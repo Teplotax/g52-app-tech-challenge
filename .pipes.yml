@@ -1,0 +1,4 @@
+aws_region: "sa-east-1"
+ecr_repository: "grupo52/tech-challenge/ecs-cluster-name"
+app_dir: "app"
+java_version: "21"

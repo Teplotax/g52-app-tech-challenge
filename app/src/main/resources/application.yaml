@@ -1,0 +1,27 @@
+server:
+  port: ${SERVER_PORT}
+
+spring:
+  application:
+    name: hello-world-ms
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: info, health, prometheus, metrics
+  endpoint:
+    health:
+      show-details: always
+    prometheus:
+      enabled: true
+    metrics:
+      enabled: true
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+
+logging:
+  level:
+    root: info
