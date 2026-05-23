@@ -119,6 +119,8 @@ resource "aws_ecs_service" "app" {
   cluster         = data.terraform_remote_state.ecs_cluster.outputs.cluster_id
   task_definition = aws_ecs_task_definition.app.arn
   desired_count   = var.desired_count
+  deployment_minimum_healthy_percent = 100
+  deployment_maximum_percent         = 200
 
   network_configuration {
     subnets          = var.subnet_ids
@@ -135,6 +137,11 @@ resource "aws_ecs_service" "app" {
     target_group_arn = aws_lb_target_group.app.arn
     container_name   = var.service_name
     container_port   = var.container_port
+  }
+
+  deployment_circuit_breaker {
+    enable   = true
+    rollback = true
   }
 
   tags = local.service_tags
