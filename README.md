@@ -1,1 +1,1 @@
-# template-app-ecs-service 
+# template-app-ecs-service
