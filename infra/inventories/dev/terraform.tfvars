@@ -9,7 +9,7 @@ repository_url    = "403339561517.dkr.ecr.sa-east-1.amazonaws.com/grupo52/tech-c
 cidr_blocks       = ["172.31.0.0/16"]
 destroy           = false
 
-desired_count     = 1
+desired_count     = 0
 
 task_env_vars = [
   {
