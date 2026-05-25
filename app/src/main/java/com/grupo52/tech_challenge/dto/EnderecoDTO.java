@@ -31,7 +31,7 @@ public class EnderecoDTO {
     private String uf;
 
     @NotBlank(message = "CEP é obrigatório")
-    @Pattern(regexp = "\\d{5}-\\d{3}", message = "CEP deve estar no formato 00000-000")
+    @Pattern(regexp = "\\d{8}", message = "CEP deve conter exatamente 8 dígitos numéricos (ex: 12345678)")
     private String cep;
 
     public static EnderecoDTO fromDomain(Endereco endereco) {
