@@ -7,21 +7,11 @@ import lombok.*;
 @NoArgsConstructor
 @Builder
 @ToString
-public class Veiculo {
+public class Modelo {
 
     private Long id;
 
-    private String placa;
+    private String nome;
 
-    //OneToOne
     private Marca marca;
-
-    //OneToOne
-    private Modelo modelo;
-
-    private Integer ano;
-
-    //OneToOne
-    private Cliente cliente;
-
 }
