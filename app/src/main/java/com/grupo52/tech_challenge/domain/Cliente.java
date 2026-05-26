@@ -13,7 +13,6 @@ import java.util.List;
 @ToString
 public class Cliente {
 
-    @Setter
     private Long id;
 
     private String nome;
