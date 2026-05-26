@@ -2,7 +2,10 @@ package com.grupo52.tech_challenge.dto.response;
 
 import com.grupo52.tech_challenge.domain.Cliente;
 import com.grupo52.tech_challenge.dto.EnderecoInfoDTO;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Getter
 @AllArgsConstructor
@@ -18,10 +21,6 @@ public class ClienteInfoResponseDTO {
     private Boolean contatoWhatsApp;
     private EnderecoInfoDTO endereco;
 
-//    private List<VeiculoInfoResponseDTO> veiculos = new ArrayList<>();
-//
-//    private List<OrdemDeServicoInfoResponseDTO> ordensDeServico = new ArrayList<>();
-
     public static ClienteInfoResponseDTO fromDomain(Cliente cliente) {
         return ClienteInfoResponseDTO.builder()
                 .nome(cliente.getNome())
@@ -31,8 +30,6 @@ public class ClienteInfoResponseDTO {
                 .telefone(cliente.getTelefone())
                 .contatoWhatsApp(cliente.getContatoWhatsApp())
                 .endereco(EnderecoInfoDTO.fromDomain(cliente.getEndereco()))
-//                .veiculos()
-//                .ordensDeServico()
                 .build();
     }
 }

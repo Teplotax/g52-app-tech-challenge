@@ -51,8 +51,8 @@ public class VeiculoDatabase {
                 .id(this.id)
                 .placa(this.placa)
                 .ano(this.ano)
-                .modelo(this.modelo.toDomain())
-                .marca(this.modelo.getMarca().toDomain())
+                .modelo(this.modelo.toInfo())
+                .marca(this.modelo.getMarca().toInfo())
                 .build();
     }
 }

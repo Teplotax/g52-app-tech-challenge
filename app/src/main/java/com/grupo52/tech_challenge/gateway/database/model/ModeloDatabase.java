@@ -30,7 +30,14 @@ public class ModeloDatabase {
         return Modelo.builder()
                 .id(this.id)
                 .nome(this.nome)
-                .marca(this.marca != null ? this.marca.toDomainWithoutModelos() : null)
+                .marca(this.marca != null ? this.marca.toInfo() : null)
+                .build();
+    }
+
+    public Modelo toInfo() {
+        return Modelo.builder()
+                .id(this.id)
+                .nome(this.nome)
                 .build();
     }
 }

@@ -8,6 +8,9 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Entity
 @Table(
         name = "clientes",
@@ -41,10 +44,11 @@ public class ClienteDatabase {
     @Embedded
     private EnderecoDatabase endereco;
 
-//TODO
-//    @OneToMany(mappedBy = "cliente", cascade = CascadeType.ALL, orphanRemoval = true)
-//    @Builder.Default
-//    private List<VeiculoDatabase> veiculos = new ArrayList<>();
+
+    @OneToMany(mappedBy = "cliente", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<VeiculoDatabase> veiculos = new ArrayList<>();
+
 //    @OneToMany(mappedBy = "cliente", cascade = CascadeType.ALL, orphanRemoval = true)
 //    @Builder.Default
 //    private List<OrdemDeServicoDatabase> ordensDeServico = new ArrayList<>();
@@ -59,17 +63,10 @@ public class ClienteDatabase {
                 .telefone(cliente.getTelefone())
                 .contatoWhatsApp(cliente.getContatoWhatsApp())
                 .endereco(EnderecoDatabase.fromDomain(cliente.getEndereco()))
-//TODO
-//
-//                .veiculos()
-//                .ordensDeServico()
                 .build();
     }
 
     public Cliente toDomain() {
-
-        System.out.println(this.tipoDocumento);
-
         return Cliente.builder()
                 .id(this.id)
                 .nome(this.nome)
@@ -79,8 +76,13 @@ public class ClienteDatabase {
                 .telefone(this.telefone)
                 .contatoWhatsApp(this.contatoWhatsApp)
                 .endereco(this.endereco.toDomain())
-//TODO
-//                .veiculos()
+                .veiculos(
+                        this.veiculos != null
+                                ? this.veiculos.stream()
+                                .map(VeiculoDatabase::toDomain)
+                                .toList()
+                                : new ArrayList<>()
+                )
 //                .ordensDeServico()
                 .build();
     }

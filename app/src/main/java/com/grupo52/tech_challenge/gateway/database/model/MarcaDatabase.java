@@ -41,7 +41,7 @@ public class MarcaDatabase {
                 .build();
     }
 
-    public Marca toDomainWithoutModelos() {
+    public Marca toInfo() {
         return Marca.builder()
                 .id(this.id)
                 .nome(this.nome)

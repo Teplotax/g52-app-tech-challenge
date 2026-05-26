@@ -1,13 +1,12 @@
 package com.grupo52.tech_challenge.controller;
 
-import com.grupo52.tech_challenge.domain.Cliente;
 import com.grupo52.tech_challenge.domain.Veiculo;
 import com.grupo52.tech_challenge.dto.request.CreateVeiculoRequestDTO;
-import com.grupo52.tech_challenge.dto.response.ClienteInfoResponseDTO;
-import com.grupo52.tech_challenge.dto.response.CreateClienteResponseDTO;
 import com.grupo52.tech_challenge.dto.response.CreateVeiculoResponseDTO;
+import com.grupo52.tech_challenge.dto.response.VeiculoInfoResponseDTO;
 import com.grupo52.tech_challenge.exception.GatewayException;
 import com.grupo52.tech_challenge.gateway.CreateVeiculoGateway;
+import com.grupo52.tech_challenge.gateway.FindVeiculoGateway;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -23,8 +22,8 @@ public class VeiculoController {
     @Autowired
     private CreateVeiculoGateway createVeiculoGateway;
 
-//    @Autowired
-//    private FindVeiculoGateway findVeiculoGateway;
+    @Autowired
+    private FindVeiculoGateway findVeiculoGateway;
 
     @PostMapping
     public ResponseEntity<CreateVeiculoResponseDTO> createCliente(@RequestBody @Valid CreateVeiculoRequestDTO createVeiculoRequestDTO) throws GatewayException {
@@ -33,13 +32,13 @@ public class VeiculoController {
         return ResponseEntity.created(buildLocationUri(veiculo)).body(CreateVeiculoResponseDTO.fromDomain(veiculo));
     }
 
-//    @GetMapping("/{veiculoId}")
-//    public ResponseEntity<ClienteInfoResponseDTO> findCliente(@PathVariable Long veiculoId) throws GatewayException {
-//        Cliente cliente = findVeiculoGateway.execute(veiculoId);
-//
-//        return ResponseEntity.ok().body(ClienteInfoResponseDTO.fromDomain(cliente));
-//    }
-//
+    @GetMapping("/{veiculoId}")
+    public ResponseEntity<VeiculoInfoResponseDTO> findVeiculo(@PathVariable Long veiculoId) throws GatewayException {
+        Veiculo veiculo = findVeiculoGateway.execute(veiculoId);
+
+        return ResponseEntity.ok().body(VeiculoInfoResponseDTO.fromDomain(veiculo));
+    }
+
     private URI buildLocationUri(Veiculo veiculo) {
         return ServletUriComponentsBuilder
                 .fromCurrentRequest()
