@@ -8,6 +8,7 @@ import org.springframework.validation.ObjectError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -36,6 +37,17 @@ public class GlobalExceptionHandler {
                 .body(new ValidationErrorResponse(errors, "Invalid Request Body"));
     }
 
+    @ExceptionHandler({MethodArgumentTypeMismatchException.class})
+    public ResponseEntity<DefaultErrorMessage> handleMethodArgumentTypeMismatchException(final MethodArgumentTypeMismatchException e) {
+        String param = e.getName();
+        String requiredType = e.getRequiredType() != null ? e.getRequiredType().getSimpleName() : "unknown";
+        String value = e.getValue() != null ? e.getValue().toString() : "null";
+        String message = String.format("'%s': Tipo de dado inválido para '%s'. Tipo de dado esperado: %s", param, value, requiredType);
+
+        return ResponseEntity.status(BAD_REQUEST)
+                .body(new DefaultErrorMessage(message, BAD_REQUEST.toString()));
+    }
+
     @ExceptionHandler({GatewayException.class})
     public ResponseEntity<DefaultErrorMessage> handleGatewayException(final GatewayException e) {
 
@@ -47,6 +59,6 @@ public class GlobalExceptionHandler {
     public ResponseEntity<DefaultErrorMessage> handleException(final Exception e) {
 
         return ResponseEntity.status(INTERNAL_SERVER_ERROR).body(
-                new DefaultErrorMessage(e.getMessage(), "Internal Server Error"));
+                new DefaultErrorMessage(e.getClass().getSimpleName() + ": " + e.getMessage(), "Internal Server Error"));
     }
 }
