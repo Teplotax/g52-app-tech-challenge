@@ -2,7 +2,7 @@ package com.grupo52.tech_challenge.dto.request;
 
 import com.grupo52.tech_challenge.domain.Cliente;
 import com.grupo52.tech_challenge.domain.Enums.TipoDocumento;
-import com.grupo52.tech_challenge.dto.EnderecoDTO;
+import com.grupo52.tech_challenge.dto.EnderecoInfoDTO;
 import com.grupo52.tech_challenge.validation.annotation.DocumentoBrasilValido;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
@@ -47,12 +47,9 @@ public class CreateClienteRequestDTO {
 
     @NotNull
     @Valid
-    private EnderecoDTO endereco;
+    private EnderecoInfoDTO endereco;
 
     public Cliente toDomain() {
-
-        System.out.println(this.tipoDocumento);
-
         return Cliente.builder()
                 .nome(this.nome)
                 .tipoDocumento(TipoDocumento.valueOf(this.tipoDocumento))

@@ -21,7 +21,7 @@ public class CreateClienteGatewayImpl implements CreateClienteGateway {
         } catch (DataIntegrityViolationException e) {
             throw new GatewayException("Falha ao cadastrar Cliente, documento já cadastrado", 409);
         } catch (Exception e) {
-            throw new GatewayException("Falha ao cadastrar Cliente, cause: " + e.getClass().getSimpleName());
+            throw new GatewayException("Falha ao cadastrar Cliente, cause: " + e.getClass().getSimpleName(), e);
         }
     }
 }

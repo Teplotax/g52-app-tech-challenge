@@ -51,6 +51,7 @@ public class ClienteDatabase {
 
     public static ClienteDatabase fromDomain(Cliente cliente) {
         return ClienteDatabase.builder()
+                .id(cliente.getId())
                 .nome(cliente.getNome())
                 .tipoDocumento(cliente.getTipoDocumento()) // ou .toString()
                 .documento(cliente.getDocumento())
