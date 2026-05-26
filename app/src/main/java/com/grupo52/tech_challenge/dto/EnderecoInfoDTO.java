@@ -10,7 +10,7 @@ import lombok.*;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class EnderecoDTO {
+public class EnderecoInfoDTO {
 
     @NotBlank(message = "Logradouro é obrigatório")
     private String logradouro;
@@ -34,9 +34,9 @@ public class EnderecoDTO {
     @Pattern(regexp = "\\d{8}", message = "CEP deve conter exatamente 8 dígitos numéricos (ex: 12345678)")
     private String cep;
 
-    public static EnderecoDTO fromDomain(Endereco endereco) {
+    public static EnderecoInfoDTO fromDomain(Endereco endereco) {
         if (endereco == null) return null;
-        return EnderecoDTO.builder()
+        return EnderecoInfoDTO.builder()
                 .logradouro(endereco.getLogradouro())
                 .numero(endereco.getNumero())
                 .complemento(endereco.getComplemento())
