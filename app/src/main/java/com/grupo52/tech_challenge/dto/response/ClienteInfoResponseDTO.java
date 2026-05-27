@@ -17,6 +17,7 @@ import java.util.List;
 @Builder
 public class ClienteInfoResponseDTO {
 
+    private Long id;
     private String nome;
     private String tipoDocumento;
     private String documento;
@@ -27,6 +28,7 @@ public class ClienteInfoResponseDTO {
 
     public static ClienteInfoResponseDTO fromDomain(Cliente cliente) {
         return ClienteInfoResponseDTO.builder()
+                .id(cliente.getId())
                 .nome(cliente.getNome())
                 .tipoDocumento(cliente.getTipoDocumento().name()) // ou .toString()
                 .documento(cliente.getDocumento())
