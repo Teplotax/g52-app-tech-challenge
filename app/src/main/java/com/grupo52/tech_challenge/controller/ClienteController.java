@@ -1,14 +1,17 @@
 package com.grupo52.tech_challenge.controller;
 
 import com.grupo52.tech_challenge.domain.Cliente;
+import com.grupo52.tech_challenge.domain.Veiculo;
 import com.grupo52.tech_challenge.dto.PagedResponse;
 import com.grupo52.tech_challenge.dto.request.CreateClienteRequestDTO;
 import com.grupo52.tech_challenge.dto.response.ClienteInfoResponseDTO;
 import com.grupo52.tech_challenge.dto.response.CreateClienteResponseDTO;
+import com.grupo52.tech_challenge.dto.response.VeiculoInfoResponseDTO;
 import com.grupo52.tech_challenge.exception.GatewayException;
 import com.grupo52.tech_challenge.gateway.CreateClienteGateway;
 import com.grupo52.tech_challenge.gateway.FindClienteGateway;
 import com.grupo52.tech_challenge.gateway.ListClientesGateway;
+import com.grupo52.tech_challenge.gateway.ListVeiculosByClienteGateway;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -19,6 +22,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
+import java.util.List;
 
 @RestController
 @RequestMapping("/clientes")
@@ -32,6 +36,9 @@ public class ClienteController {
 
     @Autowired
     private ListClientesGateway listClientesGateway;
+
+    @Autowired
+    private ListVeiculosByClienteGateway listVeiculosByClienteGateway;
 
     @PostMapping
     public ResponseEntity<CreateClienteResponseDTO> createCliente(@RequestBody @Valid CreateClienteRequestDTO createClienteRequestDTO) throws GatewayException {
@@ -53,6 +60,13 @@ public class ClienteController {
         Page<Cliente> clientes = listClientesGateway.execute(pageable);
         
         return ResponseEntity.ok(ClienteInfoResponseDTO.fromDomain(clientes));
+    }
+
+    @GetMapping("/{clienteId}/veiculos")
+    public ResponseEntity<List<VeiculoInfoResponseDTO>> findBeiculosByCliente(@PathVariable Long clienteId) throws GatewayException {
+        List<Veiculo> veiculos = listVeiculosByClienteGateway.execute(clienteId);
+
+        return ResponseEntity.ok().body(VeiculoInfoResponseDTO.fromDomain(veiculos));
     }
 
     private URI buildLocationUri(Cliente cliente) {
