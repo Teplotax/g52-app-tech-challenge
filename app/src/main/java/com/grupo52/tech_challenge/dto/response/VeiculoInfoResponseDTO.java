@@ -6,6 +6,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 @Getter
 @AllArgsConstructor
 @NoArgsConstructor
@@ -28,5 +30,12 @@ public class VeiculoInfoResponseDTO {
                 .modelo(veiculo.getModelo().getNome())
                 .ano(veiculo.getAno())
                 .build();
+    }
+
+    public static List<VeiculoInfoResponseDTO> fromDomain(List<Veiculo> veiculos) {
+        if (veiculos == null) return List.of();
+        return veiculos.stream()
+                .map(VeiculoInfoResponseDTO::fromDomain)
+                .toList();
     }
 }

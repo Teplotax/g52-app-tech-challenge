@@ -32,7 +32,7 @@ public class VeiculoDatabase {
     @JoinColumn(name = "modelo_id", referencedColumnName = "id")
     private ModeloDatabase modelo;
 
-    @OneToOne
+    @ManyToOne
     @JoinColumn(name = "cliente_id", referencedColumnName = "id")
     private ClienteDatabase cliente;
 

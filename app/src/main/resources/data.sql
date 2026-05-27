@@ -1,13 +1,13 @@
-INSERT INTO marca (id, nome) VALUES (1, 'Toyota');
-INSERT INTO marca (id, nome) VALUES (2, 'Honda');
-INSERT INTO marca (id, nome) VALUES (3, 'Volkswagen');
-INSERT INTO marca (id, nome) VALUES (4, 'Chevrolet');
-INSERT INTO marca (id, nome) VALUES (5, 'Ford');
-INSERT INTO marca (id, nome) VALUES (6, 'Fiat');
-INSERT INTO marca (id, nome) VALUES (7, 'Hyundai');
-INSERT INTO marca (id, nome) VALUES (8, 'Renault');
-INSERT INTO marca (id, nome) VALUES (9, 'Nissan');
-INSERT INTO marca (id, nome) VALUES (10, 'BMW');
+INSERT INTO marca (nome) VALUES ('Toyota');
+INSERT INTO marca (nome) VALUES ('Honda');
+INSERT INTO marca (nome) VALUES ('Volkswagen');
+INSERT INTO marca (nome) VALUES ('Chevrolet');
+INSERT INTO marca (nome) VALUES ('Ford');
+INSERT INTO marca (nome) VALUES ('Fiat');
+INSERT INTO marca (nome) VALUES ('Hyundai');
+INSERT INTO marca (nome) VALUES ('Renault');
+INSERT INTO marca (nome) VALUES ('Nissan');
+INSERT INTO marca (nome) VALUES ('BMW');
 
 -- Toyota (marca_id = 1)
 INSERT INTO modelo (nome, marca_id) VALUES ('Corolla', 1);
@@ -60,8 +60,8 @@ INSERT INTO modelo (nome, marca_id) VALUES ('Serie 5', 10);
 INSERT INTO modelo (nome, marca_id) VALUES ('X5', 10);
 
 -- Clientes
---INSERT INTO clientes (id, nome, tipo_documento, documento, email, telefone, contato_whats_app, logradouro, numero, complemento, bairro, cidade, uf, cep)
---VALUES (1, 'João Silva', 'CPF', '123.456.789-00', 'joao.silva@email.com', '47999990001', true, 'Rua das Flores', '123', 'Apto 1', 'Centro', 'Blumenau', 'SC', '89010-000');
---
---INSERT INTO clientes (id, nome, tipo_documento, documento, email, telefone, contato_whats_app, logradouro, numero, complemento, bairro, cidade, uf, cep)
---VALUES (2, 'Oficina ABC Ltda', 'CNPJ', '12.345.678/0001-99', 'contato@oficinaabc.com.br', '47988880002', false, 'Av. Brasil', '456', null, 'Velha', 'Blumenau', 'SC', '89036-000');
+INSERT INTO clientes (nome, tipo_documento, documento, email, telefone, contato_whats_app, logradouro, numero, complemento, bairro, cidade, uf, cep)
+VALUES ('João Silva', 'CPF', '123.456.789-00', 'joao.silva@email.com', '47999990001', true, 'Rua das Flores', '123', 'Apto 1', 'Centro', 'Blumenau', 'SC', '89010-000');
+
+INSERT INTO clientes (nome, tipo_documento, documento, email, telefone, contato_whats_app, logradouro, numero, complemento, bairro, cidade, uf, cep)
+VALUES ('Oficina ABC Ltda', 'CNPJ', '12.345.678/0001-99', 'contato@oficinaabc.com.br', '47988880002', false, 'Av. Brasil', '456', null, 'Velha', 'Blumenau', 'SC', '89036-000');
