@@ -3,7 +3,7 @@ server:
 
 spring:
   application:
-    name: hello-world-ms
+    name: tech-challenge-ms
 
 management:
   endpoints:
