@@ -61,7 +61,7 @@ INSERT INTO modelo (nome, marca_id) VALUES ('X5', 10);
 
 -- Clientes
 INSERT INTO clientes (nome, tipo_documento, documento, email, telefone, contato_whats_app, logradouro, numero, complemento, bairro, cidade, uf, cep)
-VALUES ('João Silva', 'CPF', '123.456.789-00', 'joao.silva@email.com', '47999990001', true, 'Rua das Flores', '123', 'Apto 1', 'Centro', 'Blumenau', 'SC', '89010-000');
+VALUES ('João Silva', 'CPF', '93364249040', 'joao.silva@email.com', '47999990001', true, 'Rua das Flores', '123', 'Apto 1', 'Centro', 'Blumenau', 'SC', '89010000');
 
 INSERT INTO clientes (nome, tipo_documento, documento, email, telefone, contato_whats_app, logradouro, numero, complemento, bairro, cidade, uf, cep)
-VALUES ('Oficina ABC Ltda', 'CNPJ', '12.345.678/0001-99', 'contato@oficinaabc.com.br', '47988880002', false, 'Av. Brasil', '456', null, 'Velha', 'Blumenau', 'SC', '89036-000');
+VALUES ('Oficina ABC Ltda', 'CNPJ', '72781890000127', 'contato@oficinaabc.com.br', '47988880002', false, 'Av. Brasil', '456', null, 'Velha', 'Blumenau', 'SC', '89036000');
