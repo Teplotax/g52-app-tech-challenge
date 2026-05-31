@@ -1,18 +1,15 @@
 package com.grupo52.tech_challenge.dto.request;
 
 import com.grupo52.tech_challenge.domain.Cliente;
+import com.grupo52.tech_challenge.domain.Endereco;
 import com.grupo52.tech_challenge.domain.Enums.TipoDocumento;
-import com.grupo52.tech_challenge.dto.EnderecoInfoDTO;
 import com.grupo52.tech_challenge.validation.annotation.DocumentoBrasilValido;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 @Getter
 @Setter
@@ -25,20 +22,21 @@ public class CreateClienteRequestDTO {
     private String nome;
 
     @NotBlank
-    @Pattern(regexp = "CPF|CNPJ", message = "deve ser 'CPF' ou 'CNPJ'")
+    @Pattern(regexp = "CPF|CNPJ", message = "Deve ser 'CPF' ou 'CNPJ'")
     private String tipoDocumento;
 
     @NotBlank
+    @Pattern(regexp = "^\\d{11,14}$", message = "Deve conter 11 ou 14 dígitos numéricos, sem caracteres especiais")
     private String documento;
 
     @NotBlank
-    @Email()
+    @Email(message = "Deve ser um email válido")
     private String email;
 
     @NotBlank
     @Pattern(
             regexp = "^[0-9]{11}$",
-            message = "deve conter exatamente 11 dígitos numéricos (ex: 11999999999)"
+            message = "Deve conter exatamente 11 dígitos numéricos (ex: 11999999999)"
     )
     private String telefone;
 
@@ -47,7 +45,7 @@ public class CreateClienteRequestDTO {
 
     @NotNull
     @Valid
-    private EnderecoInfoDTO endereco;
+    private CreateEnderecoDTO endereco;
 
     public Cliente toDomain() {
         return Cliente.builder()
@@ -59,5 +57,60 @@ public class CreateClienteRequestDTO {
                 .contatoWhatsApp(this.contatoWhatsApp)
                 .endereco(this.endereco.toDomain())
                 .build();
+    }
+
+    @Getter
+    @Setter
+    @AllArgsConstructor
+    @NoArgsConstructor
+    @Builder
+    public static class CreateEnderecoDTO {
+
+        @NotBlank(message = "Logradouro é obrigatório")
+        private String logradouro;
+
+        @NotBlank(message = "Número é obrigatório")
+        private String numero;
+
+        private String complemento;
+
+        @NotBlank(message = "Bairro é obrigatório")
+        private String bairro;
+
+        @NotBlank(message = "Cidade é obrigatória")
+        private String cidade;
+
+        @NotBlank(message = "UF é obrigatória")
+        @Pattern(regexp = "[A-Z]{2}", message = "UF deve conter 2 letras maiúsculas")
+        private String uf;
+
+        @NotBlank(message = "CEP é obrigatório")
+        @Pattern(regexp = "\\d{8}", message = "CEP deve conter exatamente 8 dígitos numéricos (ex: 12345678)")
+        private String cep;
+
+        public static CreateEnderecoDTO fromDomain(Endereco endereco) {
+            if (endereco == null) return null;
+            return CreateEnderecoDTO.builder()
+                    .logradouro(endereco.getLogradouro())
+                    .numero(endereco.getNumero())
+                    .complemento(endereco.getComplemento())
+                    .bairro(endereco.getBairro())
+                    .cidade(endereco.getCidade())
+                    .uf(endereco.getUf())
+                    .cep(endereco.getCep())
+                    .build();
+        }
+
+        public Endereco toDomain() {
+            return Endereco.builder()
+                    .logradouro(this.logradouro)
+                    .numero(this.numero)
+                    .complemento(this.complemento)
+                    .bairro(this.bairro)
+                    .cidade(this.cidade)
+                    .uf(this.uf)
+                    .cep(this.cep)
+                    .build();
+        }
     }
 }

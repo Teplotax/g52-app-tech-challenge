@@ -26,6 +26,7 @@ public class UpdateClienteGatewayImpl implements UpdateClienteGateway {
             ClienteDatabase existing = clienteOptional.orElseThrow(
                     () -> new NotFoundGatewayException("Cliente não encontrado")
             );
+            
 
             ClienteDatabase updated = ClienteDatabase.builder()
                     .id(existing.getId())
@@ -35,7 +36,7 @@ public class UpdateClienteGatewayImpl implements UpdateClienteGateway {
                     .email(cliente.getEmail() != null ? cliente.getEmail() : existing.getEmail())
                     .telefone(cliente.getTelefone() != null ? cliente.getTelefone() : existing.getTelefone())
                     .contatoWhatsApp(cliente.getContatoWhatsApp() != null ? cliente.getContatoWhatsApp() : existing.getContatoWhatsApp())
-                    .endereco(cliente.getEndereco() != null ? EnderecoDatabase.fromDomain(cliente.getEndereco()) : existing.getEndereco())
+                    .endereco(buildEndereco(cliente, existing))
                     .build();
 
             return repository.save(updated).toDomain();
@@ -46,5 +47,22 @@ public class UpdateClienteGatewayImpl implements UpdateClienteGateway {
         } catch (Exception e) {
             throw new GatewayException("Falha ao atualizar Cliente, cause: " + e.getClass().getSimpleName(), e);
         }
+    }
+
+    private EnderecoDatabase buildEndereco(Cliente cliente, ClienteDatabase existing) {
+        if (cliente.getEndereco() == null) return existing.getEndereco();
+
+        var novo = cliente.getEndereco();
+        var atual = existing.getEndereco();
+
+        return EnderecoDatabase.builder()
+                .logradouro(novo.getLogradouro() != null ? novo.getLogradouro() : (atual != null ? atual.getLogradouro() : null))
+                .numero(novo.getNumero() != null ? novo.getNumero() : (atual != null ? atual.getNumero() : null))
+                .complemento(novo.getComplemento() != null ? novo.getComplemento() : (atual != null ? atual.getComplemento() : null))
+                .bairro(novo.getBairro() != null ? novo.getBairro() : (atual != null ? atual.getBairro() : null))
+                .cidade(novo.getCidade() != null ? novo.getCidade() : (atual != null ? atual.getCidade() : null))
+                .uf(novo.getUf() != null ? novo.getUf() : (atual != null ? atual.getUf() : null))
+                .cep(novo.getCep() != null ? novo.getCep() : (atual != null ? atual.getCep() : null))
+                .build();
     }
 }
