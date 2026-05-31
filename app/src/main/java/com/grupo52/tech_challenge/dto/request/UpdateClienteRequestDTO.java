@@ -6,8 +6,6 @@ import com.grupo52.tech_challenge.domain.Enums.TipoDocumento;
 import com.grupo52.tech_challenge.validation.annotation.DocumentoBrasilValido;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import lombok.*;
 
@@ -16,46 +14,40 @@ import lombok.*;
 @AllArgsConstructor
 @NoArgsConstructor
 @DocumentoBrasilValido
-public class CreateClienteRequestDTO {
+public class UpdateClienteRequestDTO {
 
-    @NotBlank
     private String nome;
 
-    @NotBlank
-    @Pattern(regexp = "CPF|CNPJ", message = "Deve ser 'CPF' ou 'CNPJ'")
+    @Pattern(regexp = "CPF|CNPJ", message = "deve ser 'CPF' ou 'CNPJ'")
     private String tipoDocumento;
 
-    @NotBlank
     @Pattern(regexp = "^\\d{11,14}$", message = "Deve conter 11 ou 14 dígitos numéricos, sem caracteres especiais")
     private String documento;
 
-    @NotBlank
-    @Email(message = "Deve ser um email válido")
+    @Email
     private String email;
 
-    @NotBlank
     @Pattern(
             regexp = "^[0-9]{11}$",
-            message = "Deve conter exatamente 11 dígitos numéricos (ex: 11999999999)"
+            message = "deve conter exatamente 11 dígitos numéricos (ex: 11999999999)"
     )
     private String telefone;
 
-    @NotNull
     private Boolean contatoWhatsApp;
 
-    @NotNull
     @Valid
-    private CreateEnderecoDTO endereco;
+    private UpdateEnderecoDTO endereco;
 
-    public Cliente toDomain() {
+    public Cliente toDomain(Long clienteId) {
         return Cliente.builder()
+                .id(clienteId)
                 .nome(this.nome)
-                .tipoDocumento(TipoDocumento.valueOf(this.tipoDocumento))
+                .tipoDocumento(this.tipoDocumento != null ? TipoDocumento.valueOf(this.tipoDocumento) : null)
                 .documento(this.documento)
                 .email(this.email)
                 .telefone(this.telefone)
                 .contatoWhatsApp(this.contatoWhatsApp)
-                .endereco(this.endereco.toDomain())
+                .endereco(this.endereco != null ? this.endereco.toDomain() : null)
                 .build();
     }
 
@@ -64,33 +56,27 @@ public class CreateClienteRequestDTO {
     @AllArgsConstructor
     @NoArgsConstructor
     @Builder
-    public static class CreateEnderecoDTO {
+    public static class UpdateEnderecoDTO {
 
-        @NotBlank(message = "Logradouro é obrigatório")
         private String logradouro;
 
-        @NotBlank(message = "Número é obrigatório")
         private String numero;
 
         private String complemento;
 
-        @NotBlank(message = "Bairro é obrigatório")
         private String bairro;
 
-        @NotBlank(message = "Cidade é obrigatória")
         private String cidade;
 
-        @NotBlank(message = "UF é obrigatória")
         @Pattern(regexp = "[A-Z]{2}", message = "UF deve conter 2 letras maiúsculas")
         private String uf;
 
-        @NotBlank(message = "CEP é obrigatório")
         @Pattern(regexp = "\\d{8}", message = "CEP deve conter exatamente 8 dígitos numéricos (ex: 12345678)")
         private String cep;
 
-        public static CreateEnderecoDTO fromDomain(Endereco endereco) {
+        public static UpdateEnderecoDTO fromDomain(Endereco endereco) {
             if (endereco == null) return null;
-            return CreateEnderecoDTO.builder()
+            return UpdateEnderecoDTO.builder()
                     .logradouro(endereco.getLogradouro())
                     .numero(endereco.getNumero())
                     .complemento(endereco.getComplemento())

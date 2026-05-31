@@ -3,10 +3,6 @@ package com.grupo52.tech_challenge.dto.request;
 import com.grupo52.tech_challenge.domain.Cliente;
 import com.grupo52.tech_challenge.domain.Modelo;
 import com.grupo52.tech_challenge.domain.Veiculo;
-import jakarta.validation.constraints.Max;
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -16,27 +12,22 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class CreateVeiculoRequestDTO {
+public class UpdateVeiculoRequestDTO {
 
-    @NotNull
     private Long clienteId;
 
-    @NotNull
     private Long modeloId;
 
-    @NotBlank
     private String placa;
 
-    @Min(1000)
-    @Max(9999)
     private Integer ano;
 
-
-    public Veiculo toDomain() {
+    public Veiculo toDomain(Long veiculoId) {
         return Veiculo.builder()
+                .id(veiculoId)
                 .placa(this.placa)
-                .cliente(Cliente.builder().id(this.clienteId).build())
-                .modelo(Modelo.builder().id(modeloId).build())
+                .cliente(this.clienteId != null ? Cliente.builder().id(this.clienteId).build() : null)
+                .modelo(this.modeloId != null ? Modelo.builder().id(this.modeloId).build() : null)
                 .ano(this.ano)
                 .build();
     }
