@@ -26,10 +26,10 @@ public class UpdateClienteGatewayImpl implements UpdateClienteGateway {
             ClienteDatabase existing = clienteOptional.orElseThrow(
                     () -> new NotFoundGatewayException("Cliente não encontrado")
             );
-            
 
             ClienteDatabase updated = ClienteDatabase.builder()
                     .id(existing.getId())
+                    .nome(cliente.getNomeSocial() != null ? cliente.getNomeSocial() : existing.getNomeSocial())
                     .nome(cliente.getNome() != null ? cliente.getNome() : existing.getNome())
                     .tipoDocumento(cliente.getTipoDocumento() != null ? cliente.getTipoDocumento() : existing.getTipoDocumento())
                     .documento(cliente.getDocumento() != null ? cliente.getDocumento() : existing.getDocumento())
