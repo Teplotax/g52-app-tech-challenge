@@ -11,6 +11,7 @@ import lombok.*;
 @Builder
 public class CreateClienteResponseDTO {
 
+    private String nomeSocial;
     private String nome;
     private String tipoDocumento;
     private String documento;
@@ -21,6 +22,7 @@ public class CreateClienteResponseDTO {
 
     public static CreateClienteResponseDTO fromDomain(Cliente cliente) {
         return CreateClienteResponseDTO.builder()
+                .nomeSocial(cliente.getNomeSocial())
                 .nome(cliente.getNome())
                 .tipoDocumento(cliente.getTipoDocumento().name()) // ou .toString()
                 .documento(cliente.getDocumento())

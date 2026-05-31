@@ -15,6 +15,8 @@ public class Cliente {
 
     private Long id;
 
+    private String nomeSocial;
+
     private String nome;
 
     private TipoDocumento tipoDocumento;

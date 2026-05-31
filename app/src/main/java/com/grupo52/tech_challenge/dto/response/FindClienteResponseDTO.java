@@ -11,6 +11,7 @@ import lombok.*;
 @Builder
 public class FindClienteResponseDTO {
 
+
     private String nome;
     private String tipoDocumento;
     private String documento;

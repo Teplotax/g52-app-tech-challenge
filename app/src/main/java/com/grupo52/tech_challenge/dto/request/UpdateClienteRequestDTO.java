@@ -16,6 +16,8 @@ import lombok.*;
 @DocumentoBrasilValido
 public class UpdateClienteRequestDTO {
 
+    private String nomeSocial;
+
     private String nome;
 
     @Pattern(regexp = "CPF|CNPJ", message = "deve ser 'CPF' ou 'CNPJ'")
@@ -41,6 +43,7 @@ public class UpdateClienteRequestDTO {
     public Cliente toDomain(Long clienteId) {
         return Cliente.builder()
                 .id(clienteId)
+                .nomeSocial(this.nomeSocial)
                 .nome(this.nome)
                 .tipoDocumento(this.tipoDocumento != null ? TipoDocumento.valueOf(this.tipoDocumento) : null)
                 .documento(this.documento)
