@@ -12,9 +12,7 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class VeiculoInfoResponseDTO {
-
-    private Long id;
+public class UpdateVeiculoResponseDTO {
 
     private String placa;
 
@@ -24,10 +22,9 @@ public class VeiculoInfoResponseDTO {
 
     private Integer ano;
 
-    public static VeiculoInfoResponseDTO fromDomain(Veiculo veiculo) {
+    public static UpdateVeiculoResponseDTO fromDomain(Veiculo veiculo) {
         if (veiculo == null) return null;
-        return VeiculoInfoResponseDTO.builder()
-                .id(veiculo.getId())
+        return UpdateVeiculoResponseDTO.builder()
                 .placa(veiculo.getPlaca())
                 .marca(veiculo.getMarca().getNome())
                 .modelo(veiculo.getModelo().getNome())
@@ -35,10 +32,10 @@ public class VeiculoInfoResponseDTO {
                 .build();
     }
 
-    public static List<VeiculoInfoResponseDTO> fromDomain(List<Veiculo> veiculos) {
+    public static List<UpdateVeiculoResponseDTO> fromDomain(List<Veiculo> veiculos) {
         if (veiculos == null) return List.of();
         return veiculos.stream()
-                .map(VeiculoInfoResponseDTO::fromDomain)
+                .map(UpdateVeiculoResponseDTO::fromDomain)
                 .toList();
     }
 }
