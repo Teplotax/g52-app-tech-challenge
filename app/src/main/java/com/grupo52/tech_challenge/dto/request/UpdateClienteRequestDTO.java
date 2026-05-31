@@ -77,19 +77,6 @@ public class UpdateClienteRequestDTO {
         @Pattern(regexp = "\\d{8}", message = "CEP deve conter exatamente 8 dígitos numéricos (ex: 12345678)")
         private String cep;
 
-        public static UpdateEnderecoDTO fromDomain(Endereco endereco) {
-            if (endereco == null) return null;
-            return UpdateEnderecoDTO.builder()
-                    .logradouro(endereco.getLogradouro())
-                    .numero(endereco.getNumero())
-                    .complemento(endereco.getComplemento())
-                    .bairro(endereco.getBairro())
-                    .cidade(endereco.getCidade())
-                    .uf(endereco.getUf())
-                    .cep(endereco.getCep())
-                    .build();
-        }
-
         public Endereco toDomain() {
             return Endereco.builder()
                     .logradouro(this.logradouro)
