@@ -23,7 +23,7 @@ public class UpdateClienteRequestDTO {
     @Pattern(regexp = "CPF|CNPJ", message = "deve ser 'CPF' ou 'CNPJ'")
     private String tipoDocumento;
 
-    @Pattern(regexp = "^\\d{11,14}$", message = "Deve conter 11 ou 14 dígitos numéricos, sem caracteres especiais")
+    @Pattern(regexp = "^\\d{11,14}$", message = "deve conter 11 ou 14 dígitos numéricos, sem caracteres especiais")
     private String documento;
 
     @Email

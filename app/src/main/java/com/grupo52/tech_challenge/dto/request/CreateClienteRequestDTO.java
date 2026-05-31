@@ -69,18 +69,18 @@ public class CreateClienteRequestDTO {
     @Builder
     public static class CreateEnderecoDTO {
 
-        @NotBlank(message = "Logradouro é obrigatório")
+        @NotBlank(message = "logradouro é obrigatório")
         private String logradouro;
 
-        @NotBlank(message = "Número é obrigatório")
+        @NotBlank(message = "número é obrigatório")
         private String numero;
 
         private String complemento;
 
-        @NotBlank(message = "Bairro é obrigatório")
+        @NotBlank(message = "bairro é obrigatório")
         private String bairro;
 
-        @NotBlank(message = "Cidade é obrigatória")
+        @NotBlank(message = "cidade é obrigatória")
         private String cidade;
 
         @NotBlank(message = "UF é obrigatória")
