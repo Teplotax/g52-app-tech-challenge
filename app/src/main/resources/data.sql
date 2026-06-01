@@ -61,7 +61,7 @@ INSERT INTO modelo (nome, marca_id) VALUES ('X5', 10);
 
 -- Clientes
 INSERT INTO clientes (nome_social, nome, tipo_documento, documento, email, telefone, contato_whats_app, logradouro, numero, complemento, bairro, cidade, uf, cep)
-VALUES ('Maria Oliveira', 'Marcos Antônio Oliveira', 'CPF', '55563271064', 'maria.oliveira@email.com', '11988887777', false, 'Avenida Brasil', '456', 'Casa', 'Jardim América', 'São Paulo', 'SP', '01432000');
+VALUES ('Maria Oliveira', 'Marcos Antônio Oliveira', 'CPF', '55563271064', 'maria.oliveira@email.com', '11988887777', true, 'Avenida Brasil', '456', 'Casa', 'Jardim América', 'São Paulo', 'SP', '01432000');
 
 INSERT INTO clientes (nome_social, nome, tipo_documento, documento, email, telefone, contato_whats_app, logradouro, numero, complemento, bairro, cidade, uf, cep)
 VALUES ('Douglas Pereira', 'Jonathan Douglas Pereira', 'CPF', '84673421027', 'carlos.pereira@email.com', '21999998888', true, 'Rua do Sol', '789', 'Sala 5', 'Copacabana', 'Rio de Janeiro', 'RJ', '22041001');
