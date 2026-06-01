@@ -61,7 +61,7 @@ public class VeiculoController {
     public ResponseEntity<Void> deleteVeiculo(@PathVariable Long veiculoId) throws GatewayException {
         deleteVeiculoGateway.execute(veiculoId);
 
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.noContent().header("Location", buildLocationUri()).build();
     }
 
     private URI buildLocationUri(Veiculo veiculo) {
@@ -70,5 +70,11 @@ public class VeiculoController {
                 .path("/{id}")
                 .buildAndExpand(veiculo.getId())
                 .toUri();
+    }
+
+    private String buildLocationUri() {
+        return ServletUriComponentsBuilder
+                .fromCurrentRequest()
+                .build().toString();
     }
 }
