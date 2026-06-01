@@ -28,6 +28,9 @@ public class VeiculoDatabase {
     @Column(nullable = false)
     private Integer ano;
 
+    @Column(nullable = false)
+    private String cor;
+
     @ManyToOne
     @JoinColumn(name = "modelo_id", referencedColumnName = "id")
     private ModeloDatabase modelo;
@@ -43,6 +46,7 @@ public class VeiculoDatabase {
                 .ano(veiculo.getAno())
                 .modelo(modelo)
                 .cliente(cliente)
+                .cor(veiculo.getCor())
                 .build();
     }
 
@@ -53,6 +57,7 @@ public class VeiculoDatabase {
                 .ano(this.ano)
                 .modelo(this.modelo.toInfo())
                 .marca(this.modelo.getMarca().toInfo())
+                .cor(this.cor)
                 .build();
     }
 }

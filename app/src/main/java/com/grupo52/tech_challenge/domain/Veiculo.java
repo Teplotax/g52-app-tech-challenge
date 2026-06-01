@@ -13,6 +13,8 @@ public class Veiculo {
 
     private String placa;
 
+    private String cor;
+
     //OneToOne
     private Marca marca;
 

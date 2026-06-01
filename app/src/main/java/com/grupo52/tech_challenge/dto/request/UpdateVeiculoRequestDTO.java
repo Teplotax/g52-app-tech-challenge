@@ -20,7 +20,10 @@ public class UpdateVeiculoRequestDTO {
 
     private String placa;
 
+    private String cor;
+
     private Integer ano;
+
 
     public Veiculo toDomain(Long veiculoId) {
         return Veiculo.builder()
@@ -29,6 +32,7 @@ public class UpdateVeiculoRequestDTO {
                 .cliente(this.clienteId != null ? Cliente.builder().id(this.clienteId).build() : null)
                 .modelo(this.modeloId != null ? Modelo.builder().id(this.modeloId).build() : null)
                 .ano(this.ano)
+                .cor(this.cor)
                 .build();
     }
 }

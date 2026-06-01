@@ -20,6 +20,8 @@ public class UpdateVeiculoResponseDTO {
 
     private String modelo;
 
+    private String cor;
+
     private Integer ano;
 
     public static UpdateVeiculoResponseDTO fromDomain(Veiculo veiculo) {
@@ -29,6 +31,7 @@ public class UpdateVeiculoResponseDTO {
                 .marca(veiculo.getMarca().getNome())
                 .modelo(veiculo.getModelo().getNome())
                 .ano(veiculo.getAno())
+                .cor(veiculo.getCor())
                 .build();
     }
 

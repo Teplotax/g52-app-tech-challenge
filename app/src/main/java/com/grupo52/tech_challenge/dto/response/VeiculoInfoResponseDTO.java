@@ -22,6 +22,8 @@ public class VeiculoInfoResponseDTO {
 
     private String modelo;
 
+    private String cor;
+
     private Integer ano;
 
     public static VeiculoInfoResponseDTO fromDomain(Veiculo veiculo) {
@@ -32,6 +34,7 @@ public class VeiculoInfoResponseDTO {
                 .marca(veiculo.getMarca().getNome())
                 .modelo(veiculo.getModelo().getNome())
                 .ano(veiculo.getAno())
+                .cor(veiculo.getCor())
                 .build();
     }
 
