@@ -11,7 +11,7 @@ import lombok.*;
 @Builder
 public class FindClienteResponseDTO {
 
-
+    private String nomeSocial;
     private String nome;
     private String tipoDocumento;
     private String documento;
@@ -22,6 +22,7 @@ public class FindClienteResponseDTO {
 
     public static FindClienteResponseDTO fromDomain(Cliente cliente) {
         return FindClienteResponseDTO.builder()
+                .nomeSocial(cliente.getNomeSocial())
                 .nome(cliente.getNome())
                 .tipoDocumento(cliente.getTipoDocumento().name()) // ou .toString()
                 .documento(cliente.getDocumento())
