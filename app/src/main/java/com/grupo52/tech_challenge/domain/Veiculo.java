@@ -24,6 +24,6 @@ public class Veiculo {
     private Integer ano;
 
     //OneToOne
-    private Cliente cliente;
+    private Long clienteId;
 
 }

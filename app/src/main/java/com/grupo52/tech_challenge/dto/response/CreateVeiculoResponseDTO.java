@@ -10,6 +10,8 @@ import lombok.*;
 @Builder
 public class CreateVeiculoResponseDTO {
 
+    private Long clienteId;
+
     private String placa;
 
     private String marca;
@@ -23,6 +25,7 @@ public class CreateVeiculoResponseDTO {
     public static CreateVeiculoResponseDTO fromDomain(Veiculo veiculo) {
         if (veiculo == null) return null;
         return CreateVeiculoResponseDTO.builder()
+                .clienteId(veiculo.getClienteId())
                 .placa(veiculo.getPlaca())
                 .marca(veiculo.getMarca().getNome())
                 .modelo(veiculo.getModelo().getNome())

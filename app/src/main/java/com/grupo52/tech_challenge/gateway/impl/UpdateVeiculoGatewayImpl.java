@@ -37,8 +37,8 @@ public class UpdateVeiculoGatewayImpl implements UpdateVeiculoGateway {
             }
 
             ClienteDatabase cliente = existing.getCliente();
-            if (veiculo.getCliente() != null && veiculo.getCliente().getId() != null) {
-                cliente = clienteRepository.findById(veiculo.getCliente().getId()).orElseThrow(
+            if (veiculo.getClienteId() != null ) {
+                cliente = clienteRepository.findById(veiculo.getClienteId()).orElseThrow(
                         () -> new NotFoundGatewayException("Cliente não encontrado")
                 );
             }

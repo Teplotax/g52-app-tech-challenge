@@ -53,6 +53,7 @@ public class VeiculoDatabase {
     public Veiculo toDomain() {
         return Veiculo.builder()
                 .id(this.id)
+                .clienteId(this.cliente.getId())
                 .placa(this.placa)
                 .ano(this.ano)
                 .modelo(this.modelo.toInfo())
