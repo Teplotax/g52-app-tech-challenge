@@ -60,8 +60,14 @@ INSERT INTO modelo (nome, marca_id) VALUES ('Serie 5', 10);
 INSERT INTO modelo (nome, marca_id) VALUES ('X5', 10);
 
 -- Clientes
-INSERT INTO clientes (nome, tipo_documento, documento, email, telefone, contato_whats_app, logradouro, numero, complemento, bairro, cidade, uf, cep)
-VALUES ('João Silva', 'CPF', '93364249040', 'joao.silva@email.com', '47999990001', true, 'Rua das Flores', '123', 'Apto 1', 'Centro', 'Blumenau', 'SC', '89010000');
+INSERT INTO clientes (nome_social, nome, tipo_documento, documento, email, telefone, contato_whats_app, logradouro, numero, complemento, bairro, cidade, uf, cep)
+VALUES ('Maria Oliveira', 'Marcos Antônio Oliveira', 'CPF', '55563271064', 'maria.oliveira@email.com', '11988887777', true, 'Avenida Brasil', '456', 'Casa', 'Jardim América', 'São Paulo', 'SP', '01432000');
 
-INSERT INTO clientes (nome, tipo_documento, documento, email, telefone, contato_whats_app, logradouro, numero, complemento, bairro, cidade, uf, cep)
-VALUES ('Oficina ABC Ltda', 'CNPJ', '72781890000127', 'contato@oficinaabc.com.br', '47988880002', false, 'Av. Brasil', '456', null, 'Velha', 'Blumenau', 'SC', '89036000');
+INSERT INTO clientes (nome_social, nome, tipo_documento, documento, email, telefone, contato_whats_app, logradouro, numero, complemento, bairro, cidade, uf, cep)
+VALUES ('Douglas Pereira', 'Jonathan Douglas Pereira', 'CPF', '84673421027', 'carlos.pereira@email.com', '21999998888', true, 'Rua do Sol', '789', 'Sala 5', 'Copacabana', 'Rio de Janeiro', 'RJ', '22041001');
+
+INSERT INTO clientes (nome_social, nome, tipo_documento, documento, email, telefone, contato_whats_app, logradouro, numero, complemento, bairro, cidade, uf, cep)
+VALUES ('João Silva', 'João Silva', 'CPF', '93364249040', 'joao.silva@email.com', '47999990001', true, 'Rua das Flores', '123', 'Apto 1', 'Centro', 'Blumenau', 'SC', '89010000');
+
+INSERT INTO clientes (nome_social, nome, tipo_documento, documento, email, telefone, contato_whats_app, logradouro, numero, complemento, bairro, cidade, uf, cep)
+VALUES ('Oficina ABC', 'Oficina e Comércio de Peças Automotivas ABC Ltda', 'CNPJ', '72781890000127', 'contato@oficinaabc.com.br', '47988880002', false, 'Av. Brasil', '456', null, 'Velha', 'Blumenau', 'SC', '89036000');

@@ -47,6 +47,7 @@ public class UpdateVeiculoGatewayImpl implements UpdateVeiculoGateway {
                     .id(existing.getId())
                     .placa(veiculo.getPlaca() != null ? veiculo.getPlaca() : existing.getPlaca())
                     .ano(veiculo.getAno() != null ? veiculo.getAno() : existing.getAno())
+                    .cor(veiculo.getCor() != null ? veiculo.getCor() : existing.getCor())
                     .modelo(modelo)
                     .cliente(cliente)
                     .build();

@@ -11,7 +11,7 @@ import java.lang.annotation.*;
 @Target({ ElementType.TYPE })
 @Retention(RetentionPolicy.RUNTIME)
 public @interface DocumentoBrasilValido {
-    String message() default "documento: Documento inválido para o tipo informado";
+    String message() default "documento: documento inválido para o tipo informado";
     Class<?>[] groups() default {};
     Class<? extends Payload>[] payload() default {};
 }

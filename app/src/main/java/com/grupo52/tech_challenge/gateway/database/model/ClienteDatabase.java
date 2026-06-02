@@ -27,6 +27,8 @@ public class ClienteDatabase {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    private String nomeSocial;
+
     private String nome;
 
     @Enumerated(EnumType.STRING)
@@ -56,6 +58,7 @@ public class ClienteDatabase {
     public static ClienteDatabase fromDomain(Cliente cliente) {
         return ClienteDatabase.builder()
                 .id(cliente.getId())
+                .nomeSocial(cliente.getNomeSocial())
                 .nome(cliente.getNome())
                 .tipoDocumento(cliente.getTipoDocumento()) // ou .toString()
                 .documento(cliente.getDocumento())
@@ -69,6 +72,7 @@ public class ClienteDatabase {
     public Cliente toDomain() {
         return Cliente.builder()
                 .id(this.id)
+                .nomeSocial(this.nomeSocial)
                 .nome(this.nome)
                 .tipoDocumento(this.tipoDocumento)
                 .documento(this.documento)

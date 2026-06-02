@@ -27,6 +27,9 @@ public class CreateVeiculoRequestDTO {
     @NotBlank
     private String placa;
 
+    @NotBlank
+    private String cor;
+
     @Min(1000)
     @Max(9999)
     private Integer ano;
@@ -38,6 +41,7 @@ public class CreateVeiculoRequestDTO {
                 .cliente(Cliente.builder().id(this.clienteId).build())
                 .modelo(Modelo.builder().id(modeloId).build())
                 .ano(this.ano)
+                .cor(this.cor)
                 .build();
     }
 }

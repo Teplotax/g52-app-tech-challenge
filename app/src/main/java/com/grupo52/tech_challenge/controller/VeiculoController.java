@@ -1,17 +1,18 @@
 package com.grupo52.tech_challenge.controller;
 
 import com.grupo52.tech_challenge.domain.Veiculo;
+import com.grupo52.tech_challenge.dto.PagedResponse;
 import com.grupo52.tech_challenge.dto.request.CreateVeiculoRequestDTO;
 import com.grupo52.tech_challenge.dto.request.UpdateVeiculoRequestDTO;
 import com.grupo52.tech_challenge.dto.response.CreateVeiculoResponseDTO;
 import com.grupo52.tech_challenge.dto.response.VeiculoInfoResponseDTO;
 import com.grupo52.tech_challenge.exception.GatewayException;
-import com.grupo52.tech_challenge.gateway.CreateVeiculoGateway;
-import com.grupo52.tech_challenge.gateway.DeleteVeiculoGateway;
-import com.grupo52.tech_challenge.gateway.FindVeiculoGateway;
-import com.grupo52.tech_challenge.gateway.UpdateVeiculoGateway;
+import com.grupo52.tech_challenge.gateway.*;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
@@ -27,6 +28,9 @@ public class VeiculoController {
 
     @Autowired
     private FindVeiculoGateway findVeiculoGateway;
+
+    @Autowired
+    private ListVeiculosGateway listVeiculosGateway;
 
     @Autowired
     private UpdateVeiculoGateway updateVeiculoGateway;
@@ -48,6 +52,14 @@ public class VeiculoController {
         return ResponseEntity.ok().body(VeiculoInfoResponseDTO.fromDomain(veiculo));
     }
 
+    @GetMapping
+    public ResponseEntity<PagedResponse<VeiculoInfoResponseDTO>> listVeiculos(
+            @PageableDefault(size = 20, page = 0) Pageable pageable) throws GatewayException {
+        Page<Veiculo> veiculos = listVeiculosGateway.execute(pageable);
+
+        return ResponseEntity.ok(VeiculoInfoResponseDTO.fromDomain(veiculos));
+    }
+
     @PutMapping("/{veiculoId}")
     public ResponseEntity<VeiculoInfoResponseDTO> updateVeiculo(
             @PathVariable Long veiculoId,
@@ -61,7 +73,7 @@ public class VeiculoController {
     public ResponseEntity<Void> deleteVeiculo(@PathVariable Long veiculoId) throws GatewayException {
         deleteVeiculoGateway.execute(veiculoId);
 
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.noContent().header("Location", buildLocationUri()).build();
     }
 
     private URI buildLocationUri(Veiculo veiculo) {
@@ -70,5 +82,11 @@ public class VeiculoController {
                 .path("/{id}")
                 .buildAndExpand(veiculo.getId())
                 .toUri();
+    }
+
+    private String buildLocationUri() {
+        return ServletUriComponentsBuilder
+                .fromCurrentRequest()
+                .build().toString();
     }
 }

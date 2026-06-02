@@ -16,12 +16,14 @@ import lombok.*;
 @DocumentoBrasilValido
 public class UpdateClienteRequestDTO {
 
+    private String nomeSocial;
+
     private String nome;
 
     @Pattern(regexp = "CPF|CNPJ", message = "deve ser 'CPF' ou 'CNPJ'")
     private String tipoDocumento;
 
-    @Pattern(regexp = "^\\d{11,14}$", message = "Deve conter 11 ou 14 dígitos numéricos, sem caracteres especiais")
+    @Pattern(regexp = "^\\d{11,14}$", message = "deve conter 11 ou 14 dígitos numéricos, sem caracteres especiais")
     private String documento;
 
     @Email
@@ -41,6 +43,7 @@ public class UpdateClienteRequestDTO {
     public Cliente toDomain(Long clienteId) {
         return Cliente.builder()
                 .id(clienteId)
+                .nomeSocial(this.nomeSocial)
                 .nome(this.nome)
                 .tipoDocumento(this.tipoDocumento != null ? TipoDocumento.valueOf(this.tipoDocumento) : null)
                 .documento(this.documento)
@@ -73,19 +76,6 @@ public class UpdateClienteRequestDTO {
 
         @Pattern(regexp = "\\d{8}", message = "CEP deve conter exatamente 8 dígitos numéricos (ex: 12345678)")
         private String cep;
-
-        public static UpdateEnderecoDTO fromDomain(Endereco endereco) {
-            if (endereco == null) return null;
-            return UpdateEnderecoDTO.builder()
-                    .logradouro(endereco.getLogradouro())
-                    .numero(endereco.getNumero())
-                    .complemento(endereco.getComplemento())
-                    .bairro(endereco.getBairro())
-                    .cidade(endereco.getCidade())
-                    .uf(endereco.getUf())
-                    .cep(endereco.getCep())
-                    .build();
-        }
 
         public Endereco toDomain() {
             return Endereco.builder()

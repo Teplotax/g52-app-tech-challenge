@@ -84,7 +84,8 @@ public class ClienteController {
     public ResponseEntity<Void> deleteCliente(@PathVariable Long clienteId) throws GatewayException {
         deleteClienteGateway.execute(clienteId);
 
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.noContent().header("Location", buildLocationUri()
+        ).build();
     }
 
     private URI buildLocationUri(Cliente cliente) {
@@ -93,5 +94,11 @@ public class ClienteController {
                 .path("/{id}")
                 .buildAndExpand(cliente.getId())
                 .toUri();
+    }
+
+    private String buildLocationUri() {
+        return ServletUriComponentsBuilder
+                .fromCurrentRequest()
+                .build().toString();
     }
 }

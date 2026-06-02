@@ -16,6 +16,8 @@ public class CreateVeiculoResponseDTO {
 
     private String modelo;
 
+    private String cor;
+
     private Integer ano;
 
     public static CreateVeiculoResponseDTO fromDomain(Veiculo veiculo) {
@@ -25,6 +27,7 @@ public class CreateVeiculoResponseDTO {
                 .marca(veiculo.getMarca().getNome())
                 .modelo(veiculo.getModelo().getNome())
                 .ano(veiculo.getAno())
+                .cor(veiculo.getCor())
                 .build();
     }
 }

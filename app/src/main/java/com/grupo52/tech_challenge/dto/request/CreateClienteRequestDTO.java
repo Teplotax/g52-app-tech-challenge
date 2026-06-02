@@ -18,25 +18,27 @@ import lombok.*;
 @DocumentoBrasilValido
 public class CreateClienteRequestDTO {
 
+    private String nomeSocial;
+
     @NotBlank
     private String nome;
 
     @NotBlank
-    @Pattern(regexp = "CPF|CNPJ", message = "Deve ser 'CPF' ou 'CNPJ'")
+    @Pattern(regexp = "CPF|CNPJ", message = "deve ser 'CPF' ou 'CNPJ'")
     private String tipoDocumento;
 
     @NotBlank
-    @Pattern(regexp = "^\\d{11,14}$", message = "Deve conter 11 ou 14 dígitos numéricos, sem caracteres especiais")
+    @Pattern(regexp = "^\\d{11,14}$", message = "deve conter 11 ou 14 dígitos numéricos, sem caracteres especiais")
     private String documento;
 
     @NotBlank
-    @Email(message = "Deve ser um email válido")
+    @Email(message = "deve ser um email válido")
     private String email;
 
     @NotBlank
     @Pattern(
             regexp = "^[0-9]{11}$",
-            message = "Deve conter exatamente 11 dígitos numéricos (ex: 11999999999)"
+            message = "deve conter exatamente 11 dígitos numéricos (ex: 11999999999)"
     )
     private String telefone;
 
@@ -49,6 +51,7 @@ public class CreateClienteRequestDTO {
 
     public Cliente toDomain() {
         return Cliente.builder()
+                .nomeSocial(this.nomeSocial != null && !this.nomeSocial.isBlank() ? this.nomeSocial : this.nome)
                 .nome(this.nome)
                 .tipoDocumento(TipoDocumento.valueOf(this.tipoDocumento))
                 .documento(this.documento)
@@ -66,18 +69,18 @@ public class CreateClienteRequestDTO {
     @Builder
     public static class CreateEnderecoDTO {
 
-        @NotBlank(message = "Logradouro é obrigatório")
+        @NotBlank(message = "logradouro é obrigatório")
         private String logradouro;
 
-        @NotBlank(message = "Número é obrigatório")
+        @NotBlank(message = "número é obrigatório")
         private String numero;
 
         private String complemento;
 
-        @NotBlank(message = "Bairro é obrigatório")
+        @NotBlank(message = "bairro é obrigatório")
         private String bairro;
 
-        @NotBlank(message = "Cidade é obrigatória")
+        @NotBlank(message = "cidade é obrigatória")
         private String cidade;
 
         @NotBlank(message = "UF é obrigatória")
