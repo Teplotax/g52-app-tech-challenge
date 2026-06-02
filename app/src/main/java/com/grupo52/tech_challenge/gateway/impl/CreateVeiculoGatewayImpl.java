@@ -26,7 +26,7 @@ public class CreateVeiculoGatewayImpl implements CreateVeiculoGateway {
 
     public Veiculo execute(Veiculo veiculo) throws GatewayException {
         try {
-            Optional<ClienteDatabase> clienteOptional = clienteRepository.findById(veiculo.getCliente().getId());
+            Optional<ClienteDatabase> clienteOptional = clienteRepository.findById(veiculo.getClienteId());
             ClienteDatabase clienteDatabase = clienteOptional.orElseThrow(
                     () -> new NotFoundGatewayException("Cliente não encontrado")
             );

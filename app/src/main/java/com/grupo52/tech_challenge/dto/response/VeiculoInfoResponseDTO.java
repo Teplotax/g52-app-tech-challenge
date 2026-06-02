@@ -1,6 +1,5 @@
 package com.grupo52.tech_challenge.dto.response;
 
-import com.grupo52.tech_challenge.domain.Cliente;
 import com.grupo52.tech_challenge.domain.Veiculo;
 import com.grupo52.tech_challenge.dto.PagedResponse;
 import lombok.AllArgsConstructor;
@@ -19,6 +18,8 @@ public class VeiculoInfoResponseDTO {
 
     private Long id;
 
+    private Long clienteId;
+
     private String placa;
 
     private String marca;
@@ -33,6 +34,7 @@ public class VeiculoInfoResponseDTO {
         if (veiculo == null) return null;
         return VeiculoInfoResponseDTO.builder()
                 .id(veiculo.getId())
+                .clienteId(veiculo.getClienteId())
                 .placa(veiculo.getPlaca())
                 .marca(veiculo.getMarca().getNome())
                 .modelo(veiculo.getModelo().getNome())

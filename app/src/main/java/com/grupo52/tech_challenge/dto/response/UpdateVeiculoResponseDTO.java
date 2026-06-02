@@ -14,6 +14,8 @@ import java.util.List;
 @Builder
 public class UpdateVeiculoResponseDTO {
 
+    private Long clienteId;
+
     private String placa;
 
     private String marca;
@@ -27,6 +29,7 @@ public class UpdateVeiculoResponseDTO {
     public static UpdateVeiculoResponseDTO fromDomain(Veiculo veiculo) {
         if (veiculo == null) return null;
         return UpdateVeiculoResponseDTO.builder()
+                .clienteId(veiculo.getClienteId())
                 .placa(veiculo.getPlaca())
                 .marca(veiculo.getMarca().getNome())
                 .modelo(veiculo.getModelo().getNome())

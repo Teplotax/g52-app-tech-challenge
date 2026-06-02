@@ -1,6 +1,5 @@
 package com.grupo52.tech_challenge.dto.request;
 
-import com.grupo52.tech_challenge.domain.Cliente;
 import com.grupo52.tech_challenge.domain.Modelo;
 import com.grupo52.tech_challenge.domain.Veiculo;
 import lombok.AllArgsConstructor;
@@ -29,7 +28,7 @@ public class UpdateVeiculoRequestDTO {
         return Veiculo.builder()
                 .id(veiculoId)
                 .placa(this.placa)
-                .cliente(this.clienteId != null ? Cliente.builder().id(this.clienteId).build() : null)
+                .clienteId(this.clienteId)
                 .modelo(this.modeloId != null ? Modelo.builder().id(this.modeloId).build() : null)
                 .ano(this.ano)
                 .cor(this.cor)

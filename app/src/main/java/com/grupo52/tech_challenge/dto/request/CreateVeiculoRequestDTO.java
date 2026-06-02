@@ -1,6 +1,5 @@
 package com.grupo52.tech_challenge.dto.request;
 
-import com.grupo52.tech_challenge.domain.Cliente;
 import com.grupo52.tech_challenge.domain.Modelo;
 import com.grupo52.tech_challenge.domain.Veiculo;
 import jakarta.validation.constraints.Max;
@@ -38,7 +37,7 @@ public class CreateVeiculoRequestDTO {
     public Veiculo toDomain() {
         return Veiculo.builder()
                 .placa(this.placa)
-                .cliente(Cliente.builder().id(this.clienteId).build())
+                .clienteId(this.clienteId)
                 .modelo(Modelo.builder().id(modeloId).build())
                 .ano(this.ano)
                 .cor(this.cor)
