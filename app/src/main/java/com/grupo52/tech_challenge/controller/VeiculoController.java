@@ -5,6 +5,7 @@ import com.grupo52.tech_challenge.dto.PagedResponse;
 import com.grupo52.tech_challenge.dto.request.CreateVeiculoRequestDTO;
 import com.grupo52.tech_challenge.dto.request.UpdateVeiculoRequestDTO;
 import com.grupo52.tech_challenge.dto.response.CreateVeiculoResponseDTO;
+import com.grupo52.tech_challenge.dto.response.FindVeiculoResponseDTO;
 import com.grupo52.tech_challenge.dto.response.VeiculoInfoResponseDTO;
 import com.grupo52.tech_challenge.exception.GatewayException;
 import com.grupo52.tech_challenge.gateway.*;
@@ -46,10 +47,10 @@ public class VeiculoController {
     }
 
     @GetMapping("/{veiculoId}")
-    public ResponseEntity<VeiculoInfoResponseDTO> findVeiculo(@PathVariable Long veiculoId) throws GatewayException {
+    public ResponseEntity<FindVeiculoResponseDTO> findVeiculo(@PathVariable Long veiculoId) throws GatewayException {
         Veiculo veiculo = findVeiculoGateway.execute(veiculoId);
 
-        return ResponseEntity.ok().body(VeiculoInfoResponseDTO.fromDomain(veiculo));
+        return ResponseEntity.ok().body(FindVeiculoResponseDTO.fromDomain(veiculo));
     }
 
     @GetMapping
