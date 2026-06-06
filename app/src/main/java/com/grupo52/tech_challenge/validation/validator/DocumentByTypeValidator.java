@@ -1,13 +1,13 @@
 package com.grupo52.tech_challenge.validation.validator;
 
-import com.grupo52.tech_challenge.validation.annotation.DocumentoBrasil;
+import com.grupo52.tech_challenge.validation.annotation.DocumentoByType;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 import org.hibernate.validator.internal.constraintvalidators.hv.br.CPFValidator;
 
 import java.lang.reflect.Method;
 
-public class DocumentValidator implements ConstraintValidator<DocumentoBrasil, Object> {
+public class DocumentByTypeValidator implements ConstraintValidator<DocumentoByType, Object> {
 
     @Override
     public boolean isValid(Object value, ConstraintValidatorContext context) {
