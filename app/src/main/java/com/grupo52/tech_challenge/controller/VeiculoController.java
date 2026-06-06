@@ -9,12 +9,14 @@ import com.grupo52.tech_challenge.dto.response.FindVeiculoResponseDTO;
 import com.grupo52.tech_challenge.dto.response.VeiculoInfoResponseDTO;
 import com.grupo52.tech_challenge.exception.GatewayException;
 import com.grupo52.tech_challenge.gateway.*;
+import com.grupo52.tech_challenge.validation.annotation.Placa;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -22,6 +24,7 @@ import java.net.URI;
 
 @RestController
 @RequestMapping("/veiculos")
+@Validated
 public class VeiculoController {
 
     @Autowired
@@ -57,7 +60,7 @@ public class VeiculoController {
     }
 
     @GetMapping("/placa/{placa}")
-    public ResponseEntity<FindVeiculoResponseDTO> findVeiculo(@PathVariable String placa) throws GatewayException {
+    public ResponseEntity<FindVeiculoResponseDTO> findVeiculo(@PathVariable @Placa String placa) throws GatewayException {
         Veiculo veiculo = findVeiculoByPlacaGateway.execute(placa);
 
         return ResponseEntity.ok().body(FindVeiculoResponseDTO.fromDomain(veiculo));
