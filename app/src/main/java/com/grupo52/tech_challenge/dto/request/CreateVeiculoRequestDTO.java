@@ -2,6 +2,7 @@ package com.grupo52.tech_challenge.dto.request;
 
 import com.grupo52.tech_challenge.domain.Modelo;
 import com.grupo52.tech_challenge.domain.Veiculo;
+import com.grupo52.tech_challenge.validation.annotation.Placa;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -24,6 +25,7 @@ public class CreateVeiculoRequestDTO {
     private Long modeloId;
 
     @NotBlank
+    @Placa
     private String placa;
 
     @NotBlank

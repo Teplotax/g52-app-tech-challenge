@@ -3,7 +3,7 @@ package com.grupo52.tech_challenge.dto.request;
 import com.grupo52.tech_challenge.domain.Cliente;
 import com.grupo52.tech_challenge.domain.Endereco;
 import com.grupo52.tech_challenge.domain.Enums.TipoDocumento;
-import com.grupo52.tech_challenge.validation.annotation.DocumentoBrasilValido;
+import com.grupo52.tech_challenge.validation.annotation.DocumentoBrasil;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -15,7 +15,7 @@ import lombok.*;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-@DocumentoBrasilValido
+@DocumentoBrasil
 public class CreateClienteRequestDTO {
 
     private String nomeSocial;
