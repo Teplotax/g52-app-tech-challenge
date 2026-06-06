@@ -31,6 +31,9 @@ public class ClienteController {
     private FindClienteGateway findClienteGateway;
 
     @Autowired
+    private FindClienteByDocumentGateway findClienteByDocumentGateway;
+
+    @Autowired
     private ListClientesGateway listClientesGateway;
 
     @Autowired
@@ -52,6 +55,13 @@ public class ClienteController {
     @GetMapping("/{clienteId}")
     public ResponseEntity<FindClienteResponseDTO> findCliente(@PathVariable Long clienteId) throws GatewayException {
         Cliente cliente = findClienteGateway.execute(clienteId);
+
+        return ResponseEntity.ok().body(FindClienteResponseDTO.fromDomain(cliente));
+    }
+
+    @GetMapping("/documento/{documento}")
+    public ResponseEntity<FindClienteResponseDTO> findCliente(@PathVariable String documento) throws GatewayException {
+        Cliente cliente = findClienteByDocumentGateway.execute(documento);
 
         return ResponseEntity.ok().body(FindClienteResponseDTO.fromDomain(cliente));
     }
