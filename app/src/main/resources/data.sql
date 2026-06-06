@@ -9,6 +9,7 @@ INSERT INTO marca (nome) VALUES ('Renault');
 INSERT INTO marca (nome) VALUES ('Nissan');
 INSERT INTO marca (nome) VALUES ('BMW');
 
+
 -- Toyota (marca_id = 1)
 INSERT INTO modelo (nome, marca_id) VALUES ('Corolla', 1);
 INSERT INTO modelo (nome, marca_id) VALUES ('Hilux', 1);
@@ -59,6 +60,7 @@ INSERT INTO modelo (nome, marca_id) VALUES ('Serie 3', 10);
 INSERT INTO modelo (nome, marca_id) VALUES ('Serie 5', 10);
 INSERT INTO modelo (nome, marca_id) VALUES ('X5', 10);
 
+
 -- Clientes
 INSERT INTO clientes (nome_social, nome, tipo_documento, documento, email, telefone, contato_whats_app, logradouro, numero, complemento, bairro, cidade, uf, cep)
 VALUES ('Maria Oliveira', 'Marcos Antônio Oliveira', 'CPF', '55563271064', 'maria.oliveira@email.com', '11988887777', true, 'Avenida Brasil', '456', 'Casa', 'Jardim América', 'São Paulo', 'SP', '01432000');
@@ -71,3 +73,20 @@ VALUES ('João Silva', 'João Silva', 'CPF', '93364249040', 'joao.silva@email.co
 
 INSERT INTO clientes (nome_social, nome, tipo_documento, documento, email, telefone, contato_whats_app, logradouro, numero, complemento, bairro, cidade, uf, cep)
 VALUES ('Oficina ABC', 'Oficina e Comércio de Peças Automotivas ABC Ltda', 'CNPJ', '72781890000127', 'contato@oficinaabc.com.br', '47988880002', false, 'Av. Brasil', '456', null, 'Velha', 'Blumenau', 'SC', '89036000');
+
+
+-- Veículo para Maria Oliveira (cliente_id = 1)
+INSERT INTO veiculo (placa, ano, cor, modelo_id, cliente_id)
+VALUES ('ABC1A23', 2020, 'Prata', 1, 1);
+
+-- Veículo para Douglas Pereira (cliente_id = 2)
+INSERT INTO veiculo (placa, ano, cor, modelo_id, cliente_id)
+VALUES ('DEF2B34', 2019, 'Preto', 4, 2);
+
+-- Veículo para João Silva (cliente_id = 3)
+INSERT INTO veiculo (placa, ano, cor, modelo_id, cliente_id)
+VALUES ('GHI3C45', 2021, 'Branco', 7, 3);
+
+-- Veículo para Oficina ABC (cliente_id = 4)
+INSERT INTO veiculo (placa, ano, cor, modelo_id, cliente_id)
+VALUES ('JKL4D56', 2018, 'Vermelho', 10, 4);

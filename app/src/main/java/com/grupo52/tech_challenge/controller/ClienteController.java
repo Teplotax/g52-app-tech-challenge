@@ -8,12 +8,14 @@ import com.grupo52.tech_challenge.dto.request.UpdateClienteRequestDTO;
 import com.grupo52.tech_challenge.dto.response.*;
 import com.grupo52.tech_challenge.exception.GatewayException;
 import com.grupo52.tech_challenge.gateway.*;
+import com.grupo52.tech_challenge.validation.annotation.Documento;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -22,6 +24,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/clientes")
+@Validated
 public class ClienteController {
 
     @Autowired
@@ -60,7 +63,7 @@ public class ClienteController {
     }
 
     @GetMapping("/documento/{documento}")
-    public ResponseEntity<FindClienteResponseDTO> findCliente(@PathVariable String documento) throws GatewayException {
+    public ResponseEntity<FindClienteResponseDTO> findCliente(@PathVariable @Documento String documento) throws GatewayException {
         Cliente cliente = findClienteByDocumentGateway.execute(documento);
 
         return ResponseEntity.ok().body(FindClienteResponseDTO.fromDomain(cliente));

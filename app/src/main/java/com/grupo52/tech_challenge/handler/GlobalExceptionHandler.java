@@ -1,6 +1,7 @@
 package com.grupo52.tech_challenge.handler;
 
 import com.grupo52.tech_challenge.exception.GatewayException;
+import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
@@ -19,6 +20,9 @@ import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 @ControllerAdvice
 public class GlobalExceptionHandler {
 
+
+
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ValidationErrorResponse> handleBadRequest(final MethodArgumentNotValidException e) {
         List<String> errors = new ArrayList<>();
@@ -35,6 +39,15 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity.status(BAD_REQUEST)
                 .body(new ValidationErrorResponse(errors, "Invalid Request Body"));
+    }
+
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<DefaultErrorMessage> handleConstraintViolation(final ConstraintViolationException e) {
+
+        return ResponseEntity.status(BAD_REQUEST)
+                .body(new DefaultErrorMessage(
+                        e.getLocalizedMessage().substring(e.getLocalizedMessage().indexOf(":") + 2)
+                        , BAD_REQUEST.toString()));
     }
 
     @ExceptionHandler({MethodArgumentTypeMismatchException.class})

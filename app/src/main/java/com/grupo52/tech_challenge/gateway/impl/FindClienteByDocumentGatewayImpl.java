@@ -27,7 +27,7 @@ public class FindClienteByDocumentGatewayImpl implements FindClienteByDocumentGa
         } catch (NotFoundGatewayException e) {
             throw e;
         } catch (Exception e) {
-            throw new GatewayException("Falha ao consultar cliente pelo documento, cause: " + e.getClass().getSimpleName(), e);
+            throw new GatewayException("Falha ao consultar cliente por documento, cause: " + e.getClass().getSimpleName(), e);
         }
     }
 }
