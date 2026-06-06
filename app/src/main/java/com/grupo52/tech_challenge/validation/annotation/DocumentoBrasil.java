@@ -10,7 +10,7 @@ import java.lang.annotation.*;
 @Constraint(validatedBy = DocumentValidator.class)
 @Target({ ElementType.TYPE })
 @Retention(RetentionPolicy.RUNTIME)
-public @interface DocumentoBrasilValido {
+public @interface DocumentoBrasil {
     String message() default "documento: documento inválido para o tipo informado";
     Class<?>[] groups() default {};
     Class<? extends Payload>[] payload() default {};
