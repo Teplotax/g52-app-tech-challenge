@@ -31,6 +31,9 @@ public class VeiculoController {
     private FindVeiculoGateway findVeiculoGateway;
 
     @Autowired
+    private FindVeiculoByPlacaGateway findVeiculoByPlacaGateway;
+
+    @Autowired
     private ListVeiculosGateway listVeiculosGateway;
 
     @Autowired
@@ -49,6 +52,13 @@ public class VeiculoController {
     @GetMapping("/{veiculoId}")
     public ResponseEntity<FindVeiculoResponseDTO> findVeiculo(@PathVariable Long veiculoId) throws GatewayException {
         Veiculo veiculo = findVeiculoGateway.execute(veiculoId);
+
+        return ResponseEntity.ok().body(FindVeiculoResponseDTO.fromDomain(veiculo));
+    }
+
+    @GetMapping("/placa/{placa}")
+    public ResponseEntity<FindVeiculoResponseDTO> findVeiculo(@PathVariable String placa) throws GatewayException {
+        Veiculo veiculo = findVeiculoByPlacaGateway.execute(placa);
 
         return ResponseEntity.ok().body(FindVeiculoResponseDTO.fromDomain(veiculo));
     }

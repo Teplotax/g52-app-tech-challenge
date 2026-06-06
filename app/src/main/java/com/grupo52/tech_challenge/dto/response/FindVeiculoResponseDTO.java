@@ -15,6 +15,9 @@ import java.util.List;
 @NoArgsConstructor
 @Builder
 public class FindVeiculoResponseDTO {
+
+    private Long clienteId;
+
     private String placa;
 
     private String marca;
@@ -28,6 +31,7 @@ public class FindVeiculoResponseDTO {
     public static FindVeiculoResponseDTO fromDomain(Veiculo veiculo) {
         if (veiculo == null) return null;
         return FindVeiculoResponseDTO.builder()
+                .clienteId(veiculo.getClienteId())
                 .placa(veiculo.getPlaca())
                 .marca(veiculo.getMarca().getNome())
                 .modelo(veiculo.getModelo().getNome())
