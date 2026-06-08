@@ -1,0 +1,40 @@
+package com.grupo52.tech_challenge.domain;
+
+import com.grupo52.tech_challenge.domain.Enums.TipoInsumo;
+import com.grupo52.tech_challenge.domain.Enums.TipoProduto;
+import lombok.*;
+
+import java.math.BigDecimal;
+import java.util.List;
+
+@Getter
+@AllArgsConstructor
+@NoArgsConstructor
+@Builder
+@ToString
+public class Insumo implements Produto {
+    private Long id;
+
+    private String sku;
+
+    private String ean;
+
+    private String nome;
+
+    private BigDecimal quantidadeEmbalagem;
+
+    private String unidade;
+
+    private BigDecimal preco;
+
+    private Integer estoque;
+
+    private Integer estoqueMinimo;
+
+    private TipoInsumo tipoInsumo;
+
+    private List<AplicacaoProduto> aplicacoes;
+
+    @Builder.Default
+    private TipoProduto tipoProduto = TipoProduto.INSUMO;
+}
