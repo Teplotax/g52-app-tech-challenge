@@ -34,6 +34,7 @@ variable "nlb_arn" {
 
 variable "image_tag" {
   type = string
+  default = "latest"
 }
 
 variable "repository_url" {

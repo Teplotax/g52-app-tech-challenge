@@ -1,0 +1,52 @@
+package com.grupo52.tech_challenge.domain.Enums;
+
+public enum TipoInsumo {
+
+    // Lubrificantes
+    OLEO_MOTOR,
+    OLEO_CAMBIO,
+    OLEO_DIFERENCIAL,
+    FLUIDO_DIRECAO_HIDRAULICA,
+
+    // Sistema de freio
+    FLUIDO_FREIO,
+
+    // Arrefecimento
+    ADITIVO_RADIADOR,
+    AGUA_DESMINERALIZADA,
+
+    // Limpeza
+    DESENGRAXANTE,
+    LIMPA_CONTATO,
+    SHAMPOO_AUTOMOTIVO,
+    CERA_AUTOMOTIVA,
+    SILICONE,
+    LIMPA_PARABRISA,
+
+    // Fixação e vedação
+    COLA_JUNTA,
+    SILICONE_VEDACAO,
+    TRAVA_ROSCA,
+    FITA_ISOLANTE,
+
+    // Combustíveis para testes
+    GASOLINA,
+    ETANOL,
+    DIESEL,
+
+    // Gases
+    GAS_AR_CONDICIONADO,
+    NITROGENIO,
+
+    // Soldagem e reparo
+    SOLDA_ESTANHO,
+    FLUXO_SOLDA,
+
+    // Diversos
+    PANO_LIMPEZA,
+    ESTOPA,
+    GRAXA,
+    GRAXA_BRANCA,
+    GRAXA_LITIO,
+    DESOXIDANTE
+}
