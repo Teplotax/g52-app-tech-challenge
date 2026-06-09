@@ -1,16 +1,17 @@
 package com.grupo52.tech_challenge.controller;
 
-import com.grupo52.tech_challenge.domain.Cliente;
+import com.grupo52.tech_challenge.domain.Enums.TipoProduto;
 import com.grupo52.tech_challenge.domain.Peca;
 import com.grupo52.tech_challenge.dto.request.CreatePecaRequestDTO;
-import com.grupo52.tech_challenge.dto.request.UpdateClienteRequestDTO;
 import com.grupo52.tech_challenge.dto.request.UpdatePecaRequestDTO;
 import com.grupo52.tech_challenge.dto.response.CreatePecaResponseDTO;
 import com.grupo52.tech_challenge.dto.response.FindPecaResponseDTO;
-import com.grupo52.tech_challenge.dto.response.UpdateClienteResponseDTO;
 import com.grupo52.tech_challenge.dto.response.UpdatePecaResponseDTO;
 import com.grupo52.tech_challenge.exception.GatewayException;
-import com.grupo52.tech_challenge.gateway.*;
+import com.grupo52.tech_challenge.gateway.CreatePecaGateway;
+import com.grupo52.tech_challenge.gateway.DeleteProdutoGateway;
+import com.grupo52.tech_challenge.gateway.FindPecaGateway;
+import com.grupo52.tech_challenge.gateway.UpdatePecaGateway;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -62,7 +63,7 @@ public class PecaController {
 
     @DeleteMapping("/{pecaId}")
     public ResponseEntity<Void> deletePeca(@PathVariable Long pecaId) throws GatewayException {
-        deleteProdutoGateway.execute(pecaId);
+        deleteProdutoGateway.execute(pecaId, TipoProduto.PECA);
 
         return ResponseEntity.noContent().header("Location", buildLocationUri()
         ).build();

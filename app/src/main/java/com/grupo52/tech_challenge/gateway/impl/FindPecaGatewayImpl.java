@@ -1,5 +1,6 @@
 package com.grupo52.tech_challenge.gateway.impl;
 
+import com.grupo52.tech_challenge.domain.Enums.TipoProduto;
 import com.grupo52.tech_challenge.domain.Peca;
 import com.grupo52.tech_challenge.exception.GatewayException;
 import com.grupo52.tech_challenge.exception.NotFoundGatewayException;
@@ -17,9 +18,9 @@ public class FindPecaGatewayImpl implements FindPecaGateway {
 
     private final ProdutoRepository repository;
 
-    public Peca execute(Long clienteId) throws GatewayException {
+    public Peca execute(Long pecaId) throws GatewayException {
         try {
-            Optional<ProdutoDatabase> pecaOptional = repository.findById(clienteId);
+            Optional<ProdutoDatabase> pecaOptional = repository.findByIdAndTipoProduto(pecaId, TipoProduto.PECA);
             ProdutoDatabase pecaDatabase = pecaOptional.orElseThrow(
                     () -> new NotFoundGatewayException("Peça não encontrada")
             );
