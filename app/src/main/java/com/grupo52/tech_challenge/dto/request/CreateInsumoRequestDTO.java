@@ -1,9 +1,10 @@
 package com.grupo52.tech_challenge.dto.request;
 
 import com.grupo52.tech_challenge.domain.AplicacaoProduto;
-import com.grupo52.tech_challenge.domain.Enums.TipoPeca;
+import com.grupo52.tech_challenge.domain.Enums.TipoInsumo;
+import com.grupo52.tech_challenge.domain.Enums.UnidadeDeMedida;
+import com.grupo52.tech_challenge.domain.Insumo;
 import com.grupo52.tech_challenge.domain.Modelo;
-import com.grupo52.tech_challenge.domain.Peca;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
@@ -18,7 +19,7 @@ import java.util.List;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class CreatePecaRequestDTO {
+public class CreateInsumoRequestDTO {
 
     @NotBlank
     private String sku;
@@ -39,21 +40,28 @@ public class CreatePecaRequestDTO {
     private Integer estoqueMinimo;
 
     @NotNull
-    private TipoPeca tipoPeca;
+    private TipoInsumo tipoInsumo;
+
+    private BigDecimal quantidadeEmbalagem;
+
+    @Valid
+    private UnidadeDeMedida unidadeDeMedida;
 
     @NotEmpty
     @Valid
     private List<CreateAplicacaoProdutoRequestDTO> aplicacoes;
 
-    public Peca toDomain() {
-        return Peca.builder()
+    public Insumo toDomain() {
+        return Insumo.builder()
                 .sku(this.sku)
                 .ean(this.ean)
                 .nome(this.nome)
                 .preco(this.preco)
                 .estoque(this.estoque != null ? this.estoque : 0)
                 .estoqueMinimo(this.estoqueMinimo != null ? this.estoqueMinimo : 1)
-                .tipoPeca(this.tipoPeca)
+                .tipoInsumo(this.tipoInsumo)
+                .quantidadeEmbalagem(this.quantidadeEmbalagem)
+                .unidadeDeMedida(this.unidadeDeMedida)
                 .aplicacoes(this.aplicacoes.stream().map(CreateAplicacaoProdutoRequestDTO::toDomain).toList())
                 .build();
     }
@@ -77,12 +85,17 @@ public class CreatePecaRequestDTO {
         @NotNull
         private Integer anoFim;
 
+        @NotNull
+        @PositiveOrZero
+        private Integer quantidade;
+
 
         public AplicacaoProduto toDomain() {
             return AplicacaoProduto.builder()
                     .modelo(Modelo.builder().id(this.modeloId).build())
                     .anoInicio(this.anoInicio)
                     .anoFim(this.anoFim)
+                    .quantidade(this.quantidade)
                     .build();
         }
     }

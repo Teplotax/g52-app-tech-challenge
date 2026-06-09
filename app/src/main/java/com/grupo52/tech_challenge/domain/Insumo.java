@@ -2,6 +2,7 @@ package com.grupo52.tech_challenge.domain;
 
 import com.grupo52.tech_challenge.domain.Enums.TipoInsumo;
 import com.grupo52.tech_challenge.domain.Enums.TipoProduto;
+import com.grupo52.tech_challenge.domain.Enums.UnidadeDeMedida;
 import lombok.*;
 
 import java.math.BigDecimal;
@@ -23,7 +24,7 @@ public class Insumo implements Produto {
 
     private BigDecimal quantidadeEmbalagem;
 
-    private String unidade;
+    private UnidadeDeMedida unidadeDeMedida;
 
     private BigDecimal preco;
 

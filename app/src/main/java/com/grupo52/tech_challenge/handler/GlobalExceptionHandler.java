@@ -4,6 +4,7 @@ import com.grupo52.tech_challenge.exception.GatewayException;
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
 import org.springframework.validation.ObjectError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -13,12 +14,15 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 
 @ControllerAdvice
 public class GlobalExceptionHandler {
+
 
 
 
@@ -56,6 +60,29 @@ public class GlobalExceptionHandler {
         String requiredType = e.getRequiredType() != null ? e.getRequiredType().getSimpleName() : "unknown";
         String value = e.getValue() != null ? e.getValue().toString() : "null";
         String message = String.format("'%s': Tipo de dado inválido para '%s'. Tipo de dado esperado: %s", param, value, requiredType);
+
+        return ResponseEntity.status(BAD_REQUEST)
+                .body(new DefaultErrorMessage(message, BAD_REQUEST.toString()));
+    }
+
+    @ExceptionHandler({HttpMessageNotReadableException.class})
+    public ResponseEntity<DefaultErrorMessage> handleHttpMessageNotReadableException(final HttpMessageNotReadableException e) {
+
+        String message = e.getLocalizedMessage();
+
+        Pattern pattern = Pattern.compile(
+                "Enums\\.([^`]+).*?from String \"([^\"]+)\".*?(: \\[(.*?)\\])"
+        );
+
+        Matcher matcher = pattern.matcher(e.getLocalizedMessage());
+
+        if (matcher.find()) {
+            String enumType = matcher.group(1);
+            String invalidValue = matcher.group(2);
+            String enumArray = matcher.group(3);
+
+            message = String.format("'%s': Valor inválido para '%s'. Valores esperados: %s", enumType, invalidValue, enumArray);
+        }
 
         return ResponseEntity.status(BAD_REQUEST)
                 .body(new DefaultErrorMessage(message, BAD_REQUEST.toString()));

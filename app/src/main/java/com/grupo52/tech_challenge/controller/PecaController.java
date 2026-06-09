@@ -53,7 +53,7 @@ public class PecaController {
     }
 
     @PutMapping("/{pecaId}")
-    public ResponseEntity<UpdatePecaResponseDTO> updateCliente(
+    public ResponseEntity<UpdatePecaResponseDTO> updatePeca(
             @PathVariable Long pecaId,
             @RequestBody @Valid UpdatePecaRequestDTO updatePecaRequestDTO) throws GatewayException {
         Peca peca = updatePecaGateway.execute(updatePecaRequestDTO.toDomain(pecaId));
