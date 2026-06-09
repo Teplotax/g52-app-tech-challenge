@@ -1,0 +1,36 @@
+package com.grupo52.tech_challenge.dto.response;
+
+import com.grupo52.tech_challenge.domain.Veiculo;
+import lombok.*;
+
+@Getter
+@Setter
+@AllArgsConstructor
+@NoArgsConstructor
+@Builder
+public class CreateVeiculoResponseDTO {
+
+    private Long clienteId;
+
+    private String placa;
+
+    private String marca;
+
+    private String modelo;
+
+    private String cor;
+
+    private Integer ano;
+
+    public static CreateVeiculoResponseDTO fromDomain(Veiculo veiculo) {
+        if (veiculo == null) return null;
+        return CreateVeiculoResponseDTO.builder()
+                .clienteId(veiculo.getClienteId())
+                .placa(veiculo.getPlaca())
+                .marca(veiculo.getMarca().getNome())
+                .modelo(veiculo.getModelo().getNome())
+                .ano(veiculo.getAno())
+                .cor(veiculo.getCor())
+                .build();
+    }
+}
