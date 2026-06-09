@@ -2,10 +2,8 @@ package com.grupo52.tech_challenge.controller;
 
 import com.grupo52.tech_challenge.domain.Marca;
 import com.grupo52.tech_challenge.domain.Modelo;
-import com.grupo52.tech_challenge.domain.Veiculo;
 import com.grupo52.tech_challenge.dto.response.MarcaInfoResponseDTO;
 import com.grupo52.tech_challenge.dto.response.ModeloInfoResponseDTO;
-import com.grupo52.tech_challenge.dto.response.VeiculoInfoResponseDTO;
 import com.grupo52.tech_challenge.exception.GatewayException;
 import com.grupo52.tech_challenge.gateway.ListMarcasGateway;
 import com.grupo52.tech_challenge.gateway.ListModelosByMarcaGateway;
