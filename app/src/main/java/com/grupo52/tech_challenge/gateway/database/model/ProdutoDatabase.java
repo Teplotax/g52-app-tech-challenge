@@ -44,6 +44,8 @@ public class ProdutoDatabase {
 
     private Integer estoque;
 
+    private Integer estoqueReservado;
+
     private Integer estoqueMinimo;
 
     @Enumerated(EnumType.STRING)
@@ -75,6 +77,7 @@ public class ProdutoDatabase {
                 .nome(insumo.getNome())
                 .preco(insumo.getPreco())
                 .estoque(insumo.getEstoque())
+                .estoqueReservado(insumo.getEstoqueReservado())
                 .estoqueMinimo(insumo.getEstoqueMinimo())
                 .quantidadeEmbalagem(insumo.getQuantidadeEmbalagem())
                 .unidade(insumo.getUnidade())
@@ -91,6 +94,7 @@ public class ProdutoDatabase {
                 .nome(peca.getNome())
                 .preco(peca.getPreco())
                 .estoque(peca.getEstoque())
+                .estoqueReservado(peca.getEstoqueReservado())
                 .estoqueMinimo(peca.getEstoqueMinimo())
                 .tipoProduto(peca.getTipoProduto())
                 .tipoPeca(peca.getTipoPeca())
@@ -110,6 +114,7 @@ public class ProdutoDatabase {
                 .nome(produto.getNome())
                 .preco(produto.getPreco())
                 .estoque(produto.getEstoque())
+                .estoqueReservado(produto.getEstoqueReservado())
                 .estoqueMinimo(produto.getEstoqueMinimo())
                 .tipoProduto(produto.getTipoProduto())
                 .build();
@@ -123,6 +128,7 @@ public class ProdutoDatabase {
                 .nome(this.nome)
                 .preco(this.preco)
                 .estoque(this.estoque)
+                .estoqueReservado(this.estoqueReservado)
                 .estoqueMinimo(this.estoqueMinimo)
                 .quantidadeEmbalagem(this.quantidadeEmbalagem)
                 .unidade(this.unidade)
@@ -139,6 +145,7 @@ public class ProdutoDatabase {
                 .nome(this.nome)
                 .preco(this.preco)
                 .estoque(this.estoque)
+                .estoqueReservado(this.estoqueReservado)
                 .estoqueMinimo(this.estoqueMinimo)
                 .tipoProduto(this.tipoProduto)
                 .tipoPeca(this.tipoPeca)

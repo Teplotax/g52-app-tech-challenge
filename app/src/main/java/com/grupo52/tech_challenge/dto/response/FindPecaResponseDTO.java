@@ -25,6 +25,8 @@ public class FindPecaResponseDTO {
 
     private Integer estoque;
 
+    private Integer estoqueReservado;
+
     private Integer estoqueMinimo;
 
     private TipoPeca tipoPeca;
@@ -38,6 +40,7 @@ public class FindPecaResponseDTO {
                 .nome(peca.getNome())
                 .preco(peca.getPreco())
                 .estoque(peca.getEstoque())
+                .estoqueReservado(peca.getEstoqueReservado())
                 .estoqueMinimo(peca.getEstoqueMinimo())
                 .tipoPeca(peca.getTipoPeca())
                 .aplicacoes(CreateAplicacaoProdutoResponseDTO.fromDomain(peca.getAplicacoes()))

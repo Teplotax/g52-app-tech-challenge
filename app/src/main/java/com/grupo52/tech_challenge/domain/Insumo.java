@@ -29,6 +29,9 @@ public class Insumo implements Produto {
 
     private Integer estoque;
 
+    @Builder.Default
+    private Integer estoqueReservado = 0;
+
     private Integer estoqueMinimo;
 
     private TipoInsumo tipoInsumo;

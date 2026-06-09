@@ -25,6 +25,9 @@ public class Peca implements Produto {
 
     private Integer estoque;
 
+    @Builder.Default
+    private Integer estoqueReservado = 0;
+
     private Integer estoqueMinimo;
 
     private TipoPeca tipoPeca;

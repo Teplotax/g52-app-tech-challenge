@@ -14,6 +14,8 @@ public interface ProdutoRepository extends JpaRepository<ProdutoDatabase, Long> 
 
     Optional<ProdutoDatabase> findByIdAndTipoProduto(Long id, TipoProduto tipoProduto);
 
+    Boolean existsByIdAndTipoProduto(Long id, TipoProduto tipoProduto);
+
     List<ProdutoDatabase> findAllByTipoProduto(TipoProduto tipoProduto);
 
     List<ProdutoDatabase> findAllByTipoPecaAndAplicacoesModeloIdAndAplicacoesAnoInicioLessThanEqualAndAplicacoesAnoFimGreaterThanEqual(

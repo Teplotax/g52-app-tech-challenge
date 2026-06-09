@@ -13,6 +13,7 @@ public interface Produto {
     String getNome();
     TipoProduto getTipoProduto();
     Integer getEstoque();
+    Integer getEstoqueReservado();
     Integer getEstoqueMinimo();
     BigDecimal getPreco();
     List<AplicacaoProduto> getAplicacoes();
