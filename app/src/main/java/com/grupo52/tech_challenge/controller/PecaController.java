@@ -22,7 +22,7 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import java.net.URI;
 
 @RestController
-@RequestMapping("/pecas")
+@RequestMapping("/produtos/pecas")
 @Validated
 public class PecaController {
 
