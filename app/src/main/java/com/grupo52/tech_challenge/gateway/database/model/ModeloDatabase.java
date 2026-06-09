@@ -40,4 +40,10 @@ public class ModeloDatabase {
                 .nome(this.nome)
                 .build();
     }
+
+    public static ModeloDatabase fromDomain(Modelo modelo) {
+        return ModeloDatabase.builder()
+                .id(modelo.getId())
+                .build();
+    }
 }

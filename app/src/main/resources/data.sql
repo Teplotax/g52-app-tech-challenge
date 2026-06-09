@@ -24,6 +24,7 @@ INSERT INTO modelo (nome, marca_id) VALUES ('Fit', 2);
 INSERT INTO modelo (nome, marca_id) VALUES ('Gol', 3);
 INSERT INTO modelo (nome, marca_id) VALUES ('Polo', 3);
 INSERT INTO modelo (nome, marca_id) VALUES ('Tiguan', 3);
+INSERT INTO modelo (nome, marca_id) VALUES ('Spacefox', 3);
 
 -- Chevrolet (marca_id = 4)
 INSERT INTO modelo (nome, marca_id) VALUES ('Onix', 4);
@@ -90,3 +91,24 @@ VALUES ('GHI3C45', 2021, 'Branco', 7, 3);
 -- Veículo para Oficina ABC (cliente_id = 4)
 INSERT INTO veiculo (placa, ano, cor, modelo_id, cliente_id)
 VALUES ('JKL4D56', 2018, 'Vermelho', 10, 4);
+
+
+-- Peças
+INSERT INTO produtos ( sku, ean, nome, preco, estoque, estoque_reservado, estoque_minimo, tipo_produto, tipo_peca, tipo_insumo, quantidade_embalagem, unidade_de_medida)
+VALUES
+    ('FILTRO_OLEO_001', '7891342010177', 'Filtro Óleo Space Fox 1.6 2008 a 2017 PSL34MP Tecfil', 18.84, 50, 1, 10, 'PECA', 'FILTRO_OLEO', NULL, NULL, NULL);
+
+-- Insumos
+INSERT INTO produtos ( sku, ean, nome, preco, estoque, estoque_reservado, estoque_minimo, tipo_produto, tipo_peca, tipo_insumo, quantidade_embalagem, unidade_de_medida)
+VALUES
+    ('OLEO_MOTOR_001', '5011987860575', 'Óleo Shell Helix Ultra 5W-40 1l', 45.00, 100, 0, 20, 'INSUMO', NULL, 'OLEO_MOTOR', 1.0, 'L');
+
+
+
+
+
+-- Aplicação de produtos com modelo Spacefox (modelo_id = 4)
+INSERT INTO aplicacao_produtos (produto_id, modelo_id, quantidade, ano_inicio, ano_fim)
+VALUES
+    (1, 4, 1, 2008, 2017),
+    (2, 4, 4, 2007, 2016);

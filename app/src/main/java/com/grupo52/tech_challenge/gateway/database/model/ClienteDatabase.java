@@ -48,7 +48,7 @@ public class ClienteDatabase {
 
 
     @OneToMany(mappedBy = "cliente", cascade = CascadeType.ALL, orphanRemoval = true)
-    @Builder.Default
+//    @Builder.Default
     private List<VeiculoDatabase> veiculos = new ArrayList<>();
 
 //    @OneToMany(mappedBy = "cliente", cascade = CascadeType.ALL, orphanRemoval = true)
