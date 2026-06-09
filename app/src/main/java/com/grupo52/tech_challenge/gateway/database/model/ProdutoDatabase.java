@@ -84,20 +84,6 @@ public class ProdutoDatabase {
     }
 
     public static ProdutoDatabase fromDomain(Peca peca) {
-        return ProdutoDatabase.builder()
-                .id(peca.getId())
-                .sku(peca.getSku())
-                .ean(peca.getEan())
-                .nome(peca.getNome())
-                .preco(peca.getPreco())
-                .estoque(peca.getEstoque())
-                .estoqueMinimo(peca.getEstoqueMinimo())
-                .tipoProduto(peca.getTipoProduto())
-                .tipoPeca(peca.getTipoPeca())
-                .build();
-    }
-
-    public static ProdutoDatabase fromDomainTest(Peca peca) {
         ProdutoDatabase produtoDatabase = ProdutoDatabase.builder()
                 .id(peca.getId())
                 .sku(peca.getSku())
