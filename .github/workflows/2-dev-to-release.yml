@@ -185,8 +185,18 @@ jobs:
             --force-new-deployment
   release:
     name: Create Release Branch & PR
-    needs: deploy
-    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    needs: [config, terraform]
+#    needs: deploy
+#    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    if: |
+      always() &&
+      (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
+      needs.config.result == 'success' &&
+      (
+        needs.terraform.result == 'success' ||
+        needs.terraform.result == 'skipped'
+      )
+
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
