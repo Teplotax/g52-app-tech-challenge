@@ -4,9 +4,11 @@ import com.grupo52.tech_challenge.domain.Enums.TipoProduto;
 import com.grupo52.tech_challenge.domain.Insumo;
 import com.grupo52.tech_challenge.dto.request.CreateInsumoRequestDTO;
 import com.grupo52.tech_challenge.dto.response.CreateInsumoResponseDTO;
+import com.grupo52.tech_challenge.dto.response.FindInsumoResponseDTO;
 import com.grupo52.tech_challenge.exception.GatewayException;
 import com.grupo52.tech_challenge.gateway.CreateInsumoGateway;
 import com.grupo52.tech_challenge.gateway.DeleteProdutoGateway;
+import com.grupo52.tech_challenge.gateway.FindInsumoGateway;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -24,8 +26,8 @@ public class InsumoController {
     @Autowired
     private CreateInsumoGateway createInsumoGateway;
 
-//    @Autowired
-//    private FindInsumoGateway findInsumoGateway;
+    @Autowired
+    private FindInsumoGateway findInsumoGateway;
 //
 //    @Autowired
 //    private UpdateInsumoGateway updateInsumoGateway;
@@ -40,12 +42,12 @@ public class InsumoController {
         return ResponseEntity.created(buildLocationUri(insumo)).body(CreateInsumoResponseDTO.fromDomain(insumo));
     }
 
-//    @GetMapping("/{insumoId}")
-//    public ResponseEntity<FindPecaResponseDTO> findInsumo(@PathVariable Long insumoId) throws GatewayException {
-//        Peca peca = findInsumoGateway.execute(insumoId);
-//
-//        return ResponseEntity.ok().body(FindPecaResponseDTO.fromDomain(peca));
-//    }
+    @GetMapping("/{insumoId}")
+    public ResponseEntity<FindInsumoResponseDTO> findInsumo(@PathVariable Long insumoId) throws GatewayException {
+        Insumo insumo = findInsumoGateway.execute(insumoId);
+
+        return ResponseEntity.ok().body(FindInsumoResponseDTO.fromDomain(insumo));
+    }
 //
 //    @PutMapping("/{insumoId}")
 //    public ResponseEntity<UpdatePecaResponseDTO> updateInsumo(
