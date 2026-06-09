@@ -32,8 +32,10 @@ public class ProdutoDatabase {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(unique = true, nullable = false)
     private String sku;
 
+    @Column(unique = true, nullable = false)
     private String ean;
 
     private String nome;
@@ -93,6 +95,25 @@ public class ProdutoDatabase {
                 .tipoProduto(peca.getTipoProduto())
                 .tipoPeca(peca.getTipoPeca())
                 .build();
+    }
+
+    public static ProdutoDatabase fromDomainTest(Peca peca) {
+        ProdutoDatabase produtoDatabase = ProdutoDatabase.builder()
+                .id(peca.getId())
+                .sku(peca.getSku())
+                .ean(peca.getEan())
+                .nome(peca.getNome())
+                .preco(peca.getPreco())
+                .estoque(peca.getEstoque())
+                .estoqueMinimo(peca.getEstoqueMinimo())
+                .tipoProduto(peca.getTipoProduto())
+                .tipoPeca(peca.getTipoPeca())
+                .build();
+
+        List<AplicacaoProdutoDatabase> aplicacoes = AplicacaoProdutoDatabase.fromDomain(peca.getAplicacoes(), produtoDatabase);
+        produtoDatabase.setAplicacoes(aplicacoes);
+
+        return produtoDatabase;
     }
 
     public static ProdutoDatabase fromDomain(Produto produto) {

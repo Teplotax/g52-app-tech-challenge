@@ -8,7 +8,6 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.math.BigDecimal;
 import java.util.List;
 
 @Entity
@@ -38,7 +37,7 @@ public class AplicacaoProdutoDatabase {
     private ModeloDatabase modelo;
 
     @Column(nullable = false)
-    private BigDecimal quantidade;
+    private Integer quantidade;
 
     @Column(nullable = false)
     private Integer anoInicio;

@@ -14,7 +14,7 @@ public class AplicacaoProduto {
     private Produto produto;
     private Modelo modelo;
     @Builder.Default
-    private BigDecimal quantidade = BigDecimal.ONE;
+    private Integer quantidade = 1;
     private Integer anoInicio;
     private Integer anoFim;
 }
