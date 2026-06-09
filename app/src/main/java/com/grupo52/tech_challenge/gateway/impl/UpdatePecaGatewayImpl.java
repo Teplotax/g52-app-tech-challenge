@@ -35,7 +35,7 @@ public class UpdatePecaGatewayImpl implements UpdatePecaGateway {
                     .nome(peca.getNome() != null ? peca.getNome() : existing.getNome())
                     .preco(peca.getPreco() != null ? peca.getPreco() : existing.getPreco())
                     .estoque(peca.getEstoque() != null ? peca.getEstoque() : existing.getEstoque())
-                    .estoqueReservado(existing.getEstoque())
+                    .estoqueReservado(existing.getEstoqueReservado())
                     .estoqueMinimo(peca.getEstoqueMinimo() != null ? peca.getEstoqueMinimo() : existing.getEstoqueMinimo())
                     .tipoPeca(peca.getTipoPeca() != null ? peca.getTipoPeca() : existing.getTipoPeca())
                     .tipoProduto(TipoProduto.PECA)

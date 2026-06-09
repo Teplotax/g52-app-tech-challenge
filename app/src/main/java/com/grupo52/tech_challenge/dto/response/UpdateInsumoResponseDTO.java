@@ -14,7 +14,7 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class FindInsumoResponseDTO {
+public class UpdateInsumoResponseDTO {
 
     private String sku;
 
@@ -28,8 +28,6 @@ public class FindInsumoResponseDTO {
 
     private Integer estoque;
 
-    private Integer estoqueReservado;
-
     private Integer estoqueMinimo;
 
     private BigDecimal quantidadeEmbalagem;
@@ -38,14 +36,13 @@ public class FindInsumoResponseDTO {
 
     private List<CreateAplicacaoProdutoResponseDTO> aplicacoes;
 
-    public static FindInsumoResponseDTO fromDomain(Insumo insumo) {
-        return FindInsumoResponseDTO.builder()
+    public static UpdateInsumoResponseDTO fromDomain(Insumo insumo) {
+        return UpdateInsumoResponseDTO.builder()
                 .sku(insumo.getSku())
                 .ean(insumo.getEan())
                 .nome(insumo.getNome())
                 .preco(insumo.getPreco())
                 .estoque(insumo.getEstoque())
-                .estoqueReservado(insumo.getEstoqueReservado())
                 .estoqueMinimo(insumo.getEstoqueMinimo())
                 .tipoInsumo(insumo.getTipoInsumo())
                 .quantidadeEmbalagem(insumo.getQuantidadeEmbalagem())

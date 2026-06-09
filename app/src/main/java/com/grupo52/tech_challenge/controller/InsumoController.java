@@ -3,12 +3,15 @@ package com.grupo52.tech_challenge.controller;
 import com.grupo52.tech_challenge.domain.Enums.TipoProduto;
 import com.grupo52.tech_challenge.domain.Insumo;
 import com.grupo52.tech_challenge.dto.request.CreateInsumoRequestDTO;
+import com.grupo52.tech_challenge.dto.request.UpdateInsumoRequestDTO;
 import com.grupo52.tech_challenge.dto.response.CreateInsumoResponseDTO;
 import com.grupo52.tech_challenge.dto.response.FindInsumoResponseDTO;
+import com.grupo52.tech_challenge.dto.response.UpdateInsumoResponseDTO;
 import com.grupo52.tech_challenge.exception.GatewayException;
 import com.grupo52.tech_challenge.gateway.CreateInsumoGateway;
 import com.grupo52.tech_challenge.gateway.DeleteProdutoGateway;
 import com.grupo52.tech_challenge.gateway.FindInsumoGateway;
+import com.grupo52.tech_challenge.gateway.UpdateInsumoGateway;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -28,9 +31,9 @@ public class InsumoController {
 
     @Autowired
     private FindInsumoGateway findInsumoGateway;
-//
-//    @Autowired
-//    private UpdateInsumoGateway updateInsumoGateway;
+
+    @Autowired
+    private UpdateInsumoGateway updateInsumoGateway;
 
     @Autowired
     private DeleteProdutoGateway deleteProdutoGateway;
@@ -48,15 +51,15 @@ public class InsumoController {
 
         return ResponseEntity.ok().body(FindInsumoResponseDTO.fromDomain(insumo));
     }
-//
-//    @PutMapping("/{insumoId}")
-//    public ResponseEntity<UpdatePecaResponseDTO> updateInsumo(
-//            @PathVariable Long insumoId,
-//            @RequestBody @Valid UpdatePecaRequestDTO updatePecaRequestDTO) throws GatewayException {
-//        Peca peca = updateInsumoGateway.execute(updatePecaRequestDTO.toDomain(insumoId));
-//
-//        return ResponseEntity.ok().body(UpdatePecaResponseDTO.fromDomain(peca));
-//    }
+
+    @PutMapping("/{insumoId}")
+    public ResponseEntity<UpdateInsumoResponseDTO> updateInsumo(
+            @PathVariable Long insumoId,
+            @RequestBody @Valid UpdateInsumoRequestDTO updateInsumoRequestDTO) throws GatewayException {
+        Insumo insumo = updateInsumoGateway.execute(updateInsumoRequestDTO.toDomain(insumoId));
+
+        return ResponseEntity.ok().body(UpdateInsumoResponseDTO.fromDomain(insumo));
+    }
 
     @DeleteMapping("/{insumoId}")
     public ResponseEntity<Void> deleteInsumo(@PathVariable Long insumoId) throws GatewayException {

@@ -111,4 +111,4 @@ VALUES
 INSERT INTO aplicacao_produtos (produto_id, modelo_id, quantidade, ano_inicio, ano_fim)
 VALUES
     (1, 4, 1, 2008, 2017),
-    (2, 4, 4, 2008, 2017);
+    (2, 4, 4, 2007, 2016);

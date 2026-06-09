@@ -69,6 +69,7 @@ public class AplicacaoProdutoDatabase {
                         .id(this.modelo.getId())
                         .nome(this.modelo.getNome())
                         .build())
+                .quantidade(this.quantidade)
                 .anoInicio(this.anoInicio)
                 .anoFim(this.anoFim)
                 .build();
