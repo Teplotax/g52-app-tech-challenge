@@ -28,7 +28,7 @@ public class CreatePecaGatewayImpl implements CreatePecaGateway {
 
             return produtoDatabase.toPecaDomain();
         } catch (DataIntegrityViolationException e) {
-            throw new GatewayException("Falha ao cadastrar Peça, sku e ean devem ser únicos", 409);
+            throw new GatewayException("Falha ao cadastrar Peça", 409);
         } catch (Exception e) {
             throw new GatewayException("Falha ao cadastrar Peça, cause: " + e.getClass().getSimpleName(), e);
         }

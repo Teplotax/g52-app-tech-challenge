@@ -1,9 +1,14 @@
 package com.grupo52.tech_challenge.controller;
 
+import com.grupo52.tech_challenge.domain.Cliente;
 import com.grupo52.tech_challenge.domain.Peca;
 import com.grupo52.tech_challenge.dto.request.CreatePecaRequestDTO;
+import com.grupo52.tech_challenge.dto.request.UpdateClienteRequestDTO;
+import com.grupo52.tech_challenge.dto.request.UpdatePecaRequestDTO;
 import com.grupo52.tech_challenge.dto.response.CreatePecaResponseDTO;
 import com.grupo52.tech_challenge.dto.response.FindPecaResponseDTO;
+import com.grupo52.tech_challenge.dto.response.UpdateClienteResponseDTO;
+import com.grupo52.tech_challenge.dto.response.UpdatePecaResponseDTO;
 import com.grupo52.tech_challenge.exception.GatewayException;
 import com.grupo52.tech_challenge.gateway.*;
 import jakarta.validation.Valid;
@@ -27,6 +32,9 @@ public class PecaController {
     private FindPecaGateway findPecaGateway;
 
     @Autowired
+    private UpdatePecaGateway updatePecaGateway;
+
+    @Autowired
     private DeleteProdutoGateway deleteProdutoGateway;
 
     @PostMapping
@@ -41,6 +49,15 @@ public class PecaController {
         Peca peca = findPecaGateway.execute(pecaId);
 
         return ResponseEntity.ok().body(FindPecaResponseDTO.fromDomain(peca));
+    }
+
+    @PutMapping("/{pecaId}")
+    public ResponseEntity<UpdatePecaResponseDTO> updateCliente(
+            @PathVariable Long pecaId,
+            @RequestBody @Valid UpdatePecaRequestDTO updatePecaRequestDTO) throws GatewayException {
+        Peca peca = updatePecaGateway.execute(updatePecaRequestDTO.toDomain(pecaId));
+
+        return ResponseEntity.ok().body(UpdatePecaResponseDTO.fromDomain(peca));
     }
 
     @DeleteMapping("/{pecaId}")
