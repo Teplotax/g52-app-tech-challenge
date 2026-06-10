@@ -9,13 +9,10 @@ import com.grupo52.tech_challenge.dto.response.FindServicoResponseDTO;
 import com.grupo52.tech_challenge.dto.response.ServicoInfoResponseDTO;
 import com.grupo52.tech_challenge.dto.response.UpdateServicoResponseDTO;
 import com.grupo52.tech_challenge.exception.GatewayException;
-import com.grupo52.tech_challenge.gateway.CreateServicoGateway;
-import com.grupo52.tech_challenge.gateway.FindServicoGateway;
-import com.grupo52.tech_challenge.gateway.ListServicosGateway;
-import com.grupo52.tech_challenge.gateway.UpdateServicoGateway;
-import com.grupo52.tech_challenge.gateway.database.repository.ServicoRepository;
+import com.grupo52.tech_challenge.gateway.*;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
@@ -32,11 +29,16 @@ import java.net.URI;
 @RequiredArgsConstructor
 public class ServicoController {
 
-    private final CreateServicoGateway createServicoGateway;
-    private final ListServicosGateway listServicosGateway;
-    private final FindServicoGateway findServicoGateway;
-    private final UpdateServicoGateway updateServicoGateway;
-    private final ServicoRepository servicoRepository;
+    @Autowired
+    private CreateServicoGateway createServicoGateway;
+    @Autowired
+    private ListServicosGateway listServicosGateway;
+    @Autowired
+    private FindServicoGateway findServicoGateway;
+    @Autowired
+    private UpdateServicoGateway updateServicoGateway;
+    @Autowired
+    private DeleteServicoGateway deleteServicoGateway;
 
     @PostMapping
     public ResponseEntity<CreateServicoResponseDTO> createServico(
@@ -72,10 +74,7 @@ public class ServicoController {
 
     @DeleteMapping("/{servicoId}")
     public ResponseEntity<Void> deleteServico(@PathVariable Long servicoId) throws GatewayException {
-        if (!servicoRepository.existsById(servicoId)) {
-            throw new GatewayException("Serviço não encontrado", 404);
-        }
-        servicoRepository.deleteById(servicoId);
+        deleteServicoGateway.execute(servicoId);
 
         return ResponseEntity.noContent().header("Location", buildLocationUri()).build();
     }
