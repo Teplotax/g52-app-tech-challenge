@@ -63,7 +63,7 @@ public class ClienteController {
     }
 
     @GetMapping("/documento/{documento}")
-    public ResponseEntity<FindClienteResponseDTO> findCliente(@PathVariable @Documento String documento) throws GatewayException {
+    public ResponseEntity<FindClienteResponseDTO> findClienteByDocumento(@PathVariable @Documento String documento) throws GatewayException {
         Cliente cliente = findClienteByDocumentGateway.execute(documento);
 
         return ResponseEntity.ok().body(FindClienteResponseDTO.fromDomain(cliente));
