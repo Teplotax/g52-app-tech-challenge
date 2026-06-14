@@ -1,4 +1,4 @@
-package com.grupo52.tech_challenge.gateway.database;
+package com.grupo52.tech_challenge.gateway.impl;
 
 import com.grupo52.tech_challenge.domain.OrdemDeServico;
 import com.grupo52.tech_challenge.exception.GatewayException;
