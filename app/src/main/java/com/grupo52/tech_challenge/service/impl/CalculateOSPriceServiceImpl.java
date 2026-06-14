@@ -16,7 +16,6 @@ import java.math.BigDecimal;
 @Service
 public class CalculateOSPriceServiceImpl implements CalculateOSPriceService {
 
-
     private final BigDecimal PRECO_HORA = BigDecimal.valueOf(70.00);
 
     @Autowired
@@ -31,26 +30,14 @@ public class CalculateOSPriceServiceImpl implements CalculateOSPriceService {
     @Autowired
     private FindInsumoByVeiculoGateway findInsumoByVeiculoGateway;
 
-
     @Override
     public OrdemDeServico calculateServicosDesejados(OrdemDeServico os) throws GatewayException {
 
         try {
-
             for (ServicoOS servico : os.getServicosDesejados()) {
                 calculate(servico, os.getVeiculo());
                 os.setPrecoServicosDesejados(os.getPrecoServicosDesejados().add(servico.getPrecoTotal()));
             }
-
-//            for (ServicoOS servico : os.getServicosNecessarios()) {
-//                calculate(servico, os.getVeiculo());
-//                os.setPrecoServicosNecessarios(os.getPrecoServicosNecessarios().add(servico.getPrecoTotal()));
-//            }
-//
-//            for (ServicoOS servico : os.getServicosAdicionais()) {
-//                calculate(servico, os.getVeiculo());
-//                os.setPrecoServicosAdicionais(os.getPrecoServicosAdicionais().add(servico.getPrecoTotal()));
-//            }
 
             os.setPrecoTotal(os.getPrecoServicosDesejados().add(os.getPrecoServicosNecessarios()).add(os.getPrecoServicosAdicionais()));
 
