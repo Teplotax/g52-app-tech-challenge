@@ -3,10 +3,10 @@ package com.grupo52.tech_challenge.service.impl;
 import com.grupo52.tech_challenge.domain.*;
 import com.grupo52.tech_challenge.domain.Enums.TipoInsumo;
 import com.grupo52.tech_challenge.exception.GatewayException;
+import com.grupo52.tech_challenge.gateway.FindInsumoByVeiculoGateway;
+import com.grupo52.tech_challenge.gateway.FindPecaByVeiculoGateway;
 import com.grupo52.tech_challenge.gateway.FindServicoGateway;
 import com.grupo52.tech_challenge.gateway.UpdateOSGateway;
-import com.grupo52.tech_challenge.gateway.database.repository.OrdemDeServicoRepository;
-import com.grupo52.tech_challenge.gateway.database.repository.ProdutoRepository;
 import com.grupo52.tech_challenge.service.CalculateOSPriceService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -26,10 +26,11 @@ public class CalculateOSPriceServiceImpl implements CalculateOSPriceService {
     private FindServicoGateway findServicoGateway;
 
     @Autowired
-    private OrdemDeServicoRepository ordemDeServicoRepository;
+    private FindPecaByVeiculoGateway findPecaByVeiculoGateway;
 
     @Autowired
-    private ProdutoRepository produtoRepository;
+    private FindInsumoByVeiculoGateway findInsumoByVeiculoGateway;
+
 
     @Override
     public OrdemDeServico calculateServicosDesejados(OrdemDeServico os) throws GatewayException {
@@ -71,20 +72,13 @@ public class CalculateOSPriceServiceImpl implements CalculateOSPriceService {
         precoTotalOS = precoTotalOS.add(servicoOS.getPrecoHorasTecnicas());
 
 
-        System.out.println("Preço mão de obra: " + precoTotalOS);
-
         for (Servico.ServicoTipoPeca servicoTipoPeca : servico.getPecas()) {
 
-//          TODO criar gateway
-            Peca peca = produtoRepository.findAllByTipoPecaAndAplicacoesModeloIdAndAplicacoesAnoInicioLessThanEqualAndAplicacoesAnoFimGreaterThanEqual(servicoTipoPeca.getTipoPeca(), veiculo.getModelo().getId(), veiculo.getAno(), veiculo.getAno()).getFirst().toPecaDomain();
-
+            Peca peca = findPecaByVeiculoGateway.execute(servicoTipoPeca.getTipoPeca(), veiculo).getFirst();
 
             Integer quantidade = servicoTipoPeca.getQuantidade();
             BigDecimal precoPecas = peca.getPreco().multiply(BigDecimal.valueOf(quantidade));
 
-            System.out.println("Preço peças: " + precoPecas);
-
-            System.out.println(peca.getNome());
 
             PecaOS pecaOS = PecaOS.builder()
                     .peca(peca)
@@ -100,7 +94,7 @@ public class CalculateOSPriceServiceImpl implements CalculateOSPriceService {
         }
 
         for (TipoInsumo tipoInsumo : servico.getInsumos()) {
-            Insumo insumo = produtoRepository.findAllByTipoInsumoAndAplicacoesModeloIdAndAplicacoesAnoInicioLessThanEqualAndAplicacoesAnoFimGreaterThanEqual(tipoInsumo, veiculo.getModelo().getId(), veiculo.getAno(), veiculo.getAno()).getFirst().toInsumoDomain();
+            Insumo insumo = findInsumoByVeiculoGateway.execute(tipoInsumo, veiculo).getFirst();
 
             AplicacaoProduto aplicacao = insumo.getAplicacoes().stream()
                     .filter(ap -> ap.getModelo() != null
@@ -109,8 +103,6 @@ public class CalculateOSPriceServiceImpl implements CalculateOSPriceService {
 
 
             BigDecimal precoInsumos = insumo.getPreco().multiply(BigDecimal.valueOf(aplicacao.getQuantidade()));
-            System.out.println("Preço insumos: " + precoInsumos);
-            System.out.println(insumo.getNome());
             InsumoOS insumoOS = InsumoOS.builder()
                     .insumo(insumo)
                     .quantidade(aplicacao.getQuantidade())
@@ -123,24 +115,5 @@ public class CalculateOSPriceServiceImpl implements CalculateOSPriceService {
 
 
         servicoOS.setPrecoTotal(precoTotalOS);
-        System.out.println("Preço total: " + precoTotalOS);
-
     }
 }
-
-
-//public class ServicoOS {
-//
-//    private Long id;
-//
-//    private Servico servico;
-//
-//    private Boolean aprovado;
-//
-//    private BigDecimal precoTotal;
-//
-//    private List<PecaOS> pecas;
-//
-//    private List<InsumoOS> insumos;
-//}
-
