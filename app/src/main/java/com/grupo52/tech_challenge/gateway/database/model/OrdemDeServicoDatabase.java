@@ -3,9 +3,11 @@ package com.grupo52.tech_challenge.gateway.database.model;
 import com.grupo52.tech_challenge.domain.Enums.ComplexidadeOS;
 import com.grupo52.tech_challenge.domain.Enums.StatusOS;
 import com.grupo52.tech_challenge.domain.OrdemDeServico;
-import com.grupo52.tech_challenge.domain.ServicoOS;
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.math.BigDecimal;
@@ -78,7 +80,7 @@ public class OrdemDeServicoDatabase {
 
     private String justificativaAdicionais;
 
-    @OneToMany(mappedBy = "ordemDeServico", orphanRemoval = true)
+    @OneToMany(mappedBy = "ordemDeServico", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<StatusChangeDatabase> historico = new ArrayList<>();
 

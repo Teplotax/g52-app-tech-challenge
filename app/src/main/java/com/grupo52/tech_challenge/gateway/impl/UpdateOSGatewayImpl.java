@@ -5,6 +5,7 @@ import com.grupo52.tech_challenge.exception.GatewayException;
 import com.grupo52.tech_challenge.gateway.UpdateOSGateway;
 import com.grupo52.tech_challenge.gateway.database.model.OrdemDeServicoDatabase;
 import com.grupo52.tech_challenge.gateway.database.model.ServicoOSDatabase;
+import com.grupo52.tech_challenge.gateway.database.model.StatusChangeDatabase;
 import com.grupo52.tech_challenge.gateway.database.repository.OrdemDeServicoRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -41,12 +42,12 @@ public class UpdateOSGatewayImpl implements UpdateOSGateway {
                 .justificativaAdicionais(os.getJustificativaAdicionais() != null ? os.getJustificativaAdicionais() : existing.getJustificativaAdicionais())
                 .build();
 
-        mergeServicos(updated, os);
+        mergeServicos(updated, os, existing);
 
         return ordemDeServicoRepository.save(updated).toDomain();
     }
 
-    private void mergeServicos(OrdemDeServicoDatabase entity, OrdemDeServico os) {
+    private void mergeServicos(OrdemDeServicoDatabase entity, OrdemDeServico os, OrdemDeServicoDatabase existing) {
         if (os.getServicosDesejados() != null) {
             List<ServicoOSDatabase> list = os.getServicosDesejados().stream()
                     .map(s -> ServicoOSDatabase.fromDomain(s, entity, ServicoOSDatabase.TipoServicoOS.DESEJADO))
@@ -69,6 +70,14 @@ public class UpdateOSGatewayImpl implements UpdateOSGateway {
                     .toList();
             entity.getServicosAdicionais().clear();
             entity.getServicosAdicionais().addAll(list);
+        }
+
+        entity.getHistorico().addAll(existing.getHistorico());
+        if (os.getHistorico() != null) {
+            os.getHistorico().stream()
+                    .filter(sc -> sc.getId() == null)
+                    .map(sc -> StatusChangeDatabase.fromDomain(sc, entity))
+                    .forEach(sc -> entity.getHistorico().add(sc));
         }
     }
 }

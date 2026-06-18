@@ -6,24 +6,19 @@ import com.grupo52.tech_challenge.exception.GatewayException;
 import com.grupo52.tech_challenge.gateway.CreateOSGateway;
 import com.grupo52.tech_challenge.gateway.database.model.ClienteDatabase;
 import com.grupo52.tech_challenge.gateway.database.model.OrdemDeServicoDatabase;
-import com.grupo52.tech_challenge.gateway.database.model.StatusChangeDatabase;
 import com.grupo52.tech_challenge.gateway.database.model.VeiculoDatabase;
 import com.grupo52.tech_challenge.gateway.database.repository.ClienteRepository;
 import com.grupo52.tech_challenge.gateway.database.repository.OrdemDeServicoRepository;
-import com.grupo52.tech_challenge.gateway.database.repository.StatusChangeRepository;
 import com.grupo52.tech_challenge.gateway.database.repository.VeiculoRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Component;
-
-import java.util.List;
 
 @Component
 @RequiredArgsConstructor
 public class CreateOSGatewayImpl implements CreateOSGateway {
 
     private final OrdemDeServicoRepository ordemDeServicoRepository;
-    private final StatusChangeRepository statusChangeRepository;
     private final ClienteRepository clienteRepository;
     private final VeiculoRepository veiculoRepository;
 
@@ -39,16 +34,8 @@ public class CreateOSGatewayImpl implements CreateOSGateway {
                     .orElseThrow(() -> new GatewayException("Veículo não encontrado: id=" + os.getVeiculo().getId()));
 
             OrdemDeServicoDatabase osDatabase = OrdemDeServicoDatabase.fromDomain(os, cliente, veiculo);
-            OrdemDeServicoDatabase savedOs = ordemDeServicoRepository.save(osDatabase);
 
-            List<StatusChangeDatabase> statusChanges = os.getHistorico().stream()
-                    .map(sc -> StatusChangeDatabase.fromDomain(sc, savedOs))
-                    .toList();
-            statusChangeRepository.saveAll(statusChanges);
-
-            return ordemDeServicoRepository.findById(savedOs.getId())
-                    .orElseThrow(() -> new GatewayException("Falha ao recuperar OS após criação"))
-                    .toDomain();
+            return ordemDeServicoRepository.save(osDatabase).toDomain();
         } catch (DataIntegrityViolationException e) {
             throw new GatewayException("Falha ao cadastrar OS", 409);
         } catch (Exception e) {
