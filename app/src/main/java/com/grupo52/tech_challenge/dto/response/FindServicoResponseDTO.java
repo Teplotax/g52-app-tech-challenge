@@ -43,13 +43,11 @@ public class FindServicoResponseDTO {
     @Builder
     public static class ServicoTipoPecaDTO {
 
-        private Long id;
         private TipoPeca tipoPeca;
         private Integer quantidade;
 
         public static ServicoTipoPecaDTO fromDomain(Servico.ServicoTipoPeca peca) {
             return ServicoTipoPecaDTO.builder()
-                    .id(peca.getId())
                     .tipoPeca(peca.getTipoPeca())
                     .quantidade(peca.getQuantidade())
                     .build();

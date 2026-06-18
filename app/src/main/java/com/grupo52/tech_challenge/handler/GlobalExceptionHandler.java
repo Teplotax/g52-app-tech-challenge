@@ -1,6 +1,7 @@
 package com.grupo52.tech_challenge.handler;
 
 import com.grupo52.tech_challenge.exception.GatewayException;
+import com.grupo52.tech_challenge.exception.InvalidStatusChangeException;
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -23,20 +24,14 @@ import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 @ControllerAdvice
 public class GlobalExceptionHandler {
 
-
-
-
-
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ValidationErrorResponse> handleBadRequest(final MethodArgumentNotValidException e) {
         List<String> errors = new ArrayList<>();
 
-        // Field errors (e.g., telefone)
         for (FieldError fieldError : e.getBindingResult().getFieldErrors()) {
             errors.add(fieldError.getField() + ": " + fieldError.getDefaultMessage());
         }
 
-        // Global errors (e.g., @DocumentoBrasilValido)
         for (ObjectError globalError : e.getBindingResult().getGlobalErrors()) {
             errors.add(globalError.getDefaultMessage());
         }
@@ -90,6 +85,13 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler({GatewayException.class})
     public ResponseEntity<DefaultErrorMessage> handleGatewayException(final GatewayException e) {
+
+        return ResponseEntity.status(HttpStatus.valueOf(e.getStatus())).body(
+                new DefaultErrorMessage(e.getMessage(), HttpStatus.valueOf(e.getStatus()).toString()));
+    }
+
+    @ExceptionHandler({InvalidStatusChangeException.class})
+    public ResponseEntity<DefaultErrorMessage> handleInvalidStatusChangeException(final InvalidStatusChangeException e) {
 
         return ResponseEntity.status(HttpStatus.valueOf(e.getStatus())).body(
                 new DefaultErrorMessage(e.getMessage(), HttpStatus.valueOf(e.getStatus()).toString()));

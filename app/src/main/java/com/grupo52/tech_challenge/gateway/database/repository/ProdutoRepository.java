@@ -1,5 +1,6 @@
 package com.grupo52.tech_challenge.gateway.database.repository;
 
+import com.grupo52.tech_challenge.domain.Enums.TipoInsumo;
 import com.grupo52.tech_challenge.domain.Enums.TipoPeca;
 import com.grupo52.tech_challenge.domain.Enums.TipoProduto;
 import com.grupo52.tech_challenge.gateway.database.model.ProdutoDatabase;
@@ -20,5 +21,9 @@ public interface ProdutoRepository extends JpaRepository<ProdutoDatabase, Long> 
 
     List<ProdutoDatabase> findAllByTipoPecaAndAplicacoesModeloIdAndAplicacoesAnoInicioLessThanEqualAndAplicacoesAnoFimGreaterThanEqual(
             TipoPeca tipoPeca, Long modeloId, Integer anoInicio, Integer anoFim
+    );
+
+    List<ProdutoDatabase> findAllByTipoInsumoAndAplicacoesModeloIdAndAplicacoesAnoInicioLessThanEqualAndAplicacoesAnoFimGreaterThanEqual(
+            TipoInsumo tipoInsumo, Long modeloId, Integer anoInicio, Integer anoFim
     );
 }

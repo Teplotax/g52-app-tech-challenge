@@ -28,11 +28,11 @@ public class AplicacaoProdutoDatabase {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "produto_id", referencedColumnName = "id")
     private ProdutoDatabase produto;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "modelo_id", referencedColumnName = "id")
     private ModeloDatabase modelo;
 
