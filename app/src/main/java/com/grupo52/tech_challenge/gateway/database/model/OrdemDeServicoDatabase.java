@@ -3,9 +3,11 @@ package com.grupo52.tech_challenge.gateway.database.model;
 import com.grupo52.tech_challenge.domain.Enums.ComplexidadeOS;
 import com.grupo52.tech_challenge.domain.Enums.StatusOS;
 import com.grupo52.tech_challenge.domain.OrdemDeServico;
-import com.grupo52.tech_challenge.domain.ServicoOS;
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.math.BigDecimal;
@@ -80,7 +82,7 @@ public class OrdemDeServicoDatabase {
 
     @OneToMany(mappedBy = "ordemDeServico", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
-    private List<StatusChangeDatabase> statusChanges = new ArrayList<>();
+    private List<StatusChangeDatabase> historico = new ArrayList<>();
 
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
@@ -127,6 +129,12 @@ public class OrdemDeServicoDatabase {
                             .map(s -> ServicoOSDatabase.fromDomain(s, entity, ServicoOSDatabase.TipoServicoOS.ADICIONAL))
                             .toList());
         }
+        if (os.getHistorico() != null) {
+            entity.historico.addAll(
+                    os.getHistorico().stream()
+                            .map(statusChange -> StatusChangeDatabase.fromDomain(statusChange, entity))
+                            .toList());
+        }
 
         return entity;
     }
@@ -153,6 +161,9 @@ public class OrdemDeServicoDatabase {
                         : new ArrayList<>())
                 .servicosAdicionais(this.servicosAdicionais != null
                         ? this.servicosAdicionais.stream().map(ServicoOSDatabase::toDomain).toList()
+                        : new ArrayList<>())
+                .historico(this.historico != null
+                        ? this.historico.stream().map(StatusChangeDatabase::toDomain).toList()
                         : new ArrayList<>())
                 .justificativaNecessarios(this.justificativaNecessarios)
                 .justificativaAdicionais(this.justificativaAdicionais)

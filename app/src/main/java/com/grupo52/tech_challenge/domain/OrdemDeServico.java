@@ -5,6 +5,7 @@ import com.grupo52.tech_challenge.domain.Enums.StatusOS;
 import lombok.*;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 
 @Getter
@@ -52,8 +53,19 @@ public class OrdemDeServico {
 
     private List<ServicoOS> servicosAdicionais;
 
+    @Builder.Default
+    private List<StatusChange> historico = new ArrayList<>();
+
     private String justificativaNecessarios;
 
     private String justificativaAdicionais;
 
+    public void setStatus(StatusOS status) {
+        this.status = status;
+        this.historico.add(
+                StatusChange.builder()
+                        .status(status)
+                        .build()
+        );
+    }
 }

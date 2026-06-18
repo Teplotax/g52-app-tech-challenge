@@ -31,11 +31,11 @@ public class VeiculoDatabase {
     @Column(nullable = false)
     private String cor;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "modelo_id", referencedColumnName = "id")
     private ModeloDatabase modelo;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "cliente_id", referencedColumnName = "id")
     private ClienteDatabase cliente;
 
