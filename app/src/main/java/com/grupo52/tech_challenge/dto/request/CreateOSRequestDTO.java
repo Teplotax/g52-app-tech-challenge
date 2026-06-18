@@ -33,7 +33,6 @@ public class CreateOSRequestDTO {
 
     public OrdemDeServico toDomain() {
         return OrdemDeServico.builder()
-                .status(StatusOS.RECEBIDA)
                 .cliente(Cliente.builder().id(this.clienteId).build())
                 .veiculo(Veiculo.builder().id(this.veiculoId).build())
                 .tagChave(this.tagChave)

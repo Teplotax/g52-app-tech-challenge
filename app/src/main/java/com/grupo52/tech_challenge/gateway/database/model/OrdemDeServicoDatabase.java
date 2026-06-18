@@ -78,9 +78,9 @@ public class OrdemDeServicoDatabase {
 
     private String justificativaAdicionais;
 
-    @OneToMany(mappedBy = "ordemDeServico", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "ordemDeServico", orphanRemoval = true)
     @Builder.Default
-    private List<StatusChangeDatabase> statusChanges = new ArrayList<>();
+    private List<StatusChangeDatabase> historico = new ArrayList<>();
 
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
@@ -127,6 +127,12 @@ public class OrdemDeServicoDatabase {
                             .map(s -> ServicoOSDatabase.fromDomain(s, entity, ServicoOSDatabase.TipoServicoOS.ADICIONAL))
                             .toList());
         }
+        if (os.getHistorico() != null) {
+            entity.historico.addAll(
+                    os.getHistorico().stream()
+                            .map(statusChange -> StatusChangeDatabase.fromDomain(statusChange, entity))
+                            .toList());
+        }
 
         return entity;
     }
@@ -153,6 +159,9 @@ public class OrdemDeServicoDatabase {
                         : new ArrayList<>())
                 .servicosAdicionais(this.servicosAdicionais != null
                         ? this.servicosAdicionais.stream().map(ServicoOSDatabase::toDomain).toList()
+                        : new ArrayList<>())
+                .historico(this.historico != null
+                        ? this.historico.stream().map(StatusChangeDatabase::toDomain).toList()
                         : new ArrayList<>())
                 .justificativaNecessarios(this.justificativaNecessarios)
                 .justificativaAdicionais(this.justificativaAdicionais)

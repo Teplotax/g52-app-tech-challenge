@@ -1,9 +1,12 @@
 package com.grupo52.tech_challenge.gateway.database.model;
 
 import com.grupo52.tech_challenge.domain.Enums.StatusOS;
+import com.grupo52.tech_challenge.domain.StatusChange;
 import jakarta.persistence.*;
-import lombok.*;
-import org.hibernate.annotations.CreationTimestamp;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
@@ -27,7 +30,23 @@ public class StatusChangeDatabase {
     @Column(nullable = false)
     private StatusOS status;
 
-    @CreationTimestamp
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
+
+    public static StatusChangeDatabase fromDomain(StatusChange statusChange, OrdemDeServicoDatabase os) {
+        return StatusChangeDatabase.builder()
+                .id(statusChange.getId())
+                .ordemDeServico(os)
+                .status(statusChange.getStatus())
+                .createdAt(statusChange.getCreatedAt() != null ? statusChange.getCreatedAt() : LocalDateTime.now())
+                .build();
+    }
+
+    public StatusChange toDomain() {
+        return StatusChange.builder()
+                .id(this.id)
+                .status(this.status)
+                .createdAt(this.createdAt)
+                .build();
+    }
 }

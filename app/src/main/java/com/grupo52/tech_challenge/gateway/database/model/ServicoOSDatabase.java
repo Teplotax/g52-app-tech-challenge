@@ -1,12 +1,13 @@
 package com.grupo52.tech_challenge.gateway.database.model;
 
-import com.grupo52.tech_challenge.domain.Insumo;
 import com.grupo52.tech_challenge.domain.InsumoOS;
-import com.grupo52.tech_challenge.domain.Peca;
 import com.grupo52.tech_challenge.domain.PecaOS;
 import com.grupo52.tech_challenge.domain.ServicoOS;
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;

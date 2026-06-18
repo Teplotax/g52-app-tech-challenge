@@ -22,7 +22,7 @@ public class ModeloDatabase {
     @Column(nullable = false)
     private String nome;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "marca_id", nullable = false)
     private MarcaDatabase marca;
 
