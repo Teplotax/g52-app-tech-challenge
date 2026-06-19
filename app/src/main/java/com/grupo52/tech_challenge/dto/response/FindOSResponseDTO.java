@@ -42,6 +42,8 @@ public class FindOSResponseDTO {
 
     private String tagChave;
 
+    private LocalDateTime criadaEm;
+
     private BigDecimal precoTotal;
 
     private BigDecimal precoTotalAprovado;
@@ -76,6 +78,7 @@ public class FindOSResponseDTO {
                 .complexidade(os.getComplexidade())
                 .sintomas(os.getSintomas())
                 .tagChave(os.getTagChave())
+                .criadaEm(os.getCriadaEm())
                 .precoTotal(scale(os.getPrecoTotal()))
                 .precoTotalAprovado(scale(os.getPrecoTotalAprovado()))
                 .precoServicosDesejados(scale(os.getPrecoServicosDesejados()))

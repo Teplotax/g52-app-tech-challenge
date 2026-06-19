@@ -13,7 +13,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
+import java.time.LocalTime;
 
 @Service
 @RequiredArgsConstructor
@@ -26,13 +27,15 @@ public class ListOSGatewayImpl implements ListOSGateway {
             String placa,
             String documentoCliente,
             StatusOS status,
-            LocalDateTime dataInicio,
-            LocalDateTime dataFim,
+            LocalDate dataInicio,
+            LocalDate dataFim,
             Pageable pageable
     ) throws GatewayException {
         try {
             Specification<OrdemDeServicoDatabase> spec = OrdemDeServicoSpecification.withFilters(
-                    placa, documentoCliente, status, dataInicio, dataFim
+                    placa, documentoCliente, status,
+                    dataInicio != null ? dataInicio.atStartOfDay() : null,
+                    dataFim != null ? dataFim.atTime(LocalTime.MAX) : null
             );
             return repository.findAll(spec, pageable).map(OrdemDeServicoDatabase::toDomain);
         } catch (Exception e) {

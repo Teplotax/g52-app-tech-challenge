@@ -10,6 +10,7 @@ import org.springframework.data.domain.Page;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Getter
@@ -39,6 +40,8 @@ public class OSInfoResponseDTO {
 
     private String tagChave;
 
+    private LocalDateTime criadaEm;
+
     private BigDecimal precoTotal;
 
     public static OSInfoResponseDTO fromDomain(OrdemDeServico os) {
@@ -53,6 +56,7 @@ public class OSInfoResponseDTO {
                 .complexidade(os.getComplexidade())
                 .sintomas(os.getSintomas())
                 .tagChave(os.getTagChave())
+                .criadaEm(os.getCriadaEm())
                 .precoTotal(os.getPrecoTotal() != null
                         ? os.getPrecoTotal().setScale(2, RoundingMode.HALF_UP)
                         : null)
