@@ -24,7 +24,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 
 @RestController
 @RequestMapping("/ordemsDeServico")
@@ -66,8 +66,8 @@ public class OrdemDeServicoController {
             @RequestParam(required = false) String placa,
             @RequestParam(required = false) String documentoCliente,
             @RequestParam(required = false) StatusOS status,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dataInicio,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dataFim,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dataInicio,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dataFim,
             @PageableDefault(size = 20, page = 0) Pageable pageable) throws GatewayException {
 
         Page<OrdemDeServico> ordemDeServicos = listOSGateway.execute(

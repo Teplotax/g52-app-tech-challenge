@@ -40,6 +40,7 @@ public class UpdateOSGatewayImpl implements UpdateOSGateway {
                 .precoServicosAdicionais(os.getPrecoServicosAdicionais() != null ? os.getPrecoServicosAdicionais() : existing.getPrecoServicosAdicionais())
                 .justificativaNecessarios(os.getJustificativaNecessarios() != null ? os.getJustificativaNecessarios() : existing.getJustificativaNecessarios())
                 .justificativaAdicionais(os.getJustificativaAdicionais() != null ? os.getJustificativaAdicionais() : existing.getJustificativaAdicionais())
+                .createdAt(existing.getCreatedAt())
                 .build();
 
         mergeServicos(updated, os, existing);

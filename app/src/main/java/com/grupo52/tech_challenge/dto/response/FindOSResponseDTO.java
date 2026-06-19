@@ -12,6 +12,7 @@ import lombok.*;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Getter
@@ -41,6 +42,8 @@ public class FindOSResponseDTO {
     private String sintomas;
 
     private String tagChave;
+
+    private LocalDateTime criadaEm;
 
     private BigDecimal precoTotal;
 
@@ -76,6 +79,7 @@ public class FindOSResponseDTO {
                 .complexidade(os.getComplexidade())
                 .sintomas(os.getSintomas())
                 .tagChave(os.getTagChave())
+                .criadaEm(os.getCriadaEm())
                 .precoTotal(scale(os.getPrecoTotal()))
                 .precoTotalAprovado(scale(os.getPrecoTotalAprovado()))
                 .precoServicosDesejados(scale(os.getPrecoServicosDesejados()))
