@@ -5,6 +5,7 @@ import com.grupo52.tech_challenge.domain.Enums.StatusOS;
 import lombok.*;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -28,6 +29,8 @@ public class OrdemDeServico {
     private String sintomas;
 
     private String tagChave;
+
+    private LocalDateTime criadaEm;
 
     @Setter
     private BigDecimal precoTotal;

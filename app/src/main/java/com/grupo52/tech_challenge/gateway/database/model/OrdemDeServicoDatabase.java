@@ -148,6 +148,7 @@ public class OrdemDeServicoDatabase {
                 .complexidade(this.complexidade)
                 .sintomas(this.sintomas)
                 .tagChave(this.tagChave)
+                .criadaEm(this.createdAt)
                 .precoTotal(this.precoTotal)
                 .precoTotalAprovado(this.precoTotalAprovado)
                 .precoServicosDesejados(this.precoServicosDesejados)
