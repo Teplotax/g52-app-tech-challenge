@@ -26,7 +26,11 @@ public class CreateOSResponseDTO {
 
     private Long clienteId;
 
+    private String clienteNomeSocial;
+
     private Long veiculoId;
+
+    private String veiculoPlaca;
 
     private String tagChave;
 
@@ -38,7 +42,9 @@ public class CreateOSResponseDTO {
         return CreateOSResponseDTO.builder()
                 .status(os.getStatus())
                 .clienteId(os.getCliente().getId())
+                .clienteNomeSocial(os.getCliente().getNomeSocial())
                 .veiculoId(os.getVeiculo().getId())
+                .veiculoPlaca(os.getVeiculo().getPlaca())
                 .tagChave(os.getTagChave())
                 .sintomas(os.getSintomas())
                 .precoTotal(os.getPrecoTotal().setScale(2, RoundingMode.HALF_UP))
