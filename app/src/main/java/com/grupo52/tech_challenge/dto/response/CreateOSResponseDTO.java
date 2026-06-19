@@ -10,6 +10,7 @@ import lombok.*;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Getter
@@ -34,6 +35,8 @@ public class CreateOSResponseDTO {
 
     private String tagChave;
 
+    private LocalDateTime criadaEm;
+
     private BigDecimal precoTotal;
 
     private List<ServicoOSDTO> servicosDesejados;
@@ -46,6 +49,7 @@ public class CreateOSResponseDTO {
                 .veiculoId(os.getVeiculo().getId())
                 .veiculoPlaca(os.getVeiculo().getPlaca())
                 .tagChave(os.getTagChave())
+                .criadaEm(os.getCriadaEm())
                 .sintomas(os.getSintomas())
                 .precoTotal(os.getPrecoTotal().setScale(2, RoundingMode.HALF_UP))
                 .servicosDesejados(ServicoOSDTO.fromDomain(os.getServicosDesejados()))

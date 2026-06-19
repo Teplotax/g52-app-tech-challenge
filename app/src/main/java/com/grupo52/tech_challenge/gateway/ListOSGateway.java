@@ -6,15 +6,15 @@ import com.grupo52.tech_challenge.exception.GatewayException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 
 public interface ListOSGateway {
     Page<OrdemDeServico> execute(
             String placa,
             String documentoCliente,
             StatusOS status,
-            LocalDateTime dataInicio,
-            LocalDateTime dataFim,
+            LocalDate dataInicio,
+            LocalDate dataFim,
             Pageable pageable
     ) throws GatewayException;
 }
