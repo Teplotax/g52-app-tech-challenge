@@ -8,7 +8,9 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.SQLRestriction;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -37,6 +39,7 @@ public class OrdemDeServicoDatabase {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
+    @Setter
     private StatusOS status;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -48,36 +51,49 @@ public class OrdemDeServicoDatabase {
     private VeiculoDatabase veiculo;
 
     @Enumerated(EnumType.STRING)
+    @Setter
     private ComplexidadeOS complexidade;
 
+    @Setter
     private String sintomas;
 
+    @Setter
     private String tagChave;
 
+    @Setter
     private BigDecimal precoTotal;
 
+    @Setter
     private BigDecimal precoTotalAprovado;
 
+    @Setter
     private BigDecimal precoServicosDesejados;
 
+    @Setter
     private BigDecimal precoServicosNecessarios;
 
+    @Setter
     private BigDecimal precoServicosAdicionais;
 
     @OneToMany(mappedBy = "ordemDeServico", cascade = CascadeType.ALL, orphanRemoval = true)
+    @SQLRestriction("tipo = 'DESEJADO'")
     @Builder.Default
     private List<ServicoOSDatabase> servicosDesejados = new ArrayList<>();
 
     @OneToMany(mappedBy = "ordemDeServico", cascade = CascadeType.ALL, orphanRemoval = true)
+    @SQLRestriction("tipo = 'NECESSARIO'")
     @Builder.Default
     private List<ServicoOSDatabase> servicosNecessarios = new ArrayList<>();
 
     @OneToMany(mappedBy = "ordemDeServico", cascade = CascadeType.ALL, orphanRemoval = true)
+    @SQLRestriction("tipo = 'ADICIONAL'")
     @Builder.Default
     private List<ServicoOSDatabase> servicosAdicionais = new ArrayList<>();
 
+    @Setter
     private String justificativaNecessarios;
 
+    @Setter
     private String justificativaAdicionais;
 
     @OneToMany(mappedBy = "ordemDeServico", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -87,7 +103,6 @@ public class OrdemDeServicoDatabase {
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
-
 
     public static OrdemDeServicoDatabase fromDomain(
             OrdemDeServico os,
@@ -155,16 +170,16 @@ public class OrdemDeServicoDatabase {
                 .precoServicosNecessarios(this.precoServicosNecessarios)
                 .precoServicosAdicionais(this.precoServicosAdicionais)
                 .servicosDesejados(this.servicosDesejados != null
-                        ? this.servicosDesejados.stream().map(ServicoOSDatabase::toDomain).toList()
+                        ? new ArrayList<>(this.servicosDesejados.stream().map(ServicoOSDatabase::toDomain).toList())
                         : new ArrayList<>())
                 .servicosNecessarios(this.servicosNecessarios != null
-                        ? this.servicosNecessarios.stream().map(ServicoOSDatabase::toDomain).toList()
+                        ? new ArrayList<>(this.servicosNecessarios.stream().map(ServicoOSDatabase::toDomain).toList())
                         : new ArrayList<>())
                 .servicosAdicionais(this.servicosAdicionais != null
-                        ? this.servicosAdicionais.stream().map(ServicoOSDatabase::toDomain).toList()
+                        ? new ArrayList<>(this.servicosAdicionais.stream().map(ServicoOSDatabase::toDomain).toList())
                         : new ArrayList<>())
                 .historico(this.historico != null
-                        ? this.historico.stream().map(StatusChangeDatabase::toDomain).toList()
+                        ? new ArrayList<>(this.historico.stream().map(StatusChangeDatabase::toDomain).toList())
                         : new ArrayList<>())
                 .justificativaNecessarios(this.justificativaNecessarios)
                 .justificativaAdicionais(this.justificativaAdicionais)
