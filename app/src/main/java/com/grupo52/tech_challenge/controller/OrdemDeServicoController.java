@@ -30,7 +30,7 @@ import java.net.URI;
 import java.time.LocalDate;
 
 @RestController
-@RequestMapping("/ordemsDeServico")
+@RequestMapping("/ordensDeServico")
 @Validated
 public class OrdemDeServicoController {
 
