@@ -5,13 +5,16 @@ import com.grupo52.tech_challenge.domain.OrdemDeServico;
 import com.grupo52.tech_challenge.dto.PagedResponse;
 import com.grupo52.tech_challenge.dto.request.CreateOSRequestDTO;
 import com.grupo52.tech_challenge.dto.response.CreateOSResponseDTO;
+import com.grupo52.tech_challenge.dto.response.EvaluateOSResponseDTO;
 import com.grupo52.tech_challenge.dto.response.FindOSResponseDTO;
 import com.grupo52.tech_challenge.dto.response.OSInfoResponseDTO;
 import com.grupo52.tech_challenge.exception.GatewayException;
+import com.grupo52.tech_challenge.exception.InvalidStatusChangeException;
 import com.grupo52.tech_challenge.gateway.CreateOSGateway;
 import com.grupo52.tech_challenge.gateway.FindOSGateway;
 import com.grupo52.tech_challenge.gateway.ListOSGateway;
 import com.grupo52.tech_challenge.service.CalculateOSPriceService;
+import com.grupo52.tech_challenge.service.EvaluateOSService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -43,6 +46,9 @@ public class OrdemDeServicoController {
     @Autowired
     private ListOSGateway listOSGateway;
 
+    @Autowired
+    private EvaluateOSService evaluateOSService;
+
     @PostMapping
     public ResponseEntity<CreateOSResponseDTO> createOS(
             @RequestBody @Valid CreateOSRequestDTO createOSRequestDTO) throws GatewayException {
@@ -51,6 +57,15 @@ public class OrdemDeServicoController {
                 .calculateServicosDesejados(createOSGateway.execute(createOSRequestDTO.toDomain()));
 
         return ResponseEntity.created(buildLocationUri(os)).body(CreateOSResponseDTO.fromDomain(os));
+    }
+
+    @PostMapping("/{ordemDeServicoId}/diagnosticar")
+    public ResponseEntity<EvaluateOSResponseDTO> evaluate(
+            @PathVariable Long ordemDeServicoId) throws GatewayException, InvalidStatusChangeException {
+
+        OrdemDeServico os = evaluateOSService.execute(ordemDeServicoId);
+
+        return ResponseEntity.ok(EvaluateOSResponseDTO.fromDomain(os));
     }
 
     @GetMapping("/{ordemDeServicoId}")
