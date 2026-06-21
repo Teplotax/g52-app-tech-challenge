@@ -48,6 +48,42 @@ public class CalculateOSPriceServiceImpl implements CalculateOSPriceService {
         return updateOSGateway.execute(os);
     }
 
+    @Override
+    public OrdemDeServico calculateServicosNecessarios(OrdemDeServico os) throws GatewayException {
+
+        try {
+            for (ServicoOS servico : os.getServicosNecessarios()) {
+                calculate(servico, os.getVeiculo());
+                os.setPrecoServicosNecessarios(os.getPrecoServicosNecessarios().add(servico.getPrecoTotal()));
+            }
+
+            os.setPrecoTotal(os.getPrecoServicosDesejados().add(os.getPrecoServicosNecessarios()).add(os.getPrecoServicosAdicionais()));
+
+        } catch (Exception e) {
+            throw new GatewayException(e.getClass().getSimpleName());
+        }
+
+        return updateOSGateway.execute(os);
+    }
+
+    @Override
+    public OrdemDeServico calculateServicosAdicionais(OrdemDeServico os) throws GatewayException {
+
+        try {
+            for (ServicoOS servico : os.getServicosAdicionais()) {
+                calculate(servico, os.getVeiculo());
+                os.setPrecoServicosAdicionais(os.getPrecoServicosAdicionais().add(servico.getPrecoTotal()));
+            }
+
+            os.setPrecoTotal(os.getPrecoServicosDesejados().add(os.getPrecoServicosNecessarios()).add(os.getPrecoServicosAdicionais()));
+
+        } catch (Exception e) {
+            throw new GatewayException(e.getClass().getSimpleName());
+        }
+
+        return updateOSGateway.execute(os);
+    }
+
     private void calculate(ServicoOS servicoOS, Veiculo veiculo) throws GatewayException {
 
         BigDecimal precoTotalOS = BigDecimal.ZERO;
