@@ -4,6 +4,7 @@ import com.grupo52.tech_challenge.domain.Enums.StatusOS;
 import com.grupo52.tech_challenge.domain.OrdemDeServico;
 import com.grupo52.tech_challenge.exception.GatewayException;
 import com.grupo52.tech_challenge.exception.InvalidStatusException;
+import com.grupo52.tech_challenge.exception.ServiceException;
 import com.grupo52.tech_challenge.exception.ValidationException;
 import com.grupo52.tech_challenge.gateway.FindOSGateway;
 import com.grupo52.tech_challenge.gateway.UpdateOSGateway;
@@ -30,7 +31,7 @@ public class AddServicosServiceImpl implements AddServicosService {
 
 
     @Override
-    public OrdemDeServico execute(OrdemDeServico os) throws GatewayException, ValidationException {
+    public OrdemDeServico execute(OrdemDeServico os) throws GatewayException, ValidationException, ServiceException {
 
         try {
             OrdemDeServico updatedOS = updateOS(os);
@@ -39,11 +40,11 @@ public class AddServicosServiceImpl implements AddServicosService {
         } catch (ValidationException | GatewayException e) {
             throw e;
         } catch (Exception e) {
-            throw new GatewayException(e.getClass().getSimpleName());
+            throw new ServiceException("Falha inesperada ao adicionar serviços à OS", e);
         }
     }
 
-    private OrdemDeServico updateOS(OrdemDeServico os) throws GatewayException, ValidationException {
+    private OrdemDeServico updateOS(OrdemDeServico os) throws GatewayException, ValidationException, ServiceException {
         OrdemDeServico savedOS = findOSGateway.execute(os.getId());
         if(savedOS.getStatus() != StatusOS.EM_DIAGNOSTICO) {
             if(savedOS.getStatus() == StatusOS.RECEBIDA) {

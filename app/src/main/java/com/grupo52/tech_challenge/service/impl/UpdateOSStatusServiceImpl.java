@@ -4,6 +4,7 @@ import com.grupo52.tech_challenge.domain.Enums.StatusOS;
 import com.grupo52.tech_challenge.domain.OrdemDeServico;
 import com.grupo52.tech_challenge.exception.GatewayException;
 import com.grupo52.tech_challenge.exception.InvalidStatusChangeException;
+import com.grupo52.tech_challenge.exception.ServiceException;
 import com.grupo52.tech_challenge.exception.ValidationException;
 import com.grupo52.tech_challenge.service.UpdateOSStatusService;
 import org.springframework.stereotype.Service;
@@ -26,7 +27,7 @@ public class UpdateOSStatusServiceImpl implements UpdateOSStatusService {
     );
 
     @Override
-    public void execute(OrdemDeServico os, StatusOS newStatus) throws GatewayException, ValidationException {
+    public void execute(OrdemDeServico os, StatusOS newStatus) throws GatewayException, ValidationException, ServiceException {
         try {
             if (!validateStatusChange(os.getStatus(), newStatus)) {
                 throw new InvalidStatusChangeException(
@@ -34,10 +35,10 @@ public class UpdateOSStatusServiceImpl implements UpdateOSStatusService {
                 );
             }
             os.setStatus(newStatus);
-        } catch (InvalidStatusChangeException e) {
+        } catch (ValidationException e) {
             throw e;
         } catch (Exception e) {
-            throw new GatewayException(e.getClass().getSimpleName());
+            throw new ServiceException("Falha inesperada ao atualizar status da OS", e);
         }
     }
 
