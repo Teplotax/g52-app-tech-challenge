@@ -3,16 +3,16 @@ package com.grupo52.tech_challenge.controller;
 import com.grupo52.tech_challenge.domain.Enums.StatusOS;
 import com.grupo52.tech_challenge.domain.OrdemDeServico;
 import com.grupo52.tech_challenge.dto.PagedResponse;
+import com.grupo52.tech_challenge.dto.request.AddServicosRequestDTO;
 import com.grupo52.tech_challenge.dto.request.CreateOSRequestDTO;
-import com.grupo52.tech_challenge.dto.response.CreateOSResponseDTO;
-import com.grupo52.tech_challenge.dto.response.EvaluateOSResponseDTO;
-import com.grupo52.tech_challenge.dto.response.FindOSResponseDTO;
-import com.grupo52.tech_challenge.dto.response.OSInfoResponseDTO;
+import com.grupo52.tech_challenge.dto.response.*;
 import com.grupo52.tech_challenge.exception.GatewayException;
 import com.grupo52.tech_challenge.exception.InvalidStatusChangeException;
+import com.grupo52.tech_challenge.exception.ValidationException;
 import com.grupo52.tech_challenge.gateway.CreateOSGateway;
 import com.grupo52.tech_challenge.gateway.FindOSGateway;
 import com.grupo52.tech_challenge.gateway.ListOSGateway;
+import com.grupo52.tech_challenge.service.AddServicosService;
 import com.grupo52.tech_challenge.service.CalculateOSPriceService;
 import com.grupo52.tech_challenge.service.EvaluateOSService;
 import jakarta.validation.Valid;
@@ -49,6 +49,9 @@ public class OrdemDeServicoController {
     @Autowired
     private EvaluateOSService evaluateOSService;
 
+    @Autowired
+    private AddServicosService addServicosOSService;
+
     @PostMapping
     public ResponseEntity<CreateOSResponseDTO> createOS(
             @RequestBody @Valid CreateOSRequestDTO createOSRequestDTO) throws GatewayException {
@@ -61,11 +64,20 @@ public class OrdemDeServicoController {
 
     @PostMapping("/{ordemDeServicoId}/diagnosticar")
     public ResponseEntity<EvaluateOSResponseDTO> evaluate(
-            @PathVariable Long ordemDeServicoId) throws GatewayException, InvalidStatusChangeException {
+            @PathVariable Long ordemDeServicoId) throws GatewayException, ValidationException {
 
         OrdemDeServico os = evaluateOSService.execute(ordemDeServicoId);
 
         return ResponseEntity.ok(EvaluateOSResponseDTO.fromDomain(os));
+    }
+
+    @PostMapping("/{ordemDeServicoId}/adicionarServicos")
+    public ResponseEntity<AddServicosResponseDTO> addServicos(
+            @PathVariable Long ordemDeServicoId, @RequestBody @Valid AddServicosRequestDTO createOSRequestDTO) throws GatewayException, ValidationException {
+
+        OrdemDeServico os = addServicosOSService.execute(createOSRequestDTO.toDomain(ordemDeServicoId));
+
+        return ResponseEntity.ok(AddServicosResponseDTO.fromDomain(os));
     }
 
     @GetMapping("/{ordemDeServicoId}")
