@@ -3,7 +3,7 @@ package com.grupo52.tech_challenge.exception;
 import lombok.Getter;
 
 @Getter
-public class NotFoundGatewayException extends GatewayException{
+public class NotFoundGatewayException extends GatewayException {
     private static final int status = 404;
 
 

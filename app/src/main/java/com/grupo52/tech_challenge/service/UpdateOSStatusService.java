@@ -3,8 +3,8 @@ package com.grupo52.tech_challenge.service;
 import com.grupo52.tech_challenge.domain.Enums.StatusOS;
 import com.grupo52.tech_challenge.domain.OrdemDeServico;
 import com.grupo52.tech_challenge.exception.GatewayException;
-import com.grupo52.tech_challenge.exception.InvalidStatusChangeException;
+import com.grupo52.tech_challenge.exception.ValidationException;
 
 public interface UpdateOSStatusService {
-    void execute(OrdemDeServico os, StatusOS status) throws GatewayException, InvalidStatusChangeException;
+    void execute(OrdemDeServico os, StatusOS status) throws GatewayException, ValidationException;
 }

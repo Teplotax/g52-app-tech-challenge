@@ -50,17 +50,22 @@ public class OrdemDeServico {
     @Builder.Default
     private BigDecimal precoServicosAdicionais = BigDecimal.ZERO;
 
-    private List<ServicoOS> servicosDesejados;
+    @Builder.Default
+    private List<ServicoOS> servicosDesejados = new ArrayList<>();
 
-    private List<ServicoOS> servicosNecessarios;
+    @Builder.Default
+    private List<ServicoOS> servicosNecessarios = new ArrayList<>();
 
-    private List<ServicoOS> servicosAdicionais;
+    @Builder.Default
+    private List<ServicoOS> servicosAdicionais = new ArrayList<>();
 
     @Builder.Default
     private List<StatusChange> historico = new ArrayList<>();
 
+    @Setter
     private String justificativaNecessarios;
 
+    @Setter
     private String justificativaAdicionais;
 
     public void setStatus(StatusOS status) {
