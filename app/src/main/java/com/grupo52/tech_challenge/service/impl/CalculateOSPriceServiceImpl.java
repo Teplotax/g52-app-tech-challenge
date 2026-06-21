@@ -3,6 +3,8 @@ package com.grupo52.tech_challenge.service.impl;
 import com.grupo52.tech_challenge.domain.*;
 import com.grupo52.tech_challenge.domain.Enums.TipoInsumo;
 import com.grupo52.tech_challenge.exception.GatewayException;
+import com.grupo52.tech_challenge.exception.ServiceException;
+import com.grupo52.tech_challenge.exception.ValidationException;
 import com.grupo52.tech_challenge.gateway.FindInsumoByVeiculoGateway;
 import com.grupo52.tech_challenge.gateway.FindPecaByVeiculoGateway;
 import com.grupo52.tech_challenge.gateway.FindServicoGateway;
@@ -31,7 +33,7 @@ public class CalculateOSPriceServiceImpl implements CalculateOSPriceService {
     private FindInsumoByVeiculoGateway findInsumoByVeiculoGateway;
 
     @Override
-    public OrdemDeServico calculateServicosDesejados(OrdemDeServico os) throws GatewayException {
+    public OrdemDeServico calculateServicosDesejados(OrdemDeServico os) throws GatewayException, ServiceException {
 
         try {
             for (ServicoOS servico : os.getServicosDesejados()) {
@@ -41,15 +43,17 @@ public class CalculateOSPriceServiceImpl implements CalculateOSPriceService {
 
             os.setPrecoTotal(os.getPrecoServicosDesejados().add(os.getPrecoServicosNecessarios()).add(os.getPrecoServicosAdicionais()));
 
+        } catch (GatewayException e) {
+            throw e;
         } catch (Exception e) {
-            throw new GatewayException(e.getClass().getSimpleName());
+            throw new ServiceException("Falha inesperada calcular serviços desejados", e);
         }
 
         return updateOSGateway.execute(os);
     }
 
     @Override
-    public OrdemDeServico calculateServicosNecessarios(OrdemDeServico os) throws GatewayException {
+    public OrdemDeServico calculateServicosNecessarios(OrdemDeServico os) throws GatewayException, ServiceException {
 
         try {
             for (ServicoOS servico : os.getServicosNecessarios()) {
@@ -59,15 +63,17 @@ public class CalculateOSPriceServiceImpl implements CalculateOSPriceService {
 
             os.setPrecoTotal(os.getPrecoServicosDesejados().add(os.getPrecoServicosNecessarios()).add(os.getPrecoServicosAdicionais()));
 
+        } catch (GatewayException e) {
+            throw e;
         } catch (Exception e) {
-            throw new GatewayException(e.getClass().getSimpleName());
+            throw new ServiceException("Falha inesperada calcular serviços necessários", e);
         }
 
         return updateOSGateway.execute(os);
     }
 
     @Override
-    public OrdemDeServico calculateServicosAdicionais(OrdemDeServico os) throws GatewayException {
+    public OrdemDeServico calculateServicosAdicionais(OrdemDeServico os) throws GatewayException, ServiceException {
 
         try {
             for (ServicoOS servico : os.getServicosAdicionais()) {
@@ -77,8 +83,10 @@ public class CalculateOSPriceServiceImpl implements CalculateOSPriceService {
 
             os.setPrecoTotal(os.getPrecoServicosDesejados().add(os.getPrecoServicosNecessarios()).add(os.getPrecoServicosAdicionais()));
 
+        } catch (GatewayException e) {
+            throw e;
         } catch (Exception e) {
-            throw new GatewayException(e.getClass().getSimpleName());
+            throw new ServiceException("Falha inesperada calcular serviços adicionais", e);
         }
 
         return updateOSGateway.execute(os);
