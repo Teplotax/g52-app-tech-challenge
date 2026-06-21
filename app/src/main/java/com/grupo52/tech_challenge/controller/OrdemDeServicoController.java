@@ -7,7 +7,6 @@ import com.grupo52.tech_challenge.dto.request.AddServicosRequestDTO;
 import com.grupo52.tech_challenge.dto.request.CreateOSRequestDTO;
 import com.grupo52.tech_challenge.dto.response.*;
 import com.grupo52.tech_challenge.exception.GatewayException;
-import com.grupo52.tech_challenge.exception.InvalidStatusChangeException;
 import com.grupo52.tech_challenge.exception.ValidationException;
 import com.grupo52.tech_challenge.gateway.CreateOSGateway;
 import com.grupo52.tech_challenge.gateway.FindOSGateway;
@@ -62,29 +61,29 @@ public class OrdemDeServicoController {
         return ResponseEntity.created(buildLocationUri(os)).body(CreateOSResponseDTO.fromDomain(os));
     }
 
-    @PostMapping("/{ordemDeServicoId}/diagnosticar")
+    @PostMapping("/{osId}/diagnosticar")
     public ResponseEntity<EvaluateOSResponseDTO> evaluate(
-            @PathVariable Long ordemDeServicoId) throws GatewayException, ValidationException {
+            @PathVariable Long osId) throws GatewayException, ValidationException {
 
-        OrdemDeServico os = evaluateOSService.execute(ordemDeServicoId);
+        OrdemDeServico os = evaluateOSService.execute(osId);
 
         return ResponseEntity.ok(EvaluateOSResponseDTO.fromDomain(os));
     }
 
-    @PostMapping("/{ordemDeServicoId}/adicionarServicos")
+    @PostMapping("/{osId}/adicionarServicos")
     public ResponseEntity<AddServicosResponseDTO> addServicos(
-            @PathVariable Long ordemDeServicoId, @RequestBody @Valid AddServicosRequestDTO createOSRequestDTO) throws GatewayException, ValidationException {
+            @PathVariable Long osId, @RequestBody @Valid AddServicosRequestDTO createOSRequestDTO) throws GatewayException, ValidationException {
 
-        OrdemDeServico os = addServicosOSService.execute(createOSRequestDTO.toDomain(ordemDeServicoId));
+        OrdemDeServico os = addServicosOSService.execute(createOSRequestDTO.toDomain(osId));
 
         return ResponseEntity.ok(AddServicosResponseDTO.fromDomain(os));
     }
 
-    @GetMapping("/{ordemDeServicoId}")
+    @GetMapping("/{osId}")
     public ResponseEntity<FindOSResponseDTO> findOS(
-            @PathVariable Long ordemDeServicoId) throws GatewayException {
+            @PathVariable Long osId) throws GatewayException {
 
-        OrdemDeServico os = findOSGateway.execute(ordemDeServicoId);
+        OrdemDeServico os = findOSGateway.execute(osId);
         return ResponseEntity.ok(FindOSResponseDTO.fromDomain(os));
     }
 
