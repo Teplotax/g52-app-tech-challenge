@@ -4,6 +4,7 @@ import com.grupo52.tech_challenge.domain.Enums.StatusOS;
 import com.grupo52.tech_challenge.domain.OrdemDeServico;
 import com.grupo52.tech_challenge.exception.GatewayException;
 import com.grupo52.tech_challenge.exception.InvalidStatusChangeException;
+import com.grupo52.tech_challenge.exception.ServiceException;
 import com.grupo52.tech_challenge.exception.ValidationException;
 import com.grupo52.tech_challenge.gateway.FindOSGateway;
 import com.grupo52.tech_challenge.gateway.UpdateOSGateway;
@@ -26,10 +27,10 @@ public class EvaluateOSServiceImpl implements EvaluateOSService {
     private UpdateOSStatusService updateOSStatusService;
 
     @Override
-    public OrdemDeServico execute(Long osId) throws GatewayException, ValidationException {
+    public OrdemDeServico execute(Long osId) throws GatewayException, ValidationException, ServiceException {
 
         try {
-           OrdemDeServico os = findOSGateway.execute(osId);
+            OrdemDeServico os = findOSGateway.execute(osId);
             updateOSStatusService.execute(os, StatusOS.EM_DIAGNOSTICO);
 
             return updateOSGateway.execute(os);
@@ -37,7 +38,7 @@ public class EvaluateOSServiceImpl implements EvaluateOSService {
         } catch (ValidationException | GatewayException e) {
             throw e;
         } catch (Exception e) {
-            throw new GatewayException(e.getClass().getSimpleName());
+            throw new ServiceException("Falha inesperada ao atualizar OS para EM_DIAGNOSTICO", e);
         }
     }
 }
