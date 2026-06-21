@@ -3,7 +3,7 @@ package com.grupo52.tech_challenge.exception;
 import lombok.Getter;
 
 @Getter
-public class GatewayException  extends Exception{
+public class GatewayException  extends Exception {
     private int status = 502;
 
     public GatewayException(String message) { super(message); }
