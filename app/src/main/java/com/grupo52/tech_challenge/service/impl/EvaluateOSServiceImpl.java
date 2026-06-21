@@ -4,6 +4,7 @@ import com.grupo52.tech_challenge.domain.Enums.StatusOS;
 import com.grupo52.tech_challenge.domain.OrdemDeServico;
 import com.grupo52.tech_challenge.exception.GatewayException;
 import com.grupo52.tech_challenge.exception.InvalidStatusChangeException;
+import com.grupo52.tech_challenge.exception.ValidationException;
 import com.grupo52.tech_challenge.gateway.FindOSGateway;
 import com.grupo52.tech_challenge.gateway.UpdateOSGateway;
 import com.grupo52.tech_challenge.service.EvaluateOSService;
@@ -25,7 +26,7 @@ public class EvaluateOSServiceImpl implements EvaluateOSService {
     private UpdateOSStatusService updateOSStatusService;
 
     @Override
-    public OrdemDeServico execute(Long osId) throws GatewayException, InvalidStatusChangeException {
+    public OrdemDeServico execute(Long osId) throws GatewayException, ValidationException {
 
         try {
            OrdemDeServico os = findOSGateway.execute(osId);
@@ -33,9 +34,7 @@ public class EvaluateOSServiceImpl implements EvaluateOSService {
 
             return updateOSGateway.execute(os);
 
-        } catch (InvalidStatusChangeException e) {
-            throw e;
-        } catch (GatewayException e) {
+        } catch (ValidationException | GatewayException e) {
             throw e;
         } catch (Exception e) {
             throw new GatewayException(e.getClass().getSimpleName());

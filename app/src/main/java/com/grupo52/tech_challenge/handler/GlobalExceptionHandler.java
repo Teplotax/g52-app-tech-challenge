@@ -2,6 +2,7 @@ package com.grupo52.tech_challenge.handler;
 
 import com.grupo52.tech_challenge.exception.GatewayException;
 import com.grupo52.tech_challenge.exception.InvalidStatusChangeException;
+import com.grupo52.tech_challenge.exception.ValidationException;
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -88,10 +89,11 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity.status(HttpStatus.valueOf(e.getStatus())).body(
                 new DefaultErrorMessage(e.getMessage(), HttpStatus.valueOf(e.getStatus()).toString()));
+//                new DefaultErrorMessage(e.getMessage() + e.getCause() + e.getCause().getMessage(), HttpStatus.valueOf(e.getStatus()).toString()));
     }
 
-    @ExceptionHandler({InvalidStatusChangeException.class})
-    public ResponseEntity<DefaultErrorMessage> handleInvalidStatusChangeException(final InvalidStatusChangeException e) {
+    @ExceptionHandler({ValidationException.class})
+    public ResponseEntity<DefaultErrorMessage> handleInvalidStatusChangeException(final ValidationException e) {
 
         return ResponseEntity.status(HttpStatus.valueOf(e.getStatus())).body(
                 new DefaultErrorMessage(e.getMessage(), HttpStatus.valueOf(e.getStatus()).toString()));
