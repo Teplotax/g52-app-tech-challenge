@@ -7,6 +7,7 @@ import com.grupo52.tech_challenge.dto.request.AddServicosRequestDTO;
 import com.grupo52.tech_challenge.dto.request.CreateOSRequestDTO;
 import com.grupo52.tech_challenge.dto.response.*;
 import com.grupo52.tech_challenge.exception.GatewayException;
+import com.grupo52.tech_challenge.exception.ServiceException;
 import com.grupo52.tech_challenge.exception.ValidationException;
 import com.grupo52.tech_challenge.gateway.CreateOSGateway;
 import com.grupo52.tech_challenge.gateway.FindOSGateway;
@@ -53,7 +54,7 @@ public class OrdemDeServicoController {
 
     @PostMapping
     public ResponseEntity<CreateOSResponseDTO> createOS(
-            @RequestBody @Valid CreateOSRequestDTO createOSRequestDTO) throws GatewayException {
+            @RequestBody @Valid CreateOSRequestDTO createOSRequestDTO) throws GatewayException, ServiceException {
 
         OrdemDeServico os = calculateOSPriceService
                 .calculateServicosDesejados(createOSGateway.execute(createOSRequestDTO.toDomain()));
@@ -63,7 +64,7 @@ public class OrdemDeServicoController {
 
     @PostMapping("/{osId}/diagnosticar")
     public ResponseEntity<EvaluateOSResponseDTO> evaluate(
-            @PathVariable Long osId) throws GatewayException, ValidationException {
+            @PathVariable Long osId) throws GatewayException, ValidationException, ServiceException {
 
         OrdemDeServico os = evaluateOSService.execute(osId);
 
@@ -72,7 +73,7 @@ public class OrdemDeServicoController {
 
     @PostMapping("/{osId}/adicionarServicos")
     public ResponseEntity<AddServicosResponseDTO> addServicos(
-            @PathVariable Long osId, @RequestBody @Valid AddServicosRequestDTO createOSRequestDTO) throws GatewayException, ValidationException {
+            @PathVariable Long osId, @RequestBody @Valid AddServicosRequestDTO createOSRequestDTO) throws GatewayException, ValidationException, ServiceException {
 
         OrdemDeServico os = addServicosOSService.execute(createOSRequestDTO.toDomain(osId));
 
