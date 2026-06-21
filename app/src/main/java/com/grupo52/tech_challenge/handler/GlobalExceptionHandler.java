@@ -89,6 +89,7 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity.status(HttpStatus.valueOf(e.getStatus())).body(
                 new DefaultErrorMessage(e.getMessage(), HttpStatus.valueOf(e.getStatus()).toString()));
+//                new DefaultErrorMessage(e.getMessage() + e.getCause() + e.getCause().getMessage(), HttpStatus.valueOf(e.getStatus()).toString()));
     }
 
     @ExceptionHandler({ValidationException.class})

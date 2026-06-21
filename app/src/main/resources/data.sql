@@ -635,3 +635,50 @@ INSERT INTO servicos (nome, horas_tecnicas) VALUES ('Troca de correia dentada', 
 INSERT INTO servico_insumos (servico_id, tipo_insumo) VALUES (8, 'GRAXA');
 INSERT INTO servico_tipo_pecas (servico_id, tipo_peca, quantidade) VALUES (8, 'CORREIA_DENTADA', 1);
 INSERT INTO servico_tipo_pecas (servico_id, tipo_peca, quantidade) VALUES (8, 'TENSOR_CORREIA', 1);
+
+-- Serviço 9: Troca de lâmpada do farol
+INSERT INTO servicos (nome, horas_tecnicas) VALUES ('Troca de lâmpada do farol', 0.3);
+INSERT INTO servico_tipo_pecas (servico_id, tipo_peca, quantidade) VALUES (9, 'LAMPADA_LUZ_BAIXA', 1);
+
+-- =============================================================
+-- PEÇA ADICIONAL
+-- Produto ID: 23
+-- =============================================================
+
+-- id=23: Lâmpada de farol (luz baixa) - universal
+INSERT INTO produtos (sku, ean, nome, preco, estoque, estoque_reservado, estoque_minimo, tipo_produto, tipo_peca, tipo_insumo, quantidade_embalagem, unidade_de_medida)
+VALUES ('LAMPADA_FAROL_001', '7891342130177', 'Lâmpada de Farol H7 Luz Baixa', 24.00, 100, 0, 20, 'PECA', 'LAMPADA_LUZ_BAIXA', NULL, NULL, NULL);
+
+-- Aplicação universal (todos os modelos)
+INSERT INTO aplicacao_produtos (produto_id, modelo_id, quantidade, ano_inicio, ano_fim) VALUES
+                                                                                            (23, 1, 1, 1990, 2026),
+                                                                                            (23, 2, 1, 1990, 2026),
+                                                                                            (23, 3, 1, 1990, 2026),
+                                                                                            (23, 4, 1, 1990, 2026),
+                                                                                            (23, 5, 1, 1990, 2026),
+                                                                                            (23, 6, 1, 1990, 2026),
+                                                                                            (23, 7, 1, 1990, 2026),
+                                                                                            (23, 8, 1, 1990, 2026),
+                                                                                            (23, 9, 1, 1990, 2026),
+                                                                                            (23, 10, 1, 1990, 2026),
+                                                                                            (23, 11, 1, 1990, 2026),
+                                                                                            (23, 12, 1, 1990, 2026),
+                                                                                            (23, 13, 1, 1990, 2026),
+                                                                                            (23, 14, 1, 1990, 2026),
+                                                                                            (23, 15, 1, 1990, 2026),
+                                                                                            (23, 16, 1, 1990, 2026),
+                                                                                            (23, 17, 1, 1990, 2026),
+                                                                                            (23, 18, 1, 1990, 2026),
+                                                                                            (23, 19, 1, 1990, 2026),
+                                                                                            (23, 20, 1, 1990, 2026),
+                                                                                            (23, 21, 1, 1990, 2026),
+                                                                                            (23, 22, 1, 1990, 2026),
+                                                                                            (23, 23, 1, 1990, 2026),
+                                                                                            (23, 24, 1, 1990, 2026),
+                                                                                            (23, 25, 1, 1990, 2026),
+                                                                                            (23, 26, 1, 1990, 2026),
+                                                                                            (23, 27, 1, 1990, 2026),
+                                                                                            (23, 28, 1, 1990, 2026),
+                                                                                            (23, 29, 1, 1990, 2026),
+                                                                                            (23, 30, 1, 1990, 2026),
+                                                                                            (23, 31, 1, 1990, 2026);

@@ -53,8 +53,16 @@ public class AddServicosServiceImpl implements AddServicosService {
             }
         }
 
-        savedOS.setJustificativaNecessarios(savedOS.getJustificativaNecessarios() != null || savedOS.getJustificativaNecessarios().isBlank() ? savedOS.getJustificativaNecessarios() + " \n " + os.getJustificativaNecessarios() : os.getJustificativaNecessarios());
-        savedOS.setJustificativaAdicionais(savedOS.getJustificativaAdicionais() != null || savedOS.getJustificativaAdicionais().isBlank() ? savedOS.getJustificativaAdicionais() + " \n " + os.getJustificativaAdicionais() : os.getJustificativaAdicionais());
+        savedOS.setJustificativaNecessarios(
+                savedOS.getJustificativaNecessarios() != null && !savedOS.getJustificativaNecessarios().isBlank()
+                        ? savedOS.getJustificativaNecessarios() + " \n " + os.getJustificativaNecessarios()
+                        : os.getJustificativaNecessarios()
+        );
+        savedOS.setJustificativaAdicionais(
+                savedOS.getJustificativaAdicionais() != null && !savedOS.getJustificativaAdicionais().isBlank()
+                        ? savedOS.getJustificativaAdicionais() + " \n " + os.getJustificativaAdicionais()
+                        : os.getJustificativaAdicionais()
+        );
         savedOS.getServicosNecessarios().addAll(os.getServicosNecessarios());
         savedOS.getServicosAdicionais().addAll(os.getServicosAdicionais());
 
