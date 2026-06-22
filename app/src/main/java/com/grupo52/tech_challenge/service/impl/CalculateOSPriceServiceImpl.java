@@ -1,6 +1,7 @@
 package com.grupo52.tech_challenge.service.impl;
 
 import com.grupo52.tech_challenge.domain.*;
+import com.grupo52.tech_challenge.domain.Enums.ComplexidadeOS;
 import com.grupo52.tech_challenge.domain.Enums.TipoInsumo;
 import com.grupo52.tech_challenge.exception.GatewayException;
 import com.grupo52.tech_challenge.exception.ServiceException;
@@ -40,16 +41,18 @@ public class CalculateOSPriceServiceImpl implements CalculateOSPriceService {
         try {
             for (ServicoOS servico : os.getServicosDesejados()) {
                 calculate(servico, os.getVeiculo());
+                reserveProdutos(servico);
                 os.setPrecoServicosDesejados(os.getPrecoServicosDesejados().add(servico.getPrecoTotal()));
             }
 
             os.setPrecoTotal(os.getPrecoServicosDesejados().add(os.getPrecoServicosNecessarios()).add(os.getPrecoServicosAdicionais()));
+            updateComplexidade(os);
 
             return updateOSGateway.execute(os);
         } catch (GatewayException e) {
             throw e;
         } catch (Exception e) {
-            throw new ServiceException("Falha inesperada calcular serviços desejados", e);
+            throw new ServiceException("Falha inesperada calcular serviços desejados: " + e.getClass().getSimpleName() + ": " + e.getMessage(), e);
         }
     }
 
@@ -59,17 +62,19 @@ public class CalculateOSPriceServiceImpl implements CalculateOSPriceService {
         try {
             for (ServicoOS servico : os.getServicosNecessarios()) {
                 calculate(servico, os.getVeiculo());
+                reserveProdutos(servico);
                 os.setPrecoServicosNecessarios(os.getPrecoServicosNecessarios().add(servico.getPrecoTotal()));
             }
 
             os.setPrecoTotal(os.getPrecoServicosDesejados().add(os.getPrecoServicosNecessarios()).add(os.getPrecoServicosAdicionais()));
+            updateComplexidade(os);
 
             return updateOSGateway.execute(os);
 
         } catch (GatewayException e) {
             throw e;
         } catch (Exception e) {
-            throw new ServiceException("Falha inesperada calcular serviços necessários", e);
+            throw new ServiceException("Falha inesperada calcular serviços necessários" + e.getClass().getSimpleName() + ": " + e.getMessage(), e);
         }
     }
 
@@ -79,16 +84,18 @@ public class CalculateOSPriceServiceImpl implements CalculateOSPriceService {
         try {
             for (ServicoOS servico : os.getServicosAdicionais()) {
                 calculate(servico, os.getVeiculo());
+                reserveProdutos(servico);
                 os.setPrecoServicosAdicionais(os.getPrecoServicosAdicionais().add(servico.getPrecoTotal()));
             }
             os.setPrecoTotal(os.getPrecoServicosDesejados().add(os.getPrecoServicosNecessarios()).add(os.getPrecoServicosAdicionais()));
+            updateComplexidade(os);
 
             return updateOSGateway.execute(os);
 
         } catch (GatewayException e) {
             throw e;
         } catch (Exception e) {
-            throw new ServiceException("Falha inesperada calcular serviços adicionais", e);
+            throw new ServiceException("Falha inesperada calcular serviços adicionais" + e.getClass().getSimpleName() + ": " + e.getMessage(), e);
         }
     }
 
@@ -97,34 +104,44 @@ public class CalculateOSPriceServiceImpl implements CalculateOSPriceService {
 
         try {
             BigDecimal approvedPrice = BigDecimal.ZERO;
+            BigDecimal horasTecnicas = BigDecimal.ZERO;
 
             for (ServicoOS servico : os.getServicosDesejados()) {
                 if (servico.getAprovado()) {
-                    reserveProdutos(servico);
+                    horasTecnicas = horasTecnicas.add(servico.getServico().getHorasTecnicas());
                     approvedPrice = approvedPrice.add(servico.getPrecoTotal());
+                } else {
+                    releaseReservedProdutos(servico);
                 }
             }
             for (ServicoOS servico : os.getServicosNecessarios()) {
                 if (servico.getAprovado()) {
-                    reserveProdutos(servico);
+                    horasTecnicas = horasTecnicas.add(servico.getServico().getHorasTecnicas());
                     approvedPrice = approvedPrice.add(servico.getPrecoTotal());
+                } else {
+                    releaseReservedProdutos(servico);
                 }
             }
             for (ServicoOS servico : os.getServicosAdicionais()) {
                 if (servico.getAprovado()) {
-                    reserveProdutos(servico);
+                    horasTecnicas = horasTecnicas.add(servico.getServico().getHorasTecnicas());
                     approvedPrice = approvedPrice.add(servico.getPrecoTotal());
+                } else {
+                    releaseReservedProdutos(servico);
                 }
             }
 
             os.setPrecoTotalAprovado(approvedPrice);
+            os.setComplexidade(getComplexidade(horasTecnicas));
+
+
 
             return updateOSGateway.execute(os);
 
         } catch (GatewayException e) {
             throw e;
         } catch (Exception e) {
-            throw new ServiceException("Falha inesperada calcular preço aprovado: " + e.getMessage(), e);
+            throw new ServiceException("Falha inesperada calcular preço aprovado: " + e.getClass().getSimpleName() + ": " + e.getMessage(), e);
         }
     }
 
@@ -134,6 +151,7 @@ public class CalculateOSPriceServiceImpl implements CalculateOSPriceService {
 
         Servico servico = findServicoGateway.execute(servicoOS.getServico().getId());
 
+        servicoOS.setServico(servico);
         servicoOS.setPrecoHorasTecnicas(servico.getHorasTecnicas().multiply(PRECO_HORA));
 
         precoTotalOS = precoTotalOS.add(servicoOS.getPrecoHorasTecnicas());
@@ -186,23 +204,52 @@ public class CalculateOSPriceServiceImpl implements CalculateOSPriceService {
     private void reserveProdutos(ServicoOS servicoOS) throws GatewayException {
         for(PecaOS pecaOS : servicoOS.getPecas()) {
             Peca peca = pecaOS.getPeca();
-            System.out.println("PecaId: " + peca.getId());
-            System.out.println("Nome: " + peca.getNome());
-            System.out.println("Estoque: " + peca.getEstoque());
-            System.out.println("Estoque reservado: " + peca.getEstoqueReservado());
-
             peca.adicionarEstoqueReservado(pecaOS.getQuantidade());
-
-            System.out.println("Estoque reservado: " + peca.getEstoqueReservado());
-
             updatePecaGateway.execute(peca);
         }
         for(InsumoOS insumoOS : servicoOS.getInsumos()) {
             Insumo insumo = insumoOS.getInsumo();
             insumo.adicionarEstoqueReservado(insumoOS.getQuantidade());
-
-
             updateInsumoGateway.execute(insumo);
+        }
+    }
+
+    private void releaseReservedProdutos(ServicoOS servicoOS) throws GatewayException {
+        for(PecaOS pecaOS : servicoOS.getPecas()) {
+            Peca peca = pecaOS.getPeca();
+            peca.removerEstoqueReservado(pecaOS.getQuantidade());
+            updatePecaGateway.execute(peca);
+        }
+        for(InsumoOS insumoOS : servicoOS.getInsumos()) {
+            Insumo insumo = insumoOS.getInsumo();
+            insumo.removerEstoqueReservado(insumoOS.getQuantidade());
+            updateInsumoGateway.execute(insumo);
+        }
+    }
+
+    private void updateComplexidade(OrdemDeServico os) {
+        BigDecimal horasTecnicas = BigDecimal.ZERO;
+
+        for (ServicoOS servico : os.getServicosDesejados()) {
+            horasTecnicas = horasTecnicas.add(servico.getServico().getHorasTecnicas());
+        }
+        for (ServicoOS servico : os.getServicosNecessarios()) {
+            horasTecnicas = horasTecnicas.add(servico.getServico().getHorasTecnicas());
+        }
+        for (ServicoOS servico : os.getServicosAdicionais()) {
+            horasTecnicas = horasTecnicas.add(servico.getServico().getHorasTecnicas());
+        }
+
+        os.setComplexidade(getComplexidade(horasTecnicas));
+    }
+
+    private ComplexidadeOS getComplexidade(BigDecimal horasTecnicas) {
+        if (horasTecnicas.compareTo(new BigDecimal("2")) <= 0) {
+            return ComplexidadeOS.BAIXA;
+        } else if (horasTecnicas.compareTo(new BigDecimal("6")) <= 0) {
+            return ComplexidadeOS.MEDIA;
+        } else {
+            return ComplexidadeOS.ALTA;
         }
     }
 }
