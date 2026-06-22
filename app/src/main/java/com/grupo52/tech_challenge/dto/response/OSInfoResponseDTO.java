@@ -22,19 +22,19 @@ public class OSInfoResponseDTO {
 
     private Long id;
 
+    private Long clienteId;
+
+    private Long veiculoId;
+
     private StatusOS status;
 
-    private Long clienteId;
+    private ComplexidadeOS complexidade;
 
     private String clienteNomeSocial;
 
     private String clienteDocumento;
 
-    private Long veiculoId;
-
     private String veiculoPlaca;
-
-    private ComplexidadeOS complexidade;
 
     private String sintomas;
 
@@ -48,12 +48,12 @@ public class OSInfoResponseDTO {
         return OSInfoResponseDTO.builder()
                 .id(os.getId())
                 .status(os.getStatus())
+                .complexidade(os.getComplexidade())
                 .clienteId(os.getCliente().getId())
                 .clienteNomeSocial(os.getCliente().getNomeSocial())
                 .clienteDocumento(os.getCliente().getDocumento())
                 .veiculoId(os.getVeiculo().getId())
                 .veiculoPlaca(os.getVeiculo().getPlaca())
-                .complexidade(os.getComplexidade())
                 .sintomas(os.getSintomas())
                 .tagChave(os.getTagChave())
                 .criadaEm(os.getCriadaEm())

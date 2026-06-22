@@ -19,7 +19,8 @@ public class Servico {
 
     private String nome;
 
-    private BigDecimal horasTecnicas;
+    @Builder.Default
+    private BigDecimal horasTecnicas = BigDecimal.ZERO;
 
     @Builder.Default
     private List<TipoInsumo> insumos = new ArrayList<>();
