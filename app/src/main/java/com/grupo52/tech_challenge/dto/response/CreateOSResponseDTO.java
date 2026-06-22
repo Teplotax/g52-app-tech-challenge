@@ -1,6 +1,7 @@
 package com.grupo52.tech_challenge.dto.response;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.grupo52.tech_challenge.domain.Enums.ComplexidadeOS;
 import com.grupo52.tech_challenge.domain.Enums.StatusOS;
 import com.grupo52.tech_challenge.domain.InsumoOS;
 import com.grupo52.tech_challenge.domain.OrdemDeServico;
@@ -20,8 +21,11 @@ import java.util.List;
 @Builder
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class CreateOSResponseDTO {
+    private Long id;
 
     private StatusOS status;
+
+    private ComplexidadeOS complexidade;
 
     private String sintomas;
 
@@ -43,7 +47,9 @@ public class CreateOSResponseDTO {
 
     public static CreateOSResponseDTO fromDomain(OrdemDeServico os) {
         return CreateOSResponseDTO.builder()
+                .id(os.getId())
                 .status(os.getStatus())
+                .complexidade(os.getComplexidade())
                 .clienteId(os.getCliente().getId())
                 .clienteNomeSocial(os.getCliente().getNomeSocial())
                 .veiculoId(os.getVeiculo().getId())
@@ -61,6 +67,7 @@ public class CreateOSResponseDTO {
     @NoArgsConstructor
     @Builder
     public static class ServicoOSDTO {
+        private Long id;
         private String servico;
         private BigDecimal precoTotal;
         private BigDecimal precoHorasTecnicas;
@@ -69,6 +76,7 @@ public class CreateOSResponseDTO {
 
         public static ServicoOSDTO fromDomain(ServicoOS servicoOS) {
             return ServicoOSDTO.builder()
+                    .id(servicoOS.getId())
                     .servico(servicoOS.getServico().getNome())
                     .precoTotal(servicoOS.getPrecoTotal().setScale(2, RoundingMode.HALF_UP))
                     .precoHorasTecnicas(servicoOS.getPrecoHorasTecnicas().setScale(2, RoundingMode.HALF_UP))
