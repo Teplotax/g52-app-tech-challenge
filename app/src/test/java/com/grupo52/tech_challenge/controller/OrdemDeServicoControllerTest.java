@@ -5,6 +5,7 @@ import com.grupo52.tech_challenge.gateway.CreateOSGateway;
 import com.grupo52.tech_challenge.gateway.FindOSGateway;
 import com.grupo52.tech_challenge.gateway.ListOSGateway;
 import com.grupo52.tech_challenge.service.AddServicosService;
+import com.grupo52.tech_challenge.service.ApproveOSService;
 import com.grupo52.tech_challenge.service.CalculateOSPriceService;
 import com.grupo52.tech_challenge.service.EvaluateOSService;
 import org.junit.jupiter.api.Test;
@@ -47,6 +48,9 @@ public class OrdemDeServicoControllerTest {
     @MockitoBean
     private AddServicosService addServicosOSService;
 
+    @MockitoBean
+    private ApproveOSService approveOSService;
+
     @Test
     public void diagnosticarSucesso() throws Exception {
         Long osId = 1L;
@@ -59,5 +63,19 @@ public class OrdemDeServicoControllerTest {
 
         verify(evaluateOSService, times(1)).execute(any(Long.class));
         verifyNoMoreInteractions(evaluateOSService);
+    }
+
+    @Test
+    public void aprovarSucesso() throws Exception {
+        Long osId = 1L;
+
+        when(approveOSService.approveAll(any(Long.class))).thenReturn(OrdemDeServicoFixture.aguardandoAprovacao(osId));
+
+        mvc.perform(MockMvcRequestBuilders.post("/ordensDeServico/{osId}/aprovar", osId)
+                        .header("x-correlationid", "9491b617-43e6-4667-9710-a6b51516744a"))
+                .andExpect(status().isOk());
+
+        verify(approveOSService, times(1)).approveAll(any(Long.class));
+        verifyNoMoreInteractions(approveOSService);
     }
 }
