@@ -5,10 +5,7 @@ import com.grupo52.tech_challenge.domain.Enums.TipoInsumo;
 import com.grupo52.tech_challenge.domain.Enums.TipoPeca;
 import com.grupo52.tech_challenge.exception.GatewayException;
 import com.grupo52.tech_challenge.exception.ServiceException;
-import com.grupo52.tech_challenge.gateway.FindInsumoByVeiculoGateway;
-import com.grupo52.tech_challenge.gateway.FindPecaByVeiculoGateway;
-import com.grupo52.tech_challenge.gateway.FindServicoGateway;
-import com.grupo52.tech_challenge.gateway.UpdateOSGateway;
+import com.grupo52.tech_challenge.gateway.*;
 import com.grupo52.tech_challenge.service.impl.CalculateOSPriceServiceImpl;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -38,6 +35,12 @@ public class CalculateOSPriceServiceImplTest {
 
     @Mock
     private FindInsumoByVeiculoGateway findInsumoByVeiculoGateway;
+
+    @Mock
+    private UpdatePecaGateway updatePecaGateway;
+
+    @Mock
+    private UpdateInsumoGateway updateInsumoGateway;
 
     @InjectMocks
     private CalculateOSPriceServiceImpl calculateOSPriceService;
@@ -103,6 +106,80 @@ public class CalculateOSPriceServiceImplTest {
         OrdemDeServico result = calculateOSPriceService.calculateServicosAdicionais(os);
 
         assertCalculatedTotals(result.getPrecoServicosAdicionais(), result.getPrecoTotal(), servicoOS);
+    }
+
+    @Test
+    public void calculateApprovedPriceSuccess() throws GatewayException, ServiceException {
+        Peca peca = Peca.builder()
+                .id(100L)
+                .nome("Pastilha de freio dianteira")
+                .preco(new BigDecimal("35.00"))
+                .estoqueReservado(0)
+                .build();
+
+        Insumo insumo = Insumo.builder()
+                .id(200L)
+                .nome("Fluido de freio DOT 4")
+                .preco(new BigDecimal("25.00"))
+                .estoqueReservado(0)
+                .aplicacoes(List.of())
+                .build();
+
+        ServicoOS servicoAprovado = ServicoOS.builder()
+                .servico(Servico.builder().nome("Revisão de freios").build())
+                .precoTotal(new BigDecimal("320.00"))
+                .pecas(List.of(PecaOS.builder().peca(peca).quantidade(2).precoTotal(new BigDecimal("70.00")).build()))
+                .insumos(List.of(InsumoOS.builder().insumo(insumo).quantidade(1).precoTotal(new BigDecimal("25.00")).build()))
+                .build();
+        servicoAprovado.setAprovado(true);
+
+        OrdemDeServico os = OrdemDeServico.builder()
+                .id(1L)
+                .veiculo(veiculoComModelo())
+                .precoServicosDesejados(new BigDecimal("320.00"))
+                .servicosDesejados(List.of(servicoAprovado))
+                .servicosNecessarios(List.of())
+                .servicosAdicionais(List.of())
+                .build();
+
+        when(updatePecaGateway.execute(any(Peca.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(updateInsumoGateway.execute(any(Insumo.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(updateOSGateway.execute(any(OrdemDeServico.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        OrdemDeServico result = calculateOSPriceService.calculateApprovedPrice(os);
+
+        assertEquals(0, new BigDecimal("320.00").compareTo(result.getPrecoTotalAprovado()));
+        assertEquals(2, peca.getEstoqueReservado());
+        verify(updatePecaGateway, times(1)).execute(peca);
+        verify(updateInsumoGateway, times(1)).execute(insumo);
+        verify(updateOSGateway, times(1)).execute(any(OrdemDeServico.class));
+    }
+
+    @Test
+    public void calculateApprovedPriceSkipsUnapprovedServicos() throws GatewayException, ServiceException {
+        ServicoOS servicoNaoAprovado = ServicoOS.builder()
+                .servico(Servico.builder().nome("Balanceamento de rodas").build())
+                .precoTotal(new BigDecimal("165.00"))
+                .pecas(List.of())
+                .insumos(List.of())
+                .aprovado(false)
+                .build();
+
+        OrdemDeServico os = OrdemDeServico.builder()
+                .id(1L)
+                .veiculo(veiculoComModelo())
+                .servicosDesejados(List.of(servicoNaoAprovado))
+                .servicosNecessarios(List.of())
+                .servicosAdicionais(List.of())
+                .build();
+
+        when(updateOSGateway.execute(any(OrdemDeServico.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        OrdemDeServico result = calculateOSPriceService.calculateApprovedPrice(os);
+
+        assertEquals(0, BigDecimal.ZERO.compareTo(result.getPrecoTotalAprovado()));
+        verifyNoInteractions(updatePecaGateway);
+        verifyNoInteractions(updateInsumoGateway);
     }
 
     @Test

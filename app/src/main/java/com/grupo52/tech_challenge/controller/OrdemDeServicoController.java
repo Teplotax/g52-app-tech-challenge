@@ -13,6 +13,7 @@ import com.grupo52.tech_challenge.gateway.CreateOSGateway;
 import com.grupo52.tech_challenge.gateway.FindOSGateway;
 import com.grupo52.tech_challenge.gateway.ListOSGateway;
 import com.grupo52.tech_challenge.service.AddServicosService;
+import com.grupo52.tech_challenge.service.ApproveOSService;
 import com.grupo52.tech_challenge.service.CalculateOSPriceService;
 import com.grupo52.tech_challenge.service.EvaluateOSService;
 import jakarta.validation.Valid;
@@ -52,6 +53,9 @@ public class OrdemDeServicoController {
     @Autowired
     private AddServicosService addServicosOSService;
 
+    @Autowired
+    private ApproveOSService approveOSService;
+
     @PostMapping
     public ResponseEntity<CreateOSResponseDTO> createOS(
             @RequestBody @Valid CreateOSRequestDTO createOSRequestDTO) throws GatewayException, ServiceException {
@@ -78,6 +82,15 @@ public class OrdemDeServicoController {
         OrdemDeServico os = addServicosOSService.execute(createOSRequestDTO.toDomain(osId));
 
         return ResponseEntity.ok(AddServicosResponseDTO.fromDomain(os));
+    }
+
+    @PostMapping("/{osId}/aprovar")
+    public ResponseEntity<ApproveOSResponseDTO> approve(
+            @PathVariable Long osId) throws GatewayException, ValidationException, ServiceException {
+
+        OrdemDeServico os = approveOSService.approveAll(osId);
+
+        return ResponseEntity.ok(ApproveOSResponseDTO.fromDomain(os));
     }
 
     @GetMapping("/{osId}")

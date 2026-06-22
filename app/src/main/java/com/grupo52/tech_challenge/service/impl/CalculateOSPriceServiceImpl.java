@@ -4,11 +4,7 @@ import com.grupo52.tech_challenge.domain.*;
 import com.grupo52.tech_challenge.domain.Enums.TipoInsumo;
 import com.grupo52.tech_challenge.exception.GatewayException;
 import com.grupo52.tech_challenge.exception.ServiceException;
-import com.grupo52.tech_challenge.exception.ValidationException;
-import com.grupo52.tech_challenge.gateway.FindInsumoByVeiculoGateway;
-import com.grupo52.tech_challenge.gateway.FindPecaByVeiculoGateway;
-import com.grupo52.tech_challenge.gateway.FindServicoGateway;
-import com.grupo52.tech_challenge.gateway.UpdateOSGateway;
+import com.grupo52.tech_challenge.gateway.*;
 import com.grupo52.tech_challenge.service.CalculateOSPriceService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -32,6 +28,12 @@ public class CalculateOSPriceServiceImpl implements CalculateOSPriceService {
     @Autowired
     private FindInsumoByVeiculoGateway findInsumoByVeiculoGateway;
 
+    @Autowired
+    private UpdatePecaGateway updatePecaGateway;
+
+    @Autowired
+    private UpdateInsumoGateway updateInsumoGateway;
+
     @Override
     public OrdemDeServico calculateServicosDesejados(OrdemDeServico os) throws GatewayException, ServiceException {
 
@@ -43,13 +45,12 @@ public class CalculateOSPriceServiceImpl implements CalculateOSPriceService {
 
             os.setPrecoTotal(os.getPrecoServicosDesejados().add(os.getPrecoServicosNecessarios()).add(os.getPrecoServicosAdicionais()));
 
+            return updateOSGateway.execute(os);
         } catch (GatewayException e) {
             throw e;
         } catch (Exception e) {
             throw new ServiceException("Falha inesperada calcular serviços desejados", e);
         }
-
-        return updateOSGateway.execute(os);
     }
 
     @Override
@@ -63,13 +64,13 @@ public class CalculateOSPriceServiceImpl implements CalculateOSPriceService {
 
             os.setPrecoTotal(os.getPrecoServicosDesejados().add(os.getPrecoServicosNecessarios()).add(os.getPrecoServicosAdicionais()));
 
+            return updateOSGateway.execute(os);
+
         } catch (GatewayException e) {
             throw e;
         } catch (Exception e) {
             throw new ServiceException("Falha inesperada calcular serviços necessários", e);
         }
-
-        return updateOSGateway.execute(os);
     }
 
     @Override
@@ -80,16 +81,51 @@ public class CalculateOSPriceServiceImpl implements CalculateOSPriceService {
                 calculate(servico, os.getVeiculo());
                 os.setPrecoServicosAdicionais(os.getPrecoServicosAdicionais().add(servico.getPrecoTotal()));
             }
-
             os.setPrecoTotal(os.getPrecoServicosDesejados().add(os.getPrecoServicosNecessarios()).add(os.getPrecoServicosAdicionais()));
+
+            return updateOSGateway.execute(os);
 
         } catch (GatewayException e) {
             throw e;
         } catch (Exception e) {
             throw new ServiceException("Falha inesperada calcular serviços adicionais", e);
         }
+    }
 
-        return updateOSGateway.execute(os);
+    @Override
+    public OrdemDeServico calculateApprovedPrice(OrdemDeServico os) throws GatewayException, ServiceException {
+
+        try {
+            BigDecimal approvedPrice = BigDecimal.ZERO;
+
+            for (ServicoOS servico : os.getServicosDesejados()) {
+                if (servico.getAprovado()) {
+                    reserveProdutos(servico);
+                    approvedPrice = approvedPrice.add(servico.getPrecoTotal());
+                }
+            }
+            for (ServicoOS servico : os.getServicosNecessarios()) {
+                if (servico.getAprovado()) {
+                    reserveProdutos(servico);
+                    approvedPrice = approvedPrice.add(servico.getPrecoTotal());
+                }
+            }
+            for (ServicoOS servico : os.getServicosAdicionais()) {
+                if (servico.getAprovado()) {
+                    reserveProdutos(servico);
+                    approvedPrice = approvedPrice.add(servico.getPrecoTotal());
+                }
+            }
+
+            os.setPrecoTotalAprovado(approvedPrice);
+
+            return updateOSGateway.execute(os);
+
+        } catch (GatewayException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new ServiceException("Falha inesperada calcular preço aprovado: " + e.getMessage(), e);
+        }
     }
 
     private void calculate(ServicoOS servicoOS, Veiculo veiculo) throws GatewayException {
@@ -144,7 +180,29 @@ public class CalculateOSPriceServiceImpl implements CalculateOSPriceService {
             precoTotalOS = precoTotalOS.add(precoInsumos);
         }
 
-
         servicoOS.setPrecoTotal(precoTotalOS);
+    }
+
+    private void reserveProdutos(ServicoOS servicoOS) throws GatewayException {
+        for(PecaOS pecaOS : servicoOS.getPecas()) {
+            Peca peca = pecaOS.getPeca();
+            System.out.println("PecaId: " + peca.getId());
+            System.out.println("Nome: " + peca.getNome());
+            System.out.println("Estoque: " + peca.getEstoque());
+            System.out.println("Estoque reservado: " + peca.getEstoqueReservado());
+
+            peca.adicionarEstoqueReservado(pecaOS.getQuantidade());
+
+            System.out.println("Estoque reservado: " + peca.getEstoqueReservado());
+
+            updatePecaGateway.execute(peca);
+        }
+        for(InsumoOS insumoOS : servicoOS.getInsumos()) {
+            Insumo insumo = insumoOS.getInsumo();
+            insumo.adicionarEstoqueReservado(insumoOS.getQuantidade());
+
+
+            updateInsumoGateway.execute(insumo);
+        }
     }
 }

@@ -8,4 +8,5 @@ public interface CalculateOSPriceService {
     OrdemDeServico calculateServicosDesejados(OrdemDeServico os) throws GatewayException, ServiceException;
     OrdemDeServico calculateServicosNecessarios(OrdemDeServico os) throws GatewayException, ServiceException;
     OrdemDeServico calculateServicosAdicionais(OrdemDeServico os) throws GatewayException, ServiceException;
+    OrdemDeServico calculateApprovedPrice(OrdemDeServico os) throws GatewayException, ServiceException;
 }

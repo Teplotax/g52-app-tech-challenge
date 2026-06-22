@@ -17,6 +17,7 @@ public class ServicoOS {
 
     private Servico servico;
 
+    @Setter
     private Boolean aprovado;
 
     @Setter
