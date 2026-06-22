@@ -35,7 +35,7 @@ public class UpdateInsumoGatewayImpl implements UpdateInsumoGateway {
                     .nome(insumo.getNome() != null ? insumo.getNome() : existing.getNome())
                     .preco(insumo.getPreco() != null ? insumo.getPreco() : existing.getPreco())
                     .estoque(insumo.getEstoque() != null ? insumo.getEstoque() : existing.getEstoque())
-                    .estoqueReservado(existing.getEstoqueReservado())
+                    .estoqueReservado(insumo.getEstoqueReservado() != null ? insumo.getEstoqueReservado() : existing.getEstoqueReservado())
                     .estoqueMinimo(insumo.getEstoqueMinimo() != null ? insumo.getEstoqueMinimo() : existing.getEstoqueMinimo())
                     .tipoInsumo(insumo.getTipoInsumo() != null ? insumo.getTipoInsumo() : existing.getTipoInsumo())
                     .tipoProduto(TipoProduto.INSUMO)
