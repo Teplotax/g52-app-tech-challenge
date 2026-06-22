@@ -27,6 +27,8 @@ public class FindOSResponseDTO {
 
     private StatusOS status;
 
+    private  ComplexidadeOS complexidade;
+
     private Long clienteId;
 
     private String clienteNomeSocial;
@@ -36,8 +38,6 @@ public class FindOSResponseDTO {
     private Long veiculoId;
 
     private String veiculoPlaca;
-
-    private ComplexidadeOS complexidade;
 
     private String sintomas;
 
@@ -71,12 +71,12 @@ public class FindOSResponseDTO {
         return FindOSResponseDTO.builder()
                 .id(os.getId())
                 .status(os.getStatus())
+                .complexidade(os.getComplexidade())
                 .clienteId(os.getCliente().getId())
                 .clienteNomeSocial(os.getCliente().getNomeSocial())
                 .clienteDocumento(os.getCliente().getDocumento())
                 .veiculoId(os.getVeiculo().getId())
                 .veiculoPlaca(os.getVeiculo().getPlaca())
-                .complexidade(os.getComplexidade())
                 .sintomas(os.getSintomas())
                 .tagChave(os.getTagChave())
                 .criadaEm(os.getCriadaEm())
@@ -103,6 +103,7 @@ public class FindOSResponseDTO {
     @NoArgsConstructor
     @Builder
     public static class ServicoOSDetailDTO {
+        private Long id;
         private String servico;
         private BigDecimal precoTotal;
         private BigDecimal precoHorasTecnicas;
@@ -111,6 +112,7 @@ public class FindOSResponseDTO {
 
         public static ServicoOSDetailDTO fromDomain(ServicoOS servicoOS) {
             return ServicoOSDetailDTO.builder()
+                    .id(servicoOS.getId())
                     .servico(servicoOS.getServico().getNome())
                     .precoTotal(scale(servicoOS.getPrecoTotal()))
                     .precoHorasTecnicas(scale(servicoOS.getPrecoHorasTecnicas()))

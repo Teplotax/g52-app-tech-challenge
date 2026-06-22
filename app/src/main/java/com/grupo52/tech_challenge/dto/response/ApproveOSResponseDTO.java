@@ -21,19 +21,19 @@ public class ApproveOSResponseDTO {
 
     private Long id;
 
+    private Long clienteId;
+
+    private Long veiculoId;
+
     private StatusOS status;
 
-    private Long clienteId;
+    private ComplexidadeOS complexidade;
 
     private String clienteNomeSocial;
 
     private String clienteDocumento;
 
-    private Long veiculoId;
-
     private String veiculoPlaca;
-
-    private ComplexidadeOS complexidade;
 
     private String sintomas;
 

@@ -24,6 +24,7 @@ public class OrdemDeServico {
 
     private Veiculo veiculo;
 
+    @Setter
     private ComplexidadeOS complexidade;
 
     private String sintomas;

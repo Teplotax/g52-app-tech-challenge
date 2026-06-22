@@ -15,6 +15,7 @@ public class ServicoOS {
 
     private Long id;
 
+    @Setter
     private Servico servico;
 
     @Setter
