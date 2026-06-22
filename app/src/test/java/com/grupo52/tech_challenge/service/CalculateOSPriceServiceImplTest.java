@@ -14,6 +14,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -55,7 +56,7 @@ public class CalculateOSPriceServiceImplTest {
         OrdemDeServico os = OrdemDeServico.builder()
                 .id(osId)
                 .veiculo(veiculo)
-                .servicosDesejados(List.of(servicoOS))
+                .servicosDesejados(new ArrayList<>(List.of(servicoOS)))
                 .build();
 
         stubCatalogo(servicoId, veiculo);
@@ -76,7 +77,7 @@ public class CalculateOSPriceServiceImplTest {
         OrdemDeServico os = OrdemDeServico.builder()
                 .id(osId)
                 .veiculo(veiculo)
-                .servicosNecessarios(List.of(servicoOS))
+                .servicosNecessarios(new ArrayList<>(List.of(servicoOS)))
                 .build();
 
         stubCatalogo(servicoId, veiculo);
@@ -97,7 +98,7 @@ public class CalculateOSPriceServiceImplTest {
         OrdemDeServico os = OrdemDeServico.builder()
                 .id(osId)
                 .veiculo(veiculo)
-                .servicosAdicionais(List.of(servicoOS))
+                .servicosAdicionais(new ArrayList<>(List.of(servicoOS)))
                 .build();
 
         stubCatalogo(servicoId, veiculo);
@@ -122,14 +123,14 @@ public class CalculateOSPriceServiceImplTest {
                 .nome("Fluido de freio DOT 4")
                 .preco(new BigDecimal("25.00"))
                 .estoqueReservado(0)
-                .aplicacoes(List.of())
+                .aplicacoes(new ArrayList<>())
                 .build();
 
         ServicoOS servicoAprovado = ServicoOS.builder()
-                .servico(Servico.builder().nome("Revisão de freios").build())
+                .servico(Servico.builder().nome("Revisão de freios").horasTecnicas(new BigDecimal("2.0")).build())
                 .precoTotal(new BigDecimal("320.00"))
-                .pecas(List.of(PecaOS.builder().peca(peca).quantidade(2).precoTotal(new BigDecimal("70.00")).build()))
-                .insumos(List.of(InsumoOS.builder().insumo(insumo).quantidade(1).precoTotal(new BigDecimal("25.00")).build()))
+                .pecas(new ArrayList<>(List.of(PecaOS.builder().peca(peca).quantidade(2).precoTotal(new BigDecimal("70.00")).build())))
+                .insumos(new ArrayList<>(List.of(InsumoOS.builder().insumo(insumo).quantidade(1).precoTotal(new BigDecimal("25.00")).build())))
                 .build();
         servicoAprovado.setAprovado(true);
 
@@ -137,40 +138,75 @@ public class CalculateOSPriceServiceImplTest {
                 .id(1L)
                 .veiculo(veiculoComModelo())
                 .precoServicosDesejados(new BigDecimal("320.00"))
-                .servicosDesejados(List.of(servicoAprovado))
-                .servicosNecessarios(List.of())
-                .servicosAdicionais(List.of())
+                .servicosDesejados(new ArrayList<>(List.of(servicoAprovado)))
+                .servicosNecessarios(new ArrayList<>())
+                .servicosAdicionais(new ArrayList<>())
                 .build();
 
-        when(updatePecaGateway.execute(any(Peca.class))).thenAnswer(invocation -> invocation.getArgument(0));
-        when(updateInsumoGateway.execute(any(Insumo.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(updateOSGateway.execute(any(OrdemDeServico.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         OrdemDeServico result = calculateOSPriceService.calculateApprovedPrice(os);
 
         assertEquals(0, new BigDecimal("320.00").compareTo(result.getPrecoTotalAprovado()));
-        assertEquals(2, peca.getEstoqueReservado());
-        verify(updatePecaGateway, times(1)).execute(peca);
-        verify(updateInsumoGateway, times(1)).execute(insumo);
+        assertEquals(0, peca.getEstoqueReservado());
+        verifyNoInteractions(updatePecaGateway);
+        verifyNoInteractions(updateInsumoGateway);
         verify(updateOSGateway, times(1)).execute(any(OrdemDeServico.class));
     }
 
     @Test
-    public void calculateApprovedPriceSkipsUnapprovedServicos() throws GatewayException, ServiceException {
-        ServicoOS servicoNaoAprovado = ServicoOS.builder()
-                .servico(Servico.builder().nome("Balanceamento de rodas").build())
-                .precoTotal(new BigDecimal("165.00"))
-                .pecas(List.of())
-                .insumos(List.of())
+    public void calculateApprovedPriceReleasesRefusedServicos() throws GatewayException, ServiceException {
+        Peca peca = Peca.builder()
+                .id(100L)
+                .nome("Pastilha de freio dianteira")
+                .preco(new BigDecimal("35.00"))
+                .estoqueReservado(4)
+                .build();
+
+        ServicoOS servicoRecusado = ServicoOS.builder()
+                .servico(Servico.builder().nome("Revisão de freios").horasTecnicas(new BigDecimal("2.0")).build())
+                .precoTotal(new BigDecimal("320.00"))
+                .pecas(new ArrayList<>(List.of(PecaOS.builder().peca(peca).quantidade(4).precoTotal(new BigDecimal("140.00")).build())))
+                .insumos(new ArrayList<>())
                 .aprovado(false)
                 .build();
 
         OrdemDeServico os = OrdemDeServico.builder()
                 .id(1L)
                 .veiculo(veiculoComModelo())
-                .servicosDesejados(List.of(servicoNaoAprovado))
-                .servicosNecessarios(List.of())
-                .servicosAdicionais(List.of())
+                .servicosDesejados(new ArrayList<>(List.of(servicoRecusado)))
+                .servicosNecessarios(new ArrayList<>())
+                .servicosAdicionais(new ArrayList<>())
+                .build();
+
+        when(updatePecaGateway.execute(any(Peca.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(updateOSGateway.execute(any(OrdemDeServico.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        OrdemDeServico result = calculateOSPriceService.calculateApprovedPrice(os);
+
+        assertEquals(0, BigDecimal.ZERO.compareTo(result.getPrecoTotalAprovado()));
+        assertEquals(0, peca.getEstoqueReservado());
+        verify(updatePecaGateway, times(1)).execute(peca);
+        verifyNoInteractions(updateInsumoGateway);
+        verify(updateOSGateway, times(1)).execute(any(OrdemDeServico.class));
+    }
+
+    @Test
+    public void calculateApprovedPriceSkipsUnapprovedServicos() throws GatewayException, ServiceException {
+        ServicoOS servicoNaoAprovado = ServicoOS.builder()
+                .servico(Servico.builder().nome("Balanceamento de rodas").horasTecnicas(new BigDecimal("1.0")).build())
+                .precoTotal(new BigDecimal("165.00"))
+                .pecas(new ArrayList<>())
+                .insumos(new ArrayList<>())
+                .aprovado(false)
+                .build();
+
+        OrdemDeServico os = OrdemDeServico.builder()
+                .id(1L)
+                .veiculo(veiculoComModelo())
+                .servicosDesejados(new ArrayList<>(List.of(servicoNaoAprovado)))
+                .servicosNecessarios(new ArrayList<>())
+                .servicosAdicionais(new ArrayList<>())
                 .build();
 
         when(updateOSGateway.execute(any(OrdemDeServico.class))).thenAnswer(invocation -> invocation.getArgument(0));
@@ -192,7 +228,7 @@ public class CalculateOSPriceServiceImplTest {
         OrdemDeServico os = OrdemDeServico.builder()
                 .id(osId)
                 .veiculo(veiculo)
-                .servicosDesejados(List.of(servicoOS))
+                .servicosDesejados(new ArrayList<>(List.of(servicoOS)))
                 .build();
 
         doThrow(GatewayException.class).when(findServicoGateway).execute(any(Long.class));
@@ -212,7 +248,7 @@ public class CalculateOSPriceServiceImplTest {
         OrdemDeServico os = OrdemDeServico.builder()
                 .id(osId)
                 .veiculo(veiculo)
-                .servicosDesejados(List.of(servicoOS))
+                .servicosDesejados(new ArrayList<>(List.of(servicoOS)))
                 .build();
 
         doThrow(RuntimeException.class).when(findServicoGateway).execute(any(Long.class));

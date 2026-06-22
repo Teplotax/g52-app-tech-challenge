@@ -232,15 +232,12 @@ public class CalculateOSPriceServiceImpl implements CalculateOSPriceService {
 
         for (ServicoOS servico : os.getServicosDesejados()) {
             horasTecnicas = horasTecnicas.add(servico.getServico().getHorasTecnicas());
-            System.out.println(horasTecnicas);
         }
         for (ServicoOS servico : os.getServicosNecessarios()) {
             horasTecnicas = horasTecnicas.add(servico.getServico().getHorasTecnicas());
-            System.out.println(horasTecnicas);
         }
         for (ServicoOS servico : os.getServicosAdicionais()) {
             horasTecnicas = horasTecnicas.add(servico.getServico().getHorasTecnicas());
-            System.out.println(horasTecnicas);
         }
 
         os.setComplexidade(getComplexidade(horasTecnicas));
