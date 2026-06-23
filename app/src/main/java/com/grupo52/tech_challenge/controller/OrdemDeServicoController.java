@@ -4,6 +4,7 @@ import com.grupo52.tech_challenge.domain.Enums.StatusOS;
 import com.grupo52.tech_challenge.domain.OrdemDeServico;
 import com.grupo52.tech_challenge.dto.PagedResponse;
 import com.grupo52.tech_challenge.dto.request.AddServicosRequestDTO;
+import com.grupo52.tech_challenge.dto.request.AprovarOSRequestDTO;
 import com.grupo52.tech_challenge.dto.request.CreateOSRequestDTO;
 import com.grupo52.tech_challenge.dto.response.*;
 import com.grupo52.tech_challenge.exception.GatewayException;
@@ -56,6 +57,9 @@ public class OrdemDeServicoController {
     @Autowired
     private ApproveOSService approveOSService;
 
+    @Autowired
+    private CancelOSService cancelOSService;
+
     @PostMapping
     public ResponseEntity<CreateOSResponseDTO> createOS(
             @RequestBody @Valid CreateOSRequestDTO createOSRequestDTO) throws GatewayException, ServiceException {
@@ -95,11 +99,27 @@ public class OrdemDeServicoController {
 
     @PostMapping("/{osId}/aprovar")
     public ResponseEntity<ApproveOSResponseDTO> approve(
-            @PathVariable Long osId) throws GatewayException, ValidationException, ServiceException {
+            @PathVariable Long osId,
+            @RequestBody(required = false) AprovarOSRequestDTO request) throws GatewayException, ValidationException, ServiceException {
 
-        OrdemDeServico os = approveOSService.approveAll(osId);
+        OrdemDeServico os;
+
+        if (request == null || request.getServicosAprovados() == null || request.getServicosAprovados().isEmpty()) {
+            os = approveOSService.approveAll(osId);
+        } else {
+            os = approveOSService.parcialApprove(osId, request.getServicosAprovados());
+        }
 
         return ResponseEntity.ok(ApproveOSResponseDTO.fromDomain(os));
+    }
+
+    @PostMapping("/{osId}/cancelar")
+    public ResponseEntity<CancelOSResponseDTO> evaluate(
+            @PathVariable Long osId) throws GatewayException, ValidationException, ServiceException {
+
+        OrdemDeServico os = cancelOSService.execute(osId);
+
+        return ResponseEntity.ok(CancelOSResponseDTO.fromDomain(os));
     }
 
     @GetMapping("/{osId}")

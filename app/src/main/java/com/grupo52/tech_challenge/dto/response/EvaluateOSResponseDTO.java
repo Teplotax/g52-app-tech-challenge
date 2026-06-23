@@ -101,6 +101,7 @@ public class EvaluateOSResponseDTO {
     public static class ServicoOSDetailDTO {
         private Long id;
         private String servico;
+        private Boolean aprovado;
         private BigDecimal precoTotal;
         private BigDecimal precoHorasTecnicas;
         private List<PecaOSDetailDTO> pecas;
@@ -110,6 +111,7 @@ public class EvaluateOSResponseDTO {
             return ServicoOSDetailDTO.builder()
                     .id(servicoOS.getId())
                     .servico(servicoOS.getServico().getNome())
+                    .aprovado(servicoOS.getAprovado())
                     .precoTotal(scale(servicoOS.getPrecoTotal()))
                     .precoHorasTecnicas(scale(servicoOS.getPrecoHorasTecnicas()))
                     .pecas(PecaOSDetailDTO.fromDomain(servicoOS.getPecas()))
