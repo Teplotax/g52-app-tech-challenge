@@ -17,21 +17,21 @@ import java.util.List;
 @NoArgsConstructor
 @Builder
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class AddServicosResponseDTO {
+public class RequestApprovalResponseDTO {
 
     private Long id;
 
-    private Long clienteId;
-
-    private Long veiculoId;
-
     private StatusOS status;
 
-    private  ComplexidadeOS complexidade;
+    private ComplexidadeOS complexidade;
+
+    private Long clienteId;
 
     private String clienteNomeSocial;
 
     private String clienteDocumento;
+
+    private Long veiculoId;
 
     private String veiculoPlaca;
 
@@ -63,8 +63,8 @@ public class AddServicosResponseDTO {
 
     private List<StatusChangeDTO> historico;
 
-    public static AddServicosResponseDTO fromDomain(OrdemDeServico os) {
-        return AddServicosResponseDTO.builder()
+    public static RequestApprovalResponseDTO fromDomain(OrdemDeServico os) {
+        return RequestApprovalResponseDTO.builder()
                 .id(os.getId())
                 .status(os.getStatus())
                 .complexidade(os.getComplexidade())
@@ -101,7 +101,6 @@ public class AddServicosResponseDTO {
     public static class ServicoOSDetailDTO {
         private Long id;
         private String servico;
-        private Boolean aprovado;
         private BigDecimal precoTotal;
         private BigDecimal precoHorasTecnicas;
         private List<PecaOSDetailDTO> pecas;
@@ -111,7 +110,6 @@ public class AddServicosResponseDTO {
             return ServicoOSDetailDTO.builder()
                     .id(servicoOS.getId())
                     .servico(servicoOS.getServico().getNome())
-                    .aprovado(servicoOS.getAprovado())
                     .precoTotal(scale(servicoOS.getPrecoTotal()))
                     .precoHorasTecnicas(scale(servicoOS.getPrecoHorasTecnicas()))
                     .pecas(PecaOSDetailDTO.fromDomain(servicoOS.getPecas()))

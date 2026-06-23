@@ -4,27 +4,24 @@ import com.grupo52.tech_challenge.fixture.OrdemDeServicoFixture;
 import com.grupo52.tech_challenge.gateway.CreateOSGateway;
 import com.grupo52.tech_challenge.gateway.FindOSGateway;
 import com.grupo52.tech_challenge.gateway.ListOSGateway;
-import com.grupo52.tech_challenge.service.AddServicosService;
-import com.grupo52.tech_challenge.service.ApproveOSService;
-import com.grupo52.tech_challenge.service.CalculateOSPriceService;
-import com.grupo52.tech_challenge.service.EvaluateOSService;
+import com.grupo52.tech_challenge.service.*;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @ExtendWith(SpringExtension.class)
-@WebMvcTest(
-        controllers = OrdemDeServicoController.class
-)
+@WebMvcTest(controllers = OrdemDeServicoController.class)
 public class OrdemDeServicoControllerTest {
 
     @Autowired
@@ -49,6 +46,9 @@ public class OrdemDeServicoControllerTest {
     private AddServicosService addServicosOSService;
 
     @MockitoBean
+    private RequestApprovalService requestApprovalService;
+
+    @MockitoBean
     private ApproveOSService approveOSService;
 
     @Test
@@ -66,7 +66,21 @@ public class OrdemDeServicoControllerTest {
     }
 
     @Test
-    public void aprovarSucesso() throws Exception {
+    public void solicitarAprovacaoSucesso() throws Exception {
+        Long osId = 1L;
+
+        when(requestApprovalService.execute(any(Long.class))).thenReturn(OrdemDeServicoFixture.aguardandoAprovacao(osId));
+
+        mvc.perform(MockMvcRequestBuilders.post("/ordensDeServico/{osId}/solicitarAprovacao", osId)
+                        .header("x-correlationid", "9491b617-43e6-4667-9710-a6b51516744a"))
+                .andExpect(status().isOk());
+
+        verify(requestApprovalService, times(1)).execute(any(Long.class));
+        verifyNoMoreInteractions(requestApprovalService);
+    }
+
+    @Test
+    public void aprovarTodosSucesso() throws Exception {
         Long osId = 1L;
 
         when(approveOSService.approveAll(any(Long.class))).thenReturn(OrdemDeServicoFixture.aguardandoAprovacao(osId));
@@ -76,6 +90,22 @@ public class OrdemDeServicoControllerTest {
                 .andExpect(status().isOk());
 
         verify(approveOSService, times(1)).approveAll(any(Long.class));
+        verifyNoMoreInteractions(approveOSService);
+    }
+
+    @Test
+    public void aprovarParcialSucesso() throws Exception {
+        Long osId = 1L;
+
+        when(approveOSService.parcialApprove(any(Long.class), anyList())).thenReturn(OrdemDeServicoFixture.aguardandoAprovacao(osId));
+
+        mvc.perform(MockMvcRequestBuilders.post("/ordensDeServico/{osId}/aprovar", osId)
+                        .header("x-correlationid", "9491b617-43e6-4667-9710-a6b51516744a")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"servicosAprovados\":[1,3]}"))
+                .andExpect(status().isOk());
+
+        verify(approveOSService, times(1)).parcialApprove(any(Long.class), anyList());
         verifyNoMoreInteractions(approveOSService);
     }
 }
