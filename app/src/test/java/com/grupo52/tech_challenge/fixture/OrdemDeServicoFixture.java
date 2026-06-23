@@ -88,6 +88,33 @@ public class OrdemDeServicoFixture {
                 .build();
     }
 
+    public static OrdemDeServico cancelada(Long osId) {
+        return OrdemDeServico.builder()
+                .id(osId)
+                .status(StatusOS.CANCELADA)
+                .cliente(clienteJoaoSilva())
+                .veiculo(veiculoCorollaABC1D23())
+                .complexidade(ComplexidadeOS.MEDIA)
+                .sintomas("Barulho ao frear e vibração no volante em altas velocidades")
+                .tagChave("001")
+                .criadaEm(LocalDateTime.parse("2024-06-01T10:00:00"))
+                .precoTotal(new BigDecimal("810.00"))
+                .precoTotalAprovado(null)
+                .precoServicosDesejados(new BigDecimal("485.00"))
+                .precoServicosNecessarios(new BigDecimal("280.00"))
+                .precoServicosAdicionais(new BigDecimal("45.00"))
+                .servicosDesejados(new ArrayList<>())
+                .servicosNecessarios(new ArrayList<>())
+                .servicosAdicionais(new ArrayList<>())
+                .historico(new ArrayList<>(List.of(
+                        statusChange(StatusOS.RECEBIDA, "2024-06-01T10:00:00"),
+                        statusChange(StatusOS.EM_DIAGNOSTICO, "2024-06-01T11:30:00"),
+                        statusChange(StatusOS.AGUARDANDO_APROVACAO, "2024-06-01T14:00:00"),
+                        statusChange(StatusOS.CANCELADA, "2024-06-01T16:00:00")
+                )))
+                .build();
+    }
+
     public static OrdemDeServico aguardandoAprovacaoComIds(Long osId) {
         return OrdemDeServico.builder()
                 .id(osId)
