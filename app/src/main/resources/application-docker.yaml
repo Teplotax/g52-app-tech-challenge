@@ -1,5 +1,5 @@
 server:
-  port: 8080
+  port: ${SERVER_PORT:8080}
 
 spring:
   datasource:
@@ -11,7 +11,7 @@ spring:
     defer-datasource-initialization: true
     database-platform: org.hibernate.dialect.H2Dialect
     hibernate:
-      ddl-auto: update #update #none
+      ddl-auto: update
   h2:
     console:
       enabled: true
@@ -20,7 +20,7 @@ spring:
     init:
       mode: always
   mail:
-    host: ${MAIL_HOST:localhost}
+    host: ${MAIL_HOST:mailpit}
     port: ${MAIL_PORT:1025}
     username: ${MAIL_USERNAME:dev@local}
     password: ${MAIL_PASSWORD:dev}

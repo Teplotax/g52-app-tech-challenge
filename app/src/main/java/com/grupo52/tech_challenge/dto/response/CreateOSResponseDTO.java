@@ -69,6 +69,7 @@ public class CreateOSResponseDTO {
     public static class ServicoOSDTO {
         private Long id;
         private String servico;
+        private Boolean aprovado;
         private BigDecimal precoTotal;
         private BigDecimal precoHorasTecnicas;
         private List<PecaOSDTO> pecas;
@@ -78,6 +79,7 @@ public class CreateOSResponseDTO {
             return ServicoOSDTO.builder()
                     .id(servicoOS.getId())
                     .servico(servicoOS.getServico().getNome())
+                    .aprovado(servicoOS.getAprovado())
                     .precoTotal(servicoOS.getPrecoTotal().setScale(2, RoundingMode.HALF_UP))
                     .precoHorasTecnicas(servicoOS.getPrecoHorasTecnicas().setScale(2, RoundingMode.HALF_UP))
                     .pecas(PecaOSDTO.fromDomain(servicoOS.getPecas()))
