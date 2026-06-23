@@ -51,6 +51,9 @@ public class OrdemDeServicoControllerTest {
     @MockitoBean
     private ApproveOSService approveOSService;
 
+    @MockitoBean
+    private CancelOSService cancelOSService;
+
     @Test
     public void diagnosticarSucesso() throws Exception {
         Long osId = 1L;
@@ -107,5 +110,19 @@ public class OrdemDeServicoControllerTest {
 
         verify(approveOSService, times(1)).parcialApprove(any(Long.class), anyList());
         verifyNoMoreInteractions(approveOSService);
+    }
+
+    @Test
+    public void cancelarSucesso() throws Exception {
+        Long osId = 1L;
+
+        when(cancelOSService.execute(any(Long.class))).thenReturn(OrdemDeServicoFixture.cancelada(osId));
+
+        mvc.perform(MockMvcRequestBuilders.post("/ordensDeServico/{osId}/cancelar", osId)
+                        .header("x-correlationid", "9491b617-43e6-4667-9710-a6b51516744a"))
+                .andExpect(status().isOk());
+
+        verify(cancelOSService, times(1)).execute(any(Long.class));
+        verifyNoMoreInteractions(cancelOSService);
     }
 }
