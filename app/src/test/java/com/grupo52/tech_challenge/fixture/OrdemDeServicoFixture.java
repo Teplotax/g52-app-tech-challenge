@@ -88,11 +88,40 @@ public class OrdemDeServicoFixture {
                 .build();
     }
 
+    public static OrdemDeServico aguardandoAprovacaoComIds(Long osId) {
+        return OrdemDeServico.builder()
+                .id(osId)
+                .status(StatusOS.AGUARDANDO_APROVACAO)
+                .cliente(clienteJoaoSilva())
+                .veiculo(veiculoCorollaABC1D23())
+                .complexidade(ComplexidadeOS.MEDIA)
+                .sintomas("Barulho ao frear e vibração no volante em altas velocidades")
+                .tagChave("001")
+                .criadaEm(LocalDateTime.parse("2024-06-01T10:00:00"))
+                .precoTotal(new BigDecimal("810.00"))
+                .precoTotalAprovado(null)
+                .precoServicosDesejados(new BigDecimal("485.00"))
+                .precoServicosNecessarios(new BigDecimal("280.00"))
+                .precoServicosAdicionais(new BigDecimal("45.00"))
+                .justificativaNecessarios("Identificado desgaste excessivo no disco de freio durante o diagnóstico")
+                .justificativaAdicionais("Mecânico identificou lâmpada do farol direito queimada durante o diagnóstico")
+                .servicosDesejados(new ArrayList<>(List.of(revisaoDeFreiosComId(1L, false), balanceamentoDeRodasComId(2L, false))))
+                .servicosNecessarios(new ArrayList<>(List.of(trocaDeDiscoComId(3L, false))))
+                .servicosAdicionais(new ArrayList<>(List.of(trocaDeLampadaComId(4L, false))))
+                .historico(new ArrayList<>(List.of(
+                        statusChange(StatusOS.RECEBIDA, "2024-06-01T10:00:00"),
+                        statusChange(StatusOS.EM_DIAGNOSTICO, "2024-06-01T11:30:00"),
+                        statusChange(StatusOS.AGUARDANDO_APROVACAO, "2024-06-01T14:00:00")
+                )))
+                .build();
+    }
+
     public static Cliente clienteJoaoSilva() {
         return Cliente.builder()
                 .id(1L)
                 .nomeSocial("João Silva")
                 .documento("123.456.789-00")
+                .email("joao.silva@email.com")
                 .build();
     }
 
@@ -134,8 +163,32 @@ public class OrdemDeServicoFixture {
                 .build();
     }
 
+    public static ServicoOS revisaoDeFreiosComId(Long id, Boolean aprovado) {
+        return ServicoOS.builder()
+                .id(id)
+                .servico(Servico.builder().nome("Revisão de freios").build())
+                .precoTotal(new BigDecimal("320.00"))
+                .precoHorasTecnicas(new BigDecimal("120.00"))
+                .pecas(new ArrayList<>())
+                .insumos(new ArrayList<>())
+                .aprovado(aprovado)
+                .build();
+    }
+
     public static ServicoOS balanceamentoDeRodas(Boolean aprovado) {
         return ServicoOS.builder()
+                .servico(Servico.builder().nome("Balanceamento de rodas").build())
+                .precoTotal(new BigDecimal("165.00"))
+                .precoHorasTecnicas(new BigDecimal("80.00"))
+                .pecas(new ArrayList<>())
+                .insumos(new ArrayList<>())
+                .aprovado(aprovado)
+                .build();
+    }
+
+    public static ServicoOS balanceamentoDeRodasComId(Long id, Boolean aprovado) {
+        return ServicoOS.builder()
+                .id(id)
                 .servico(Servico.builder().nome("Balanceamento de rodas").build())
                 .precoTotal(new BigDecimal("165.00"))
                 .precoHorasTecnicas(new BigDecimal("80.00"))
@@ -167,6 +220,18 @@ public class OrdemDeServicoFixture {
                 .build();
     }
 
+    public static ServicoOS trocaDeDiscoComId(Long id, Boolean aprovado) {
+        return ServicoOS.builder()
+                .id(id)
+                .servico(Servico.builder().nome("Troca de disco de freio").build())
+                .precoTotal(new BigDecimal("280.00"))
+                .precoHorasTecnicas(new BigDecimal("100.00"))
+                .pecas(new ArrayList<>())
+                .insumos(new ArrayList<>())
+                .aprovado(aprovado)
+                .build();
+    }
+
     public static ServicoOS trocaDeLampada(Boolean aprovado) {
         return ServicoOS.builder()
                 .servico(Servico.builder().nome("Troca de lâmpada do farol").build())
@@ -184,6 +249,18 @@ public class OrdemDeServicoFixture {
                                 .precoTotal(new BigDecimal("24.00"))
                                 .build()
                 )))
+                .insumos(new ArrayList<>())
+                .aprovado(aprovado)
+                .build();
+    }
+
+    public static ServicoOS trocaDeLampadaComId(Long id, Boolean aprovado) {
+        return ServicoOS.builder()
+                .id(id)
+                .servico(Servico.builder().nome("Troca de lâmpada do farol").build())
+                .precoTotal(new BigDecimal("45.00"))
+                .precoHorasTecnicas(new BigDecimal("21.00"))
+                .pecas(new ArrayList<>())
                 .insumos(new ArrayList<>())
                 .aprovado(aprovado)
                 .build();
