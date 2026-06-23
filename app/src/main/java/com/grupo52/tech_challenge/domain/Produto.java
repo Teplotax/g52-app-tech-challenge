@@ -17,4 +17,8 @@ public interface Produto {
     Integer getEstoqueMinimo();
     BigDecimal getPreco();
     List<AplicacaoProduto> getAplicacoes();
+
+    void adicionarEstoqueReservado(Integer quantidade);
+    void removerEstoqueReservado(Integer quantidade);
+    void removerEstoque(Integer quantidade);
 }
