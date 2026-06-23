@@ -57,8 +57,8 @@ public class OrdemDeServicoController {
     @Autowired
     private ApproveOSService approveOSService;
 
-//    @Autowired
-//    private CancelOSService cancelOSService;
+    @Autowired
+    private CancelOSService cancelOSService;
 
     @PostMapping
     public ResponseEntity<CreateOSResponseDTO> createOS(
@@ -113,14 +113,14 @@ public class OrdemDeServicoController {
         return ResponseEntity.ok(ApproveOSResponseDTO.fromDomain(os));
     }
 
-//    @PostMapping("/{osId}/cancelar")
-//    public ResponseEntity<CancelOSResponseDTO> cancel(
-//            @PathVariable Long osId) throws GatewayException, ValidationException, ServiceException {
-//
-//        OrdemDeServico os = cancelOSService.execute(osId);
-//
-//        return ResponseEntity.ok(CancelOSResponseDTO.fromDomain(os));
-//    }
+    @PostMapping("/{osId}/cancelar")
+    public ResponseEntity<CancelOSResponseDTO> cancel(
+            @PathVariable Long osId) throws GatewayException, ValidationException, ServiceException {
+
+        OrdemDeServico os = cancelOSService.execute(osId);
+
+        return ResponseEntity.ok(CancelOSResponseDTO.fromDomain(os));
+    }
 
     @GetMapping("/{osId}")
     public ResponseEntity<FindOSResponseDTO> findOS(
