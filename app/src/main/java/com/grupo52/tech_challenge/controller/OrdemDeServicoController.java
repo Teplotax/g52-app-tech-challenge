@@ -12,10 +12,7 @@ import com.grupo52.tech_challenge.exception.ValidationException;
 import com.grupo52.tech_challenge.gateway.CreateOSGateway;
 import com.grupo52.tech_challenge.gateway.FindOSGateway;
 import com.grupo52.tech_challenge.gateway.ListOSGateway;
-import com.grupo52.tech_challenge.service.AddServicosService;
-import com.grupo52.tech_challenge.service.ApproveOSService;
-import com.grupo52.tech_challenge.service.CalculateOSPriceService;
-import com.grupo52.tech_challenge.service.EvaluateOSService;
+import com.grupo52.tech_challenge.service.*;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -54,6 +51,9 @@ public class OrdemDeServicoController {
     private AddServicosService addServicosOSService;
 
     @Autowired
+    private RequestApprovalService requestApprovalService;
+
+    @Autowired
     private ApproveOSService approveOSService;
 
     @PostMapping
@@ -82,6 +82,15 @@ public class OrdemDeServicoController {
         OrdemDeServico os = addServicosOSService.execute(createOSRequestDTO.toDomain(osId));
 
         return ResponseEntity.ok(AddServicosResponseDTO.fromDomain(os));
+    }
+
+    @PostMapping("/{osId}/solicitarAprovacao")
+    public ResponseEntity<RequestApprovalResponseDTO> requestApproval(
+            @PathVariable Long osId) throws GatewayException, ValidationException, ServiceException {
+
+        OrdemDeServico os = requestApprovalService.execute(osId);
+
+        return ResponseEntity.ok(RequestApprovalResponseDTO.fromDomain(os));
     }
 
     @PostMapping("/{osId}/aprovar")
