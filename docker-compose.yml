@@ -1,0 +1,39 @@
+services:
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: tech-challenge-mailpit
+    restart: unless-stopped
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+    environment:
+      MP_SMTP_AUTH_ACCEPT_ANY: "true"
+      MP_SMTP_AUTH_ALLOW_INSECURE: "true"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "-", "http://localhost:8025/readyz"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  app:
+    build:
+      context: ./app
+      dockerfile: Dockerfile.multistage
+    container_name: tech-challenge-app
+    restart: unless-stopped
+    depends_on:
+      mailpit:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      MAIL_HOST: mailpit
+      MAIL_PORT: 1025
+      MAIL_USERNAME: dev@local
+      MAIL_PASSWORD: dev
+      MAIL_SMTP_AUTH: "false"
+      MAIL_SMTP_STARTTLS: "false"
+      APPROVAL_SECRET: local-dev-secret-change-me
+      APP_BASE_URL: http://localhost:8080
+      APPROVAL_TTL_MINUTES: 1440

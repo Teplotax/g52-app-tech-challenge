@@ -4,6 +4,7 @@ import com.grupo52.tech_challenge.domain.Enums.StatusOS;
 import com.grupo52.tech_challenge.domain.OrdemDeServico;
 import com.grupo52.tech_challenge.dto.PagedResponse;
 import com.grupo52.tech_challenge.dto.request.AddServicosRequestDTO;
+import com.grupo52.tech_challenge.dto.request.AprovarOSRequestDTO;
 import com.grupo52.tech_challenge.dto.request.CreateOSRequestDTO;
 import com.grupo52.tech_challenge.dto.response.*;
 import com.grupo52.tech_challenge.exception.GatewayException;
@@ -12,10 +13,7 @@ import com.grupo52.tech_challenge.exception.ValidationException;
 import com.grupo52.tech_challenge.gateway.CreateOSGateway;
 import com.grupo52.tech_challenge.gateway.FindOSGateway;
 import com.grupo52.tech_challenge.gateway.ListOSGateway;
-import com.grupo52.tech_challenge.service.AddServicosService;
-import com.grupo52.tech_challenge.service.ApproveOSService;
-import com.grupo52.tech_challenge.service.CalculateOSPriceService;
-import com.grupo52.tech_challenge.service.EvaluateOSService;
+import com.grupo52.tech_challenge.service.*;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -54,7 +52,13 @@ public class OrdemDeServicoController {
     private AddServicosService addServicosOSService;
 
     @Autowired
+    private RequestApprovalService requestApprovalService;
+
+    @Autowired
     private ApproveOSService approveOSService;
+
+//    @Autowired
+//    private CancelOSService cancelOSService;
 
     @PostMapping
     public ResponseEntity<CreateOSResponseDTO> createOS(
@@ -84,14 +88,39 @@ public class OrdemDeServicoController {
         return ResponseEntity.ok(AddServicosResponseDTO.fromDomain(os));
     }
 
-    @PostMapping("/{osId}/aprovar")
-    public ResponseEntity<ApproveOSResponseDTO> approve(
+    @PostMapping("/{osId}/solicitarAprovacao")
+    public ResponseEntity<RequestApprovalResponseDTO> requestApproval(
             @PathVariable Long osId) throws GatewayException, ValidationException, ServiceException {
 
-        OrdemDeServico os = approveOSService.approveAll(osId);
+        OrdemDeServico os = requestApprovalService.execute(osId);
+
+        return ResponseEntity.ok(RequestApprovalResponseDTO.fromDomain(os));
+    }
+
+    @PostMapping("/{osId}/aprovar")
+    public ResponseEntity<ApproveOSResponseDTO> approve(
+            @PathVariable Long osId,
+            @RequestBody(required = false) AprovarOSRequestDTO request) throws GatewayException, ValidationException, ServiceException {
+
+        OrdemDeServico os;
+
+        if (request == null || request.getServicosAprovados() == null || request.getServicosAprovados().isEmpty()) {
+            os = approveOSService.approveAll(osId);
+        } else {
+            os = approveOSService.parcialApprove(osId, request.getServicosAprovados());
+        }
 
         return ResponseEntity.ok(ApproveOSResponseDTO.fromDomain(os));
     }
+
+//    @PostMapping("/{osId}/cancelar")
+//    public ResponseEntity<CancelOSResponseDTO> cancel(
+//            @PathVariable Long osId) throws GatewayException, ValidationException, ServiceException {
+//
+//        OrdemDeServico os = cancelOSService.execute(osId);
+//
+//        return ResponseEntity.ok(CancelOSResponseDTO.fromDomain(os));
+//    }
 
     @GetMapping("/{osId}")
     public ResponseEntity<FindOSResponseDTO> findOS(
