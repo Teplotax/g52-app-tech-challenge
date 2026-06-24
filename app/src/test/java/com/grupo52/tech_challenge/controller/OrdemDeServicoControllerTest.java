@@ -52,7 +52,16 @@ public class OrdemDeServicoControllerTest {
     private ApproveOSService approveOSService;
 
     @MockitoBean
+    private ExecuteOSService executeOSService;
+
+    @MockitoBean
+    private FinalizeOSService finalizeOSService;
+
+    @MockitoBean
     private CancelOSService cancelOSService;
+
+    @MockitoBean
+    private EntregarOSService entregarOSService;
 
     @Test
     public void diagnosticarSucesso() throws Exception {
@@ -113,6 +122,34 @@ public class OrdemDeServicoControllerTest {
     }
 
     @Test
+    public void executarSucesso() throws Exception {
+        Long osId = 1L;
+
+        when(executeOSService.execute(any(Long.class))).thenReturn(OrdemDeServicoFixture.aguardandoAprovacao(osId));
+
+        mvc.perform(MockMvcRequestBuilders.post("/ordensDeServico/{osId}/executar", osId)
+                        .header("x-correlationid", "9491b617-43e6-4667-9710-a6b51516744a"))
+                .andExpect(status().isOk());
+
+        verify(executeOSService, times(1)).execute(any(Long.class));
+        verifyNoMoreInteractions(executeOSService);
+    }
+
+    @Test
+    public void finalizarSucesso() throws Exception {
+        Long osId = 1L;
+
+        when(finalizeOSService.execute(any(Long.class))).thenReturn(OrdemDeServicoFixture.finalizada(osId));
+
+        mvc.perform(MockMvcRequestBuilders.post("/ordensDeServico/{osId}/finalizar", osId)
+                        .header("x-correlationid", "9491b617-43e6-4667-9710-a6b51516744a"))
+                .andExpect(status().isOk());
+
+        verify(finalizeOSService, times(1)).execute(any(Long.class));
+        verifyNoMoreInteractions(finalizeOSService);
+    }
+
+    @Test
     public void cancelarSucesso() throws Exception {
         Long osId = 1L;
 
@@ -124,5 +161,19 @@ public class OrdemDeServicoControllerTest {
 
         verify(cancelOSService, times(1)).execute(any(Long.class));
         verifyNoMoreInteractions(cancelOSService);
+    }
+
+    @Test
+    public void entregarSucesso() throws Exception {
+        Long osId = 1L;
+
+        when(entregarOSService.execute(any(Long.class))).thenReturn(OrdemDeServicoFixture.entregue(osId));
+
+        mvc.perform(MockMvcRequestBuilders.post("/ordensDeServico/{osId}/entregar", osId)
+                        .header("x-correlationid", "9491b617-43e6-4667-9710-a6b51516744a"))
+                .andExpect(status().isOk());
+
+        verify(entregarOSService, times(1)).execute(any(Long.class));
+        verifyNoMoreInteractions(entregarOSService);
     }
 }

@@ -58,6 +58,7 @@ public class OrdemDeServicoDatabase {
     private String sintomas;
 
     @Setter
+    @Column(unique = true)
     private String tagChave;
 
     @Setter
