@@ -30,12 +30,12 @@ public class OrcamentoDocumentGatewayImpl implements OrcamentoDocumentGateway {
     public String buildHtml(OrdemDeServico os) {
         StringBuilder sb = new StringBuilder();
         sb.append("<html><head><meta charset=\"UTF-8\"/><style>")
-          .append("body{font-family:Arial,sans-serif;color:#222;}")
-          .append("h1{font-size:18px;}h2{font-size:14px;margin-top:20px;}")
-          .append("table{width:100%;border-collapse:collapse;margin-top:8px;}")
-          .append("th,td{border:1px solid #ccc;padding:6px;text-align:left;font-size:12px;}")
-          .append("th{background:#f2f2f2;}.total{font-weight:bold;}")
-          .append("</style></head><body>");
+                .append("body{font-family:Arial,sans-serif;color:#222;}")
+                .append("h1{font-size:18px;}h2{font-size:14px;margin-top:20px;}")
+                .append("table{width:100%;border-collapse:collapse;margin-top:8px;}")
+                .append("th,td{border:1px solid #ccc;padding:6px;text-align:left;font-size:12px;}")
+                .append("th{background:#f2f2f2;}.total{font-weight:bold;}")
+                .append("</style></head><body>");
 
         sb.append("<h1>Orçamento - Ordem de Serviço #").append(os.getId()).append("</h1>");
         sb.append("<p><strong>Cliente:</strong> ").append(safe(os.getCliente().getNomeSocial())).append("<br/>");
@@ -60,14 +60,14 @@ public class OrcamentoDocumentGatewayImpl implements OrcamentoDocumentGateway {
         String token = approvalTokenGateway.generate(os.getId());
         String approvalUrl = baseUrl + "/aprovacao/" + os.getId() + "?token=" + token;
         sb.append("<div style=\"text-align:center;margin-top:24px;\">")
-          .append("<a href=\"").append(approvalUrl).append("\" ")
-          .append("style=\"background:#1a7f37;color:#fff;padding:12px 24px;")
-          .append("text-decoration:none;border-radius:6px;display:inline-block;font-size:14px;\">")
-          .append("Aprovar orçamento</a></div>");
+                .append("<a href=\"").append(approvalUrl).append("\" ")
+                .append("style=\"background:#1a7f37;color:#fff;padding:12px 24px;")
+                .append("text-decoration:none;border-radius:6px;display:inline-block;font-size:14px;\">")
+                .append("Revisar e aprovar serviços</a></div>");
 
         sb.append("<p style=\"margin-top:24px;font-size:11px;color:#666;\">")
-          .append("Este é um orçamento sujeito à sua aprovação. Clique no botão acima para aprovar os serviços.")
-          .append("</p>");
+                .append("Este é um orçamento sujeito à sua aprovação. Clique no botão acima para revisar os serviços e selecionar quais deseja aprovar.")
+                .append("</p>");
 
         sb.append("</body></html>");
         return sb.toString();
