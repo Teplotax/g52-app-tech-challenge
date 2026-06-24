@@ -37,9 +37,6 @@ public class OrdemDeServico {
     private BigDecimal precoTotal;
 
     @Setter
-    private BigDecimal precoTotalAprovado;
-
-    @Setter
     @Builder.Default
     private BigDecimal precoServicosDesejados = BigDecimal.ZERO;
 

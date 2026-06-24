@@ -14,6 +14,7 @@ import com.grupo52.tech_challenge.gateway.CreateOSGateway;
 import com.grupo52.tech_challenge.gateway.FindOSGateway;
 import com.grupo52.tech_challenge.gateway.ListOSGateway;
 import com.grupo52.tech_challenge.service.*;
+import com.grupo52.tech_challenge.service.EntregarOSService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -62,6 +63,9 @@ public class OrdemDeServicoController {
 
     @Autowired
     private CancelOSService cancelOSService;
+
+    @Autowired
+    private EntregarOSService entregarOSService;
 
     @Autowired
     private FinalizeOSService finalizeOSService;
@@ -144,6 +148,15 @@ public class OrdemDeServicoController {
         OrdemDeServico os = cancelOSService.execute(osId);
 
         return ResponseEntity.ok(CancelOSResponseDTO.fromDomain(os));
+    }
+
+    @PostMapping("/{osId}/entregar")
+    public ResponseEntity<EntregarOSResponseDTO> deliver(
+            @PathVariable Long osId) throws GatewayException, ValidationException, ServiceException {
+
+        OrdemDeServico os = entregarOSService.execute(osId);
+
+        return ResponseEntity.ok(EntregarOSResponseDTO.fromDomain(os));
     }
 
     @GetMapping("/{osId}")

@@ -147,7 +147,10 @@ public class CalculateOSPriceServiceImplTest {
 
         OrdemDeServico result = calculateOSPriceService.calculateApprovedPrice(os);
 
-        assertEquals(0, new BigDecimal("320.00").compareTo(result.getPrecoTotalAprovado()));
+        assertEquals(0, new BigDecimal("320.00").compareTo(result.getPrecoServicosDesejados()));
+        assertEquals(0, BigDecimal.ZERO.compareTo(result.getPrecoServicosNecessarios()));
+        assertEquals(0, BigDecimal.ZERO.compareTo(result.getPrecoServicosAdicionais()));
+        assertEquals(0, new BigDecimal("320.00").compareTo(result.getPrecoTotal()));
         assertEquals(0, peca.getEstoqueReservado());
         verifyNoInteractions(updatePecaGateway);
         verifyNoInteractions(updateInsumoGateway);
@@ -184,7 +187,8 @@ public class CalculateOSPriceServiceImplTest {
 
         OrdemDeServico result = calculateOSPriceService.calculateApprovedPrice(os);
 
-        assertEquals(0, BigDecimal.ZERO.compareTo(result.getPrecoTotalAprovado()));
+        assertEquals(0, BigDecimal.ZERO.compareTo(result.getPrecoServicosDesejados()));
+        assertEquals(0, BigDecimal.ZERO.compareTo(result.getPrecoTotal()));
         assertEquals(0, peca.getEstoqueReservado());
         verify(updatePecaGateway, times(1)).execute(peca);
         verifyNoInteractions(updateInsumoGateway);
@@ -213,7 +217,8 @@ public class CalculateOSPriceServiceImplTest {
 
         OrdemDeServico result = calculateOSPriceService.calculateApprovedPrice(os);
 
-        assertEquals(0, BigDecimal.ZERO.compareTo(result.getPrecoTotalAprovado()));
+        assertEquals(0, BigDecimal.ZERO.compareTo(result.getPrecoServicosDesejados()));
+        assertEquals(0, BigDecimal.ZERO.compareTo(result.getPrecoTotal()));
         verifyNoInteractions(updatePecaGateway);
         verifyNoInteractions(updateInsumoGateway);
     }

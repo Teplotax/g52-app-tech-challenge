@@ -39,7 +39,11 @@ public class CreateOSGatewayImpl implements CreateOSGateway {
 
             return ordemDeServicoRepository.save(osDatabase).toDomain();
         } catch (DataIntegrityViolationException e) {
-            throw new GatewayException("Falha ao cadastrar OS", 409);
+            String cause = e.getMostSpecificCause().getMessage().toLowerCase();
+            if (cause.contains("tagchave") || cause.contains("tag_chave")) {
+                throw new GatewayException("tagChave já cadastrada em outra OS ativa", 409);
+            }
+            throw new GatewayException("Violação de integridade ao cadastrar OS", 409);
         } catch (Exception e) {
             throw new GatewayException("Falha ao cadastrar OS, cause: " + e.getClass().getSimpleName(), e);
         }

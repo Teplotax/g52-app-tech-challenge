@@ -43,7 +43,6 @@ public class EvaluateOSResponseDTO {
 
     private BigDecimal precoTotal;
 
-    private BigDecimal precoTotalAprovado;
 
     private BigDecimal precoServicosDesejados;
 
@@ -77,7 +76,6 @@ public class EvaluateOSResponseDTO {
                 .tagChave(os.getTagChave())
                 .criadaEm(os.getCriadaEm())
                 .precoTotal(scale(os.getPrecoTotal()))
-                .precoTotalAprovado(scale(os.getPrecoTotalAprovado()))
                 .precoServicosDesejados(scale(os.getPrecoServicosDesejados()))
                 .precoServicosNecessarios(scale(os.getPrecoServicosNecessarios()))
                 .precoServicosAdicionais(scale(os.getPrecoServicosAdicionais()))
