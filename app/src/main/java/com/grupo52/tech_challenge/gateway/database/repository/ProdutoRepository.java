@@ -23,6 +23,8 @@ public interface ProdutoRepository extends JpaRepository<ProdutoDatabase, Long> 
             TipoPeca tipoPeca, Long modeloId, Integer anoInicio, Integer anoFim
     );
 
+    Optional<ProdutoDatabase> findByEan(String ean);
+
     List<ProdutoDatabase> findAllByTipoInsumoAndAplicacoesModeloIdAndAplicacoesAnoInicioLessThanEqualAndAplicacoesAnoFimGreaterThanEqual(
             TipoInsumo tipoInsumo, Long modeloId, Integer anoInicio, Integer anoFim
     );
