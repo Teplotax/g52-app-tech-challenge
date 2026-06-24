@@ -77,6 +77,9 @@ public class ApprovalLinkController {
             }
 
             List<Long> aprovados = servicosAprovados != null ? servicosAprovados : new ArrayList<>();
+            if (aprovados.isEmpty()) {
+                return html(422, page("Nenhum serviço selecionado", "Selecione ao menos um serviço para confirmar a aprovação.", null));
+            }
             approveOSService.parcialApprove(osId, aprovados);
             return html(200, page("Orçamento aprovado!", "A ordem de serviço #" + osId + " foi aprovada com sucesso.", null));
         } catch (Exception e) {
@@ -99,14 +102,17 @@ public class ApprovalLinkController {
             sb.append(servicoSection("Serviços Adicionais", os.getServicosAdicionais(), false));
         }
 
-        sb.append("<div style=\"margin-top:28px;\">");
-        sb.append("<button type=\"submit\" style=\"background:#1a7f37;color:#fff;padding:12px 28px;")
-                .append("border:none;border-radius:6px;font-size:15px;cursor:pointer;\">Confirmar aprovação</button>");
+        sb.append("<div style=\"margin-top:28px;display:flex;justify-content:center;gap:12px;\">");
+        sb.append("<button type=\"button\" onclick=\"history.back()\" "
+                + "style=\"background:#fff;color:#555;padding:12px 28px;border:1px solid #ccc;"
+                + "border-radius:6px;font-size:15px;cursor:pointer;\">Cancelar</button>");
+        sb.append("<button id=\"btnAprovar\" type=\"submit\" "
+                + "style=\"background:#1a7f37;color:#fff;padding:12px 28px;"
+                + "border:none;border-radius:6px;font-size:15px;cursor:pointer;\">Confirmar aprovação</button>");
         sb.append("</div>");
         sb.append("</form>");
         return sb.toString();
     }
-
     private String servicoSection(String titulo, List<ServicoOS> servicos, boolean preChecked) {
         StringBuilder sb = new StringBuilder();
         sb.append("<div style=\"margin:20px auto;max-width:480px;text-align:left;\">")
@@ -149,6 +155,8 @@ public class ApprovalLinkController {
                   + "});"
                   + "var el=document.getElementById('totalDinamico');"
                   + "if(el)el.textContent='R$ '+total.toFixed(2).replace('.',',');"
+                  + "var btn=document.getElementById('btnAprovar');"
+                  + "if(btn){btn.disabled=total===0;btn.style.opacity=total===0?'0.45':'1';btn.style.cursor=total===0?'not-allowed':'pointer';}"
                   + "}"
                   + "document.addEventListener('DOMContentLoaded',function(){"
                   + "document.querySelectorAll('input[name=\"servicosAprovados\"]').forEach(function(cb){"
