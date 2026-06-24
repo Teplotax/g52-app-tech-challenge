@@ -34,7 +34,6 @@ public class UpdateOSGatewayImpl implements UpdateOSGateway {
                 .sintomas(os.getSintomas() != null ? os.getSintomas() : existing.getSintomas())
                 .tagChave(os.getTagChave() != null ? os.getTagChave() : existing.getTagChave())
                 .precoTotal(os.getPrecoTotal() != null ? os.getPrecoTotal() : existing.getPrecoTotal())
-                .precoTotalAprovado(os.getPrecoTotalAprovado() != null ? os.getPrecoTotalAprovado() : existing.getPrecoTotalAprovado())
                 .precoServicosDesejados(os.getPrecoServicosDesejados() != null ? os.getPrecoServicosDesejados() : existing.getPrecoServicosDesejados())
                 .precoServicosNecessarios(os.getPrecoServicosNecessarios() != null ? os.getPrecoServicosNecessarios() : existing.getPrecoServicosNecessarios())
                 .precoServicosAdicionais(os.getPrecoServicosAdicionais() != null ? os.getPrecoServicosAdicionais() : existing.getPrecoServicosAdicionais())

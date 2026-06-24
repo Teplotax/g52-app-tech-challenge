@@ -22,7 +22,6 @@ public class OrdemDeServicoFixture {
                 .tagChave("001")
                 .criadaEm(LocalDateTime.parse("2024-06-01T10:00:00"))
                 .precoTotal(new BigDecimal("485.00"))
-                .precoTotalAprovado(null)
                 .precoServicosDesejados(new BigDecimal("485.00"))
                 .precoServicosNecessarios(new BigDecimal("0.00"))
                 .precoServicosAdicionais(new BigDecimal("0.00"))
@@ -48,7 +47,6 @@ public class OrdemDeServicoFixture {
                 .tagChave("001")
                 .criadaEm(LocalDateTime.parse("2024-06-01T10:00:00"))
                 .precoTotal(new BigDecimal("485.00"))
-                .precoTotalAprovado(null)
                 .precoServicosDesejados(new BigDecimal("485.00"))
                 .precoServicosNecessarios(new BigDecimal("0.00"))
                 .precoServicosAdicionais(new BigDecimal("0.00"))
@@ -71,7 +69,6 @@ public class OrdemDeServicoFixture {
                 .tagChave("001")
                 .criadaEm(LocalDateTime.parse("2024-06-01T10:00:00"))
                 .precoTotal(new BigDecimal("810.00"))
-                .precoTotalAprovado(null)
                 .precoServicosDesejados(new BigDecimal("485.00"))
                 .precoServicosNecessarios(new BigDecimal("280.00"))
                 .precoServicosAdicionais(new BigDecimal("45.00"))
@@ -88,6 +85,90 @@ public class OrdemDeServicoFixture {
                 .build();
     }
 
+    public static OrdemDeServico finalizada(Long osId) {
+        return OrdemDeServico.builder()
+                .id(osId)
+                .status(StatusOS.FINALIZADA)
+                .cliente(clienteJoaoSilva())
+                .veiculo(veiculoCorollaABC1D23())
+                .complexidade(ComplexidadeOS.MEDIA)
+                .sintomas("Barulho ao frear e vibração no volante em altas velocidades")
+                .tagChave("001")
+                .criadaEm(LocalDateTime.parse("2024-06-01T10:00:00"))
+                .precoTotal(new BigDecimal("810.00"))
+                .precoServicosDesejados(new BigDecimal("485.00"))
+                .precoServicosNecessarios(new BigDecimal("280.00"))
+                .precoServicosAdicionais(new BigDecimal("45.00"))
+                .servicosDesejados(new ArrayList<>())
+                .servicosNecessarios(new ArrayList<>())
+                .servicosAdicionais(new ArrayList<>())
+                .historico(new ArrayList<>(List.of(
+                        statusChange(StatusOS.RECEBIDA, "2024-06-01T10:00:00"),
+                        statusChange(StatusOS.EM_DIAGNOSTICO, "2024-06-01T11:30:00"),
+                        statusChange(StatusOS.AGUARDANDO_APROVACAO, "2024-06-01T14:00:00"),
+                        statusChange(StatusOS.APROVADA, "2024-06-01T15:30:00"),
+                        statusChange(StatusOS.EM_EXECUCAO, "2024-06-01T16:00:00"),
+                        statusChange(StatusOS.FINALIZADA, "2024-06-02T09:00:00")
+                )))
+                .build();
+    }
+
+    public static OrdemDeServico entregue(Long osId) {
+        return OrdemDeServico.builder()
+                .id(osId)
+                .status(StatusOS.ENTREGUE)
+                .cliente(clienteJoaoSilva())
+                .veiculo(veiculoCorollaABC1D23())
+                .complexidade(ComplexidadeOS.MEDIA)
+                .sintomas("Barulho ao frear e vibração no volante em altas velocidades")
+                .tagChave(null)
+                .criadaEm(LocalDateTime.parse("2024-06-01T10:00:00"))
+                .precoTotal(new BigDecimal("810.00"))
+                .precoServicosDesejados(new BigDecimal("485.00"))
+                .precoServicosNecessarios(new BigDecimal("280.00"))
+                .precoServicosAdicionais(new BigDecimal("45.00"))
+                .servicosDesejados(new ArrayList<>())
+                .servicosNecessarios(new ArrayList<>())
+                .servicosAdicionais(new ArrayList<>())
+                .historico(new ArrayList<>(List.of(
+                        statusChange(StatusOS.RECEBIDA, "2024-06-01T10:00:00"),
+                        statusChange(StatusOS.EM_DIAGNOSTICO, "2024-06-01T11:30:00"),
+                        statusChange(StatusOS.AGUARDANDO_APROVACAO, "2024-06-01T14:00:00"),
+                        statusChange(StatusOS.APROVADA, "2024-06-01T15:30:00"),
+                        statusChange(StatusOS.EM_EXECUCAO, "2024-06-01T16:00:00"),
+                        statusChange(StatusOS.FINALIZADA, "2024-06-02T09:00:00"),
+                        statusChange(StatusOS.ENTREGUE, "2024-06-02T10:00:00")
+                )))
+                .build();
+    }
+
+    public static OrdemDeServico devolvido(Long osId) {
+        return OrdemDeServico.builder()
+                .id(osId)
+                .status(StatusOS.DEVOLVIDO)
+                .cliente(clienteJoaoSilva())
+                .veiculo(veiculoCorollaABC1D23())
+                .complexidade(ComplexidadeOS.MEDIA)
+                .sintomas("Barulho ao frear e vibração no volante em altas velocidades")
+                .tagChave(null)
+                .criadaEm(LocalDateTime.parse("2024-06-01T10:00:00"))
+                .precoTotal(new BigDecimal("810.00"))
+                .precoServicosDesejados(new BigDecimal("485.00"))
+                .precoServicosNecessarios(new BigDecimal("280.00"))
+                .precoServicosAdicionais(new BigDecimal("45.00"))
+                .servicosDesejados(new ArrayList<>())
+                .servicosNecessarios(new ArrayList<>())
+                .servicosAdicionais(new ArrayList<>())
+                .historico(new ArrayList<>(List.of(
+                        statusChange(StatusOS.RECEBIDA, "2024-06-01T10:00:00"),
+                        statusChange(StatusOS.EM_DIAGNOSTICO, "2024-06-01T11:30:00"),
+                        statusChange(StatusOS.AGUARDANDO_APROVACAO, "2024-06-01T14:00:00"),
+                        statusChange(StatusOS.CANCELADA, "2024-06-01T16:00:00"),
+                        statusChange(StatusOS.DEVOLVIDO, "2024-06-02T10:00:00")
+                )))
+                .build();
+    }
+
     public static OrdemDeServico cancelada(Long osId) {
         return OrdemDeServico.builder()
                 .id(osId)
@@ -99,7 +180,6 @@ public class OrdemDeServicoFixture {
                 .tagChave("001")
                 .criadaEm(LocalDateTime.parse("2024-06-01T10:00:00"))
                 .precoTotal(new BigDecimal("810.00"))
-                .precoTotalAprovado(null)
                 .precoServicosDesejados(new BigDecimal("485.00"))
                 .precoServicosNecessarios(new BigDecimal("280.00"))
                 .precoServicosAdicionais(new BigDecimal("45.00"))
@@ -126,7 +206,6 @@ public class OrdemDeServicoFixture {
                 .tagChave("001")
                 .criadaEm(LocalDateTime.parse("2024-06-01T10:00:00"))
                 .precoTotal(new BigDecimal("810.00"))
-                .precoTotalAprovado(null)
                 .precoServicosDesejados(new BigDecimal("485.00"))
                 .precoServicosNecessarios(new BigDecimal("280.00"))
                 .precoServicosAdicionais(new BigDecimal("45.00"))
