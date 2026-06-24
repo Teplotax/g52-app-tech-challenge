@@ -43,7 +43,6 @@ public class ApproveOSResponseDTO {
 
     private BigDecimal precoTotal;
 
-    private BigDecimal precoTotalAprovado;
 
     private BigDecimal precoServicosDesejados;
 
@@ -77,7 +76,6 @@ public class ApproveOSResponseDTO {
                 .tagChave(os.getTagChave())
                 .criadaEm(os.getCriadaEm())
                 .precoTotal(scale(os.getPrecoTotal()))
-                .precoTotalAprovado(scale(os.getPrecoTotalAprovado()))
                 .precoServicosDesejados(scale(os.getPrecoServicosDesejados()))
                 .precoServicosNecessarios(scale(os.getPrecoServicosNecessarios()))
                 .precoServicosAdicionais(scale(os.getPrecoServicosAdicionais()))
@@ -125,7 +123,7 @@ public class ApproveOSResponseDTO {
 
         public static List<ServicoOSDetailDTO> fromDomain(List<ServicoOS> servicos) {
             if (servicos == null) return List.of();
-            return servicos.stream().map(ServicoOSDetailDTO::fromDomain).toList();
+            return servicos.stream().filter(s -> Boolean.TRUE.equals(s.getAprovado())).map(ServicoOSDetailDTO::fromDomain).toList();
         }
     }
 

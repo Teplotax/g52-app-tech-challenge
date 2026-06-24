@@ -37,7 +37,6 @@ public class CalculateOSPriceServiceImpl implements CalculateOSPriceService {
 
     @Override
     public OrdemDeServico calculateServicosDesejados(OrdemDeServico os) throws GatewayException, ServiceException {
-
         try {
             for (ServicoOS servico : os.getServicosDesejados()) {
                 calculate(servico, os.getVeiculo());
@@ -58,7 +57,6 @@ public class CalculateOSPriceServiceImpl implements CalculateOSPriceService {
 
     @Override
     public OrdemDeServico calculateServicosNecessarios(OrdemDeServico os) throws GatewayException, ServiceException {
-
         try {
             for (ServicoOS servico : os.getServicosNecessarios()) {
                 calculate(servico, os.getVeiculo());
@@ -70,7 +68,6 @@ public class CalculateOSPriceServiceImpl implements CalculateOSPriceService {
             updateComplexidade(os);
 
             return updateOSGateway.execute(os);
-
         } catch (GatewayException e) {
             throw e;
         } catch (Exception e) {
@@ -80,7 +77,6 @@ public class CalculateOSPriceServiceImpl implements CalculateOSPriceService {
 
     @Override
     public OrdemDeServico calculateServicosAdicionais(OrdemDeServico os) throws GatewayException, ServiceException {
-
         try {
             for (ServicoOS servico : os.getServicosAdicionais()) {
                 calculate(servico, os.getVeiculo());
@@ -91,7 +87,6 @@ public class CalculateOSPriceServiceImpl implements CalculateOSPriceService {
             updateComplexidade(os);
 
             return updateOSGateway.execute(os);
-
         } catch (GatewayException e) {
             throw e;
         } catch (Exception e) {
@@ -101,15 +96,16 @@ public class CalculateOSPriceServiceImpl implements CalculateOSPriceService {
 
     @Override
     public OrdemDeServico calculateApprovedPrice(OrdemDeServico os) throws GatewayException, ServiceException {
-
         try {
-            BigDecimal approvedPrice = BigDecimal.ZERO;
+            BigDecimal precoDesejados = BigDecimal.ZERO;
+            BigDecimal precoNecessarios = BigDecimal.ZERO;
+            BigDecimal precoAdicionais = BigDecimal.ZERO;
             BigDecimal horasTecnicas = BigDecimal.ZERO;
 
             for (ServicoOS servico : os.getServicosDesejados()) {
                 if (servico.getAprovado()) {
                     horasTecnicas = horasTecnicas.add(servico.getServico().getHorasTecnicas());
-                    approvedPrice = approvedPrice.add(servico.getPrecoTotal());
+                    precoDesejados = precoDesejados.add(servico.getPrecoTotal());
                 } else {
                     releaseReservedProdutos(servico);
                 }
@@ -117,7 +113,7 @@ public class CalculateOSPriceServiceImpl implements CalculateOSPriceService {
             for (ServicoOS servico : os.getServicosNecessarios()) {
                 if (servico.getAprovado()) {
                     horasTecnicas = horasTecnicas.add(servico.getServico().getHorasTecnicas());
-                    approvedPrice = approvedPrice.add(servico.getPrecoTotal());
+                    precoNecessarios = precoNecessarios.add(servico.getPrecoTotal());
                 } else {
                     releaseReservedProdutos(servico);
                 }
@@ -125,19 +121,19 @@ public class CalculateOSPriceServiceImpl implements CalculateOSPriceService {
             for (ServicoOS servico : os.getServicosAdicionais()) {
                 if (servico.getAprovado()) {
                     horasTecnicas = horasTecnicas.add(servico.getServico().getHorasTecnicas());
-                    approvedPrice = approvedPrice.add(servico.getPrecoTotal());
+                    precoAdicionais = precoAdicionais.add(servico.getPrecoTotal());
                 } else {
                     releaseReservedProdutos(servico);
                 }
             }
 
-            os.setPrecoTotalAprovado(approvedPrice);
+            os.setPrecoServicosDesejados(precoDesejados);
+            os.setPrecoServicosNecessarios(precoNecessarios);
+            os.setPrecoServicosAdicionais(precoAdicionais);
+            os.setPrecoTotal(precoDesejados.add(precoNecessarios).add(precoAdicionais));
             os.setComplexidade(getComplexidade(horasTecnicas));
 
-
-
             return updateOSGateway.execute(os);
-
         } catch (GatewayException e) {
             throw e;
         } catch (Exception e) {
@@ -146,7 +142,6 @@ public class CalculateOSPriceServiceImpl implements CalculateOSPriceService {
     }
 
     private void calculate(ServicoOS servicoOS, Veiculo veiculo) throws GatewayException {
-
         BigDecimal precoTotalOS = BigDecimal.ZERO;
 
         Servico servico = findServicoGateway.execute(servicoOS.getServico().getId());
@@ -156,14 +151,11 @@ public class CalculateOSPriceServiceImpl implements CalculateOSPriceService {
 
         precoTotalOS = precoTotalOS.add(servicoOS.getPrecoHorasTecnicas());
 
-
         for (Servico.ServicoTipoPeca servicoTipoPeca : servico.getPecas()) {
-
             Peca peca = findPecaByVeiculoGateway.execute(servicoTipoPeca.getTipoPeca(), veiculo).getFirst();
 
             Integer quantidade = servicoTipoPeca.getQuantidade();
             BigDecimal precoPecas = peca.getPreco().multiply(BigDecimal.valueOf(quantidade));
-
 
             PecaOS pecaOS = PecaOS.builder()
                     .peca(peca)
@@ -172,10 +164,7 @@ public class CalculateOSPriceServiceImpl implements CalculateOSPriceService {
                     .build();
 
             servicoOS.addPeca(pecaOS);
-
-
             precoTotalOS = precoTotalOS.add(precoPecas);
-
         }
 
         for (TipoInsumo tipoInsumo : servico.getInsumos()) {
@@ -185,7 +174,6 @@ public class CalculateOSPriceServiceImpl implements CalculateOSPriceService {
                     .filter(ap -> ap.getModelo() != null
                             && veiculo.getModelo().getId().equals(ap.getModelo().getId()))
                     .toList().getFirst();
-
 
             BigDecimal precoInsumos = insumo.getPreco().multiply(BigDecimal.valueOf(aplicacao.getQuantidade()));
             InsumoOS insumoOS = InsumoOS.builder()
@@ -202,12 +190,12 @@ public class CalculateOSPriceServiceImpl implements CalculateOSPriceService {
     }
 
     private void reserveProdutos(ServicoOS servicoOS) throws GatewayException {
-        for(PecaOS pecaOS : servicoOS.getPecas()) {
+        for (PecaOS pecaOS : servicoOS.getPecas()) {
             Peca peca = pecaOS.getPeca();
             peca.adicionarEstoqueReservado(pecaOS.getQuantidade());
             updatePecaGateway.execute(peca);
         }
-        for(InsumoOS insumoOS : servicoOS.getInsumos()) {
+        for (InsumoOS insumoOS : servicoOS.getInsumos()) {
             Insumo insumo = insumoOS.getInsumo();
             insumo.adicionarEstoqueReservado(insumoOS.getQuantidade());
             updateInsumoGateway.execute(insumo);
@@ -215,12 +203,12 @@ public class CalculateOSPriceServiceImpl implements CalculateOSPriceService {
     }
 
     private void releaseReservedProdutos(ServicoOS servicoOS) throws GatewayException {
-        for(PecaOS pecaOS : servicoOS.getPecas()) {
+        for (PecaOS pecaOS : servicoOS.getPecas()) {
             Peca peca = pecaOS.getPeca();
             peca.removerEstoqueReservado(pecaOS.getQuantidade());
             updatePecaGateway.execute(peca);
         }
-        for(InsumoOS insumoOS : servicoOS.getInsumos()) {
+        for (InsumoOS insumoOS : servicoOS.getInsumos()) {
             Insumo insumo = insumoOS.getInsumo();
             insumo.removerEstoqueReservado(insumoOS.getQuantidade());
             updateInsumoGateway.execute(insumo);

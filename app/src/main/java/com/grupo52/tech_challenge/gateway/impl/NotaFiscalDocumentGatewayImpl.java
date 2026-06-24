@@ -37,7 +37,7 @@ public class NotaFiscalDocumentGatewayImpl implements NotaFiscalDocumentGateway 
 
         sb.append("<table><tr class=\"total\">")
                 .append("<td>Total Aprovado</td>")
-                .append("<td>R$ ").append(scale(os.getPrecoTotalAprovado())).append("</td>")
+                .append("<td>R$ ").append(scale(os.getPrecoTotal())).append("</td>")
                 .append("</tr></table>");
 
         sb.append("<p style=\"color:#888;font-size:10px;margin-top:32px;\">")

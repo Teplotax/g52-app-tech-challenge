@@ -43,7 +43,6 @@ public class CancelOSResponseDTO {
 
     private BigDecimal precoTotal;
 
-    private BigDecimal precoTotalAprovado;
 
     private List<StatusChangeDTO> historico;
 
@@ -61,7 +60,6 @@ public class CancelOSResponseDTO {
                 .tagChave(os.getTagChave())
                 .criadaEm(os.getCriadaEm())
                 .precoTotal(scale(os.getPrecoTotal()))
-                .precoTotalAprovado(scale(os.getPrecoTotalAprovado()))
                 .historico(StatusChangeDTO.fromDomain(os.getHistorico()))
                 .build();
     }
