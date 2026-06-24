@@ -3,6 +3,7 @@ package com.grupo52.tech_challenge.dto.request;
 import com.grupo52.tech_challenge.domain.*;
 import com.grupo52.tech_challenge.domain.Enums.StatusOS;
 import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import lombok.*;
@@ -26,6 +27,7 @@ public class CreateOSRequestDTO {
 
     private String sintomas;
 
+    @NotBlank(message = "tagChave é obrigatória")
     private String tagChave;
 
     @NotEmpty

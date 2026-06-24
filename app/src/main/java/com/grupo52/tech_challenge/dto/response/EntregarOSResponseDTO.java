@@ -17,7 +17,7 @@ import java.util.List;
 @NoArgsConstructor
 @Builder
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class CancelOSResponseDTO {
+public class EntregarOSResponseDTO {
 
     private Long id;
 
@@ -46,8 +46,8 @@ public class CancelOSResponseDTO {
 
     private List<StatusChangeDTO> historico;
 
-    public static CancelOSResponseDTO fromDomain(OrdemDeServico os) {
-        return CancelOSResponseDTO.builder()
+    public static EntregarOSResponseDTO fromDomain(OrdemDeServico os) {
+        return EntregarOSResponseDTO.builder()
                 .id(os.getId())
                 .status(os.getStatus())
                 .clienteId(os.getCliente().getId())

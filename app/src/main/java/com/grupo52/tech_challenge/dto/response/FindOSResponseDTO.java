@@ -47,7 +47,6 @@ public class FindOSResponseDTO {
 
     private BigDecimal precoTotal;
 
-    private BigDecimal precoTotalAprovado;
 
     private BigDecimal precoServicosDesejados;
 
@@ -81,7 +80,6 @@ public class FindOSResponseDTO {
                 .tagChave(os.getTagChave())
                 .criadaEm(os.getCriadaEm())
                 .precoTotal(scale(os.getPrecoTotal()))
-                .precoTotalAprovado(scale(os.getPrecoTotalAprovado()))
                 .precoServicosDesejados(scale(os.getPrecoServicosDesejados()))
                 .precoServicosNecessarios(scale(os.getPrecoServicosNecessarios()))
                 .precoServicosAdicionais(scale(os.getPrecoServicosAdicionais()))

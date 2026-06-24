@@ -58,13 +58,11 @@ public class OrdemDeServicoDatabase {
     private String sintomas;
 
     @Setter
+    @Column(unique = true)
     private String tagChave;
 
     @Setter
     private BigDecimal precoTotal;
-
-    @Setter
-    private BigDecimal precoTotalAprovado;
 
     @Setter
     private BigDecimal precoServicosDesejados;
@@ -118,7 +116,6 @@ public class OrdemDeServicoDatabase {
                 .sintomas(os.getSintomas())
                 .tagChave(os.getTagChave())
                 .precoTotal(os.getPrecoTotal())
-                .precoTotalAprovado(os.getPrecoTotalAprovado())
                 .precoServicosDesejados(os.getPrecoServicosDesejados())
                 .precoServicosNecessarios(os.getPrecoServicosNecessarios())
                 .precoServicosAdicionais(os.getPrecoServicosAdicionais())
@@ -165,7 +162,6 @@ public class OrdemDeServicoDatabase {
                 .tagChave(this.tagChave)
                 .criadaEm(this.createdAt)
                 .precoTotal(this.precoTotal)
-                .precoTotalAprovado(this.precoTotalAprovado)
                 .precoServicosDesejados(this.precoServicosDesejados)
                 .precoServicosNecessarios(this.precoServicosNecessarios)
                 .precoServicosAdicionais(this.precoServicosAdicionais)
