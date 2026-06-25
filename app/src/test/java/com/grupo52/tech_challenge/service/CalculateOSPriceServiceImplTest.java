@@ -110,6 +110,139 @@ public class CalculateOSPriceServiceImplTest {
     }
 
     @Test
+    public void calculateServicosDesejadosPicksFirstPecaWithSufficientStock() throws GatewayException, ServiceException {
+        Long servicoId = 10L;
+        Veiculo veiculo = veiculoComModelo();
+        ServicoOS servicoOS = ServicoOS.builder().servico(Servico.builder().id(servicoId).build()).build();
+
+        OrdemDeServico os = OrdemDeServico.builder()
+                .id(1L)
+                .veiculo(veiculo)
+                .servicosDesejados(new ArrayList<>(List.of(servicoOS)))
+                .build();
+
+        Servico servico = servicoComPecaEInsumo(servicoId);
+
+        Peca pecaSemEstoque = Peca.builder()
+                .id(101L)
+                .nome("Pastilha sem estoque")
+                .preco(new BigDecimal("10.00"))
+                .estoque(1)
+                .estoqueReservado(1)
+                .build();
+
+        Peca pecaComEstoque = Peca.builder()
+                .id(100L)
+                .nome("Pastilha de freio dianteira")
+                .preco(new BigDecimal("10.00"))
+                .estoque(10)
+                .estoqueReservado(0)
+                .build();
+
+        AplicacaoProduto aplicacao = AplicacaoProduto.builder()
+                .modelo(veiculo.getModelo())
+                .quantidade(3)
+                .build();
+
+        Insumo insumo = Insumo.builder()
+                .id(200L)
+                .nome("Fluido de freio DOT 4")
+                .preco(new BigDecimal("5.00"))
+                .estoque(10)
+                .estoqueReservado(0)
+                .aplicacoes(List.of(aplicacao))
+                .build();
+
+        when(findServicoGateway.execute(servicoId)).thenReturn(servico);
+        when(findPecaByVeiculoGateway.execute(TipoPeca.PASTILHA_FREIO, veiculo)).thenReturn(List.of(pecaSemEstoque, pecaComEstoque));
+        when(findInsumoByVeiculoGateway.execute(TipoInsumo.FLUIDO_FREIO, veiculo)).thenReturn(List.of(insumo));
+        when(updateOSGateway.execute(any(OrdemDeServico.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        OrdemDeServico result = calculateOSPriceService.calculateServicosDesejados(os);
+
+        assertEquals(100L, servicoOS.getPecas().getFirst().getPeca().getId());
+    }
+
+    @Test
+    public void calculateServicosDesejadosThrowsWhenNoPecaHasSufficientStock() throws GatewayException {
+        Long servicoId = 10L;
+        Veiculo veiculo = veiculoComModelo();
+        ServicoOS servicoOS = ServicoOS.builder().servico(Servico.builder().id(servicoId).build()).build();
+
+        OrdemDeServico os = OrdemDeServico.builder()
+                .id(1L)
+                .veiculo(veiculo)
+                .servicosDesejados(new ArrayList<>(List.of(servicoOS)))
+                .build();
+
+        Servico servico = servicoComPecaEInsumo(servicoId);
+
+        Peca pecaSemEstoque = Peca.builder()
+                .id(100L)
+                .nome("Pastilha de freio")
+                .preco(new BigDecimal("10.00"))
+                .estoque(1)
+                .estoqueReservado(1)
+                .build();
+
+        when(findServicoGateway.execute(servicoId)).thenReturn(servico);
+        when(findPecaByVeiculoGateway.execute(TipoPeca.PASTILHA_FREIO, veiculo)).thenReturn(List.of(pecaSemEstoque));
+
+        ServiceException ex = assertThrows(ServiceException.class, () ->
+                calculateOSPriceService.calculateServicosDesejados(os)
+        );
+
+        assertEquals(422, ex.getStatus());
+    }
+
+    @Test
+    public void calculateServicosDesejadosThrowsWhenNoInsumoHasSufficientStock() throws GatewayException {
+        Long servicoId = 10L;
+        Veiculo veiculo = veiculoComModelo();
+        ServicoOS servicoOS = ServicoOS.builder().servico(Servico.builder().id(servicoId).build()).build();
+
+        OrdemDeServico os = OrdemDeServico.builder()
+                .id(1L)
+                .veiculo(veiculo)
+                .servicosDesejados(new ArrayList<>(List.of(servicoOS)))
+                .build();
+
+        Servico servico = servicoComPecaEInsumo(servicoId);
+
+        Peca peca = Peca.builder()
+                .id(100L)
+                .nome("Pastilha de freio dianteira")
+                .preco(new BigDecimal("10.00"))
+                .estoque(10)
+                .estoqueReservado(0)
+                .build();
+
+        AplicacaoProduto aplicacao = AplicacaoProduto.builder()
+                .modelo(veiculo.getModelo())
+                .quantidade(3)
+                .build();
+
+        Insumo insumoSemEstoque = Insumo.builder()
+                .id(200L)
+                .nome("Fluido de freio DOT 4")
+                .preco(new BigDecimal("5.00"))
+                .estoque(2)
+                .estoqueReservado(2)
+                .aplicacoes(List.of(aplicacao))
+                .build();
+
+        when(findServicoGateway.execute(servicoId)).thenReturn(servico);
+        when(findPecaByVeiculoGateway.execute(TipoPeca.PASTILHA_FREIO, veiculo)).thenReturn(List.of(peca));
+        when(findInsumoByVeiculoGateway.execute(TipoInsumo.FLUIDO_FREIO, veiculo)).thenReturn(List.of(insumoSemEstoque));
+
+        ServiceException ex = assertThrows(ServiceException.class, () ->
+                calculateOSPriceService.calculateServicosDesejados(os)
+        );
+
+        assertEquals(422, ex.getStatus());
+    }
+
+    @Test
     public void calculateApprovedPriceSuccess() throws GatewayException, ServiceException {
         Peca peca = Peca.builder()
                 .id(100L)
@@ -264,21 +397,14 @@ public class CalculateOSPriceServiceImplTest {
     }
 
     private void stubCatalogo(Long servicoId, Veiculo veiculo) throws GatewayException {
-        Servico servico = Servico.builder()
-                .id(servicoId)
-                .nome("Troca de pastilhas de freio")
-                .horasTecnicas(new BigDecimal("1.0"))
-                .pecas(List.of(Servico.ServicoTipoPeca.builder()
-                        .tipoPeca(TipoPeca.PASTILHA_FREIO)
-                        .quantidade(2)
-                        .build()))
-                .insumos(List.of(TipoInsumo.FLUIDO_FREIO))
-                .build();
+        Servico servico = servicoComPecaEInsumo(servicoId);
 
         Peca peca = Peca.builder()
                 .id(100L)
                 .nome("Pastilha de freio dianteira")
                 .preco(new BigDecimal("10.00"))
+                .estoque(10)
+                .estoqueReservado(0)
                 .build();
 
         AplicacaoProduto aplicacao = AplicacaoProduto.builder()
@@ -290,12 +416,27 @@ public class CalculateOSPriceServiceImplTest {
                 .id(200L)
                 .nome("Fluido de freio DOT 4")
                 .preco(new BigDecimal("5.00"))
+                .estoque(10)
+                .estoqueReservado(0)
                 .aplicacoes(List.of(aplicacao))
                 .build();
 
         when(findServicoGateway.execute(servicoId)).thenReturn(servico);
         when(findPecaByVeiculoGateway.execute(TipoPeca.PASTILHA_FREIO, veiculo)).thenReturn(List.of(peca));
         when(findInsumoByVeiculoGateway.execute(TipoInsumo.FLUIDO_FREIO, veiculo)).thenReturn(List.of(insumo));
+    }
+
+    private Servico servicoComPecaEInsumo(Long servicoId) {
+        return Servico.builder()
+                .id(servicoId)
+                .nome("Troca de pastilhas de freio")
+                .horasTecnicas(new BigDecimal("1.0"))
+                .pecas(List.of(Servico.ServicoTipoPeca.builder()
+                        .tipoPeca(TipoPeca.PASTILHA_FREIO)
+                        .quantidade(2)
+                        .build()))
+                .insumos(List.of(TipoInsumo.FLUIDO_FREIO))
+                .build();
     }
 
     private Veiculo veiculoComModelo() {
