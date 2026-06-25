@@ -37,7 +37,7 @@ public class AddServicosServiceImpl implements AddServicosService {
             OrdemDeServico updatedOS = updateOS(os);
 
             return calculateOSPriceService.calculateServicosAdicionais(calculateOSPriceService.calculateServicosNecessarios(updatedOS));
-        } catch (ValidationException | GatewayException e) {
+        } catch (ValidationException | GatewayException | ServiceException e) {
             throw e;
         } catch (Exception e) {
             throw new ServiceException("Falha inesperada ao adicionar serviços à OS", e);

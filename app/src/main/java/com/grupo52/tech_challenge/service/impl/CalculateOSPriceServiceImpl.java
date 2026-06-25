@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 @Service
 public class CalculateOSPriceServiceImpl implements CalculateOSPriceService {
@@ -48,7 +49,7 @@ public class CalculateOSPriceServiceImpl implements CalculateOSPriceService {
             updateComplexidade(os);
 
             return updateOSGateway.execute(os);
-        } catch (GatewayException e) {
+        } catch (GatewayException | ServiceException e) {
             throw e;
         } catch (Exception e) {
             throw new ServiceException("Falha inesperada calcular serviços desejados: " + e.getClass().getSimpleName() + ": " + e.getMessage(), e);
@@ -68,7 +69,7 @@ public class CalculateOSPriceServiceImpl implements CalculateOSPriceService {
             updateComplexidade(os);
 
             return updateOSGateway.execute(os);
-        } catch (GatewayException e) {
+        } catch (GatewayException | ServiceException e) {
             throw e;
         } catch (Exception e) {
             throw new ServiceException("Falha inesperada calcular serviços necessários" + e.getClass().getSimpleName() + ": " + e.getMessage(), e);
@@ -87,7 +88,7 @@ public class CalculateOSPriceServiceImpl implements CalculateOSPriceService {
             updateComplexidade(os);
 
             return updateOSGateway.execute(os);
-        } catch (GatewayException e) {
+        } catch (GatewayException | ServiceException e) {
             throw e;
         } catch (Exception e) {
             throw new ServiceException("Falha inesperada calcular serviços adicionais" + e.getClass().getSimpleName() + ": " + e.getMessage(), e);
@@ -141,7 +142,7 @@ public class CalculateOSPriceServiceImpl implements CalculateOSPriceService {
         }
     }
 
-    private void calculate(ServicoOS servicoOS, Veiculo veiculo) throws GatewayException {
+    private void calculate(ServicoOS servicoOS, Veiculo veiculo) throws GatewayException, ServiceException {
         BigDecimal precoTotalOS = BigDecimal.ZERO;
 
         Servico servico = findServicoGateway.execute(servicoOS.getServico().getId());
@@ -152,9 +153,16 @@ public class CalculateOSPriceServiceImpl implements CalculateOSPriceService {
         precoTotalOS = precoTotalOS.add(servicoOS.getPrecoHorasTecnicas());
 
         for (Servico.ServicoTipoPeca servicoTipoPeca : servico.getPecas()) {
-            Peca peca = findPecaByVeiculoGateway.execute(servicoTipoPeca.getTipoPeca(), veiculo).getFirst();
-
             Integer quantidade = servicoTipoPeca.getQuantidade();
+
+            List<Peca> pecasDisponiveis = findPecaByVeiculoGateway.execute(servicoTipoPeca.getTipoPeca(), veiculo);
+            Peca peca = pecasDisponiveis.stream()
+                    .filter(p -> (p.getEstoque() - p.getEstoqueReservado()) >= quantidade)
+                    .findFirst()
+                    .orElseThrow(() -> new ServiceException(
+                            "Estoque insuficiente para peça do tipo " + servicoTipoPeca.getTipoPeca()
+                                    + ". Seleção automática entre múltiplos fornecedores está no backlog.", 422));
+
             BigDecimal precoPecas = peca.getPreco().multiply(BigDecimal.valueOf(quantidade));
 
             PecaOS pecaOS = PecaOS.builder()
@@ -168,7 +176,18 @@ public class CalculateOSPriceServiceImpl implements CalculateOSPriceService {
         }
 
         for (TipoInsumo tipoInsumo : servico.getInsumos()) {
-            Insumo insumo = findInsumoByVeiculoGateway.execute(tipoInsumo, veiculo).getFirst();
+            List<Insumo> insumosDisponiveis = findInsumoByVeiculoGateway.execute(tipoInsumo, veiculo);
+            Insumo insumo = insumosDisponiveis.stream()
+                    .filter(i -> {
+                        AplicacaoProduto ap = i.getAplicacoes().stream()
+                                .filter(a -> a.getModelo() != null && veiculo.getModelo().getId().equals(a.getModelo().getId()))
+                                .findFirst().orElse(null);
+                        return ap != null && (i.getEstoque() - i.getEstoqueReservado()) >= ap.getQuantidade();
+                    })
+                    .findFirst()
+                    .orElseThrow(() -> new ServiceException(
+                            "Estoque insuficiente para insumo do tipo " + tipoInsumo
+                                    + ". Seleção automática entre múltiplos fornecedores está no backlog.", 422));
 
             AplicacaoProduto aplicacao = insumo.getAplicacoes().stream()
                     .filter(ap -> ap.getModelo() != null
