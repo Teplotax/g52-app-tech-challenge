@@ -1,4 +1,23 @@
 services:
+  keycloak:
+    image: quay.io/keycloak/keycloak:24.0
+    container_name: tech-challenge-keycloak
+    restart: unless-stopped
+    command: start-dev --import-realm
+    ports:
+      - "8180:8080"
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+    volumes:
+      - ./keycloak:/opt/keycloak/data/import
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/realms/g52"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+      start_period: 30s
+
   mailpit:
     image: axllent/mailpit:latest
     container_name: tech-challenge-mailpit
@@ -24,6 +43,8 @@ services:
     depends_on:
       mailpit:
         condition: service_healthy
+      keycloak:
+        condition: service_started
     ports:
       - "8080:8080"
     environment:
@@ -37,3 +58,4 @@ services:
       APPROVAL_SECRET: local-dev-secret-change-me
       APP_BASE_URL: http://localhost:8080
       APPROVAL_TTL_MINUTES: 1440
+      KEYCLOAK_JWK_SET_URI: http://keycloak:8080/realms/g52/protocol/openid-connect/certs
