@@ -3,6 +3,7 @@ package com.grupo52.tech_challenge.gateway.impl;
 import com.grupo52.tech_challenge.domain.Enums.StatusOS;
 import com.grupo52.tech_challenge.domain.OrdemDeServico;
 import com.grupo52.tech_challenge.exception.GatewayException;
+import com.grupo52.tech_challenge.exception.ServiceException;
 import com.grupo52.tech_challenge.gateway.CreateOSGateway;
 import com.grupo52.tech_challenge.gateway.database.model.ClienteDatabase;
 import com.grupo52.tech_challenge.gateway.database.model.OrdemDeServicoDatabase;
@@ -25,7 +26,7 @@ public class CreateOSGatewayImpl implements CreateOSGateway {
     private final VeiculoRepository veiculoRepository;
 
     @Override
-    public OrdemDeServico execute(OrdemDeServico os) throws GatewayException {
+    public OrdemDeServico execute(OrdemDeServico os) throws GatewayException, ServiceException {
         try {
             updateOSStatusService.execute(os, StatusOS.RECEBIDA);
 
@@ -44,6 +45,8 @@ public class CreateOSGatewayImpl implements CreateOSGateway {
                 throw new GatewayException("tagChave já cadastrada em outra OS ativa", 409);
             }
             throw new GatewayException("Violação de integridade ao cadastrar OS", 409);
+        } catch (GatewayException | ServiceException e) {
+            throw e;
         } catch (Exception e) {
             throw new GatewayException("Falha ao cadastrar OS, cause: " + e.getClass().getSimpleName(), e);
         }
