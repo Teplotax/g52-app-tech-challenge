@@ -1,7 +1,6 @@
 package com.grupo52.tech_challenge.handler;
 
 import com.grupo52.tech_challenge.exception.GatewayException;
-import com.grupo52.tech_challenge.exception.InvalidStatusChangeException;
 import com.grupo52.tech_challenge.exception.ServiceException;
 import com.grupo52.tech_challenge.exception.ValidationException;
 import jakarta.validation.ConstraintViolationException;
