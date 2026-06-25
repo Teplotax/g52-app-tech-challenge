@@ -7,8 +7,10 @@ import com.grupo52.tech_challenge.validation.annotation.DocumentoByType;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Pattern;
+import com.grupo52.tech_challenge.validation.annotation.SafeDto;
 import lombok.*;
 
+@SafeDto
 @Getter
 @Setter
 @AllArgsConstructor
