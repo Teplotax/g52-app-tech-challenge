@@ -4,12 +4,14 @@ import com.grupo52.tech_challenge.domain.Enums.TipoInsumo;
 import com.grupo52.tech_challenge.domain.Enums.TipoPeca;
 import com.grupo52.tech_challenge.domain.Servico;
 import jakarta.validation.constraints.PositiveOrZero;
+import com.grupo52.tech_challenge.validation.annotation.SafeDto;
 import lombok.*;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
+@SafeDto
 @Getter
 @Setter
 @AllArgsConstructor

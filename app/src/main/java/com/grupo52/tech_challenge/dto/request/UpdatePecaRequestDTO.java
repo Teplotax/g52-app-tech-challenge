@@ -13,7 +13,9 @@ import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.util.List;
+import com.grupo52.tech_challenge.validation.annotation.SafeDto;
 
+@SafeDto
 @Getter
 @Setter
 @AllArgsConstructor

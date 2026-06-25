@@ -5,11 +5,13 @@ import com.grupo52.tech_challenge.domain.Servico;
 import com.grupo52.tech_challenge.domain.ServicoOS;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
+import com.grupo52.tech_challenge.validation.annotation.SafeDto;
 import lombok.*;
 
 import java.util.ArrayList;
 import java.util.List;
 
+@SafeDto
 @Getter
 @Setter
 @AllArgsConstructor

@@ -6,7 +6,9 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import com.grupo52.tech_challenge.validation.annotation.SafeDto;
 
+@SafeDto
 @Getter
 @Setter
 @AllArgsConstructor
