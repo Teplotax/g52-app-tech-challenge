@@ -23,7 +23,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-public class CalculateOSPriceServiceImplTest {
+class CalculateOSPriceServiceImplTest {
 
     @Mock
     private UpdateOSGateway updateOSGateway;

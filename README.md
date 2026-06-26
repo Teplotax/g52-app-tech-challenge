@@ -48,12 +48,12 @@ Para e remove os containers (equivalente a `docker compose down`):
 
 ## Serviços disponíveis após subir a aplicação
 
-| Serviço | URL | Descrição |
-|---|---|---|
-| MailPit | http://localhost:8025 | Visualização dos e-mails enviados pela aplicação (ex.: aprovações de ordem de serviço) |
-| H2 Console | http://localhost:8080/h2-console | Console do banco em memória (JDBC URL: `jdbc:h2:mem:testdb`, usuário `sa`, sem senha) |
-| Keycloak | http://localhost:8180 | Servidor de autenticação (realm `g52`, usuário admin: `admin` / `admin`) |
-| API | http://localhost:8080 | Aplicação Spring Boot |
+| Serviço | URL                              | Descrição |
+|---|----------------------------------|---|
+| MailPit | http://localhost:8025            | Visualização dos e-mails enviados pela aplicação (ex.: aprovações de ordem de serviço) |
+| H2 Console | http://localhost:8081/h2-console | Console do banco em memória (JDBC URL: `jdbc:h2:mem:testdb`, usuário `sa`, sem senha) |
+| Keycloak | http://localhost:8180            | Servidor de autenticação (realm `g52`, usuário admin: `admin` / `admin`) |
+| API | http://localhost:8081            | Aplicação Spring Boot |
 
 
 ## Stack e arquitetura

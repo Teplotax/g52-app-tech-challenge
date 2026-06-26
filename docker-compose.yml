@@ -46,7 +46,7 @@ services:
       keycloak:
         condition: service_started
     ports:
-      - "8080:8080"
+      - "8081:8081"
     environment:
       SPRING_PROFILES_ACTIVE: docker
       MAIL_HOST: mailpit
@@ -56,6 +56,6 @@ services:
       MAIL_SMTP_AUTH: "false"
       MAIL_SMTP_STARTTLS: "false"
       APPROVAL_SECRET: local-dev-secret-change-me
-      APP_BASE_URL: http://localhost:8080
+      APP_BASE_URL: http://localhost:8081
       APPROVAL_TTL_MINUTES: 1440
       KEYCLOAK_JWK_SET_URI: http://keycloak:8080/realms/g52/protocol/openid-connect/certs
