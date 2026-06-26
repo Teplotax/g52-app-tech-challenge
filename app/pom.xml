@@ -6,7 +6,7 @@
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
 		<version>4.0.6</version>
-		<relativePath/>
+		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.grupo52</groupId>
 	<artifactId>tech-challenge</artifactId>
@@ -29,35 +29,6 @@
 	<properties>
 		<java.version>21</java.version>
 		<spring-cloud.version>2025.1.1</spring-cloud.version>
-		<sonar.projectKey>${env.SONAR_PROJECT_KEY}</sonar.projectKey>
-		<sonar.host.url>${env.SONAR_HOST_URL}</sonar.host.url>
-		<sonar.coverage.jacoco.xmlReportPaths>${project.build.directory}/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
-		<sonar.coverage.exclusions>
-			**/domain/**,
-			**/gateway/**,
-			**/controller/**,
-			**/dto/**,
-			**/config/**,
-			**/exception/**,
-			**/*Application*,
-			**/*Request*,
-			**/*Response*,
-			**/*Entity*,
-			**/*Fixture*
-		</sonar.coverage.exclusions>
-		<sonar.exclusions>
-			**/domain/**,
-			**/gateway/**,
-			**/controller/**,
-			**/dto/**,
-			**/config/**,
-			**/exception/**,
-			**/*Application*,
-			**/*Request*,
-			**/*Response*,
-			**/*Entity*,
-			**/*Fixture*
-		</sonar.exclusions>
 	</properties>
 	<dependencies>
 		<dependency>
@@ -84,6 +55,10 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-web</artifactId>
 		</dependency>
+		<!--		<dependency>-->
+		<!--			<groupId>org.springframework.cloud</groupId>-->
+		<!--			<artifactId>spring-cloud-starter-openfeign</artifactId>-->
+		<!--		</dependency>-->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-devtools</artifactId>
@@ -215,42 +190,7 @@
 				<artifactId>maven-surefire-plugin</artifactId>
 				<configuration>
 					<!--suppress UnresolvedMavenProperty -->
-					<argLine>@{argLine} -javaagent:${org.mockito:mockito-core:jar}</argLine>
-				</configuration>
-			</plugin>
-			<plugin>
-				<groupId>org.jacoco</groupId>
-				<artifactId>jacoco-maven-plugin</artifactId>
-				<version>0.8.12</version>
-				<executions>
-					<execution>
-						<id>prepare-agent</id>
-						<goals>
-							<goal>prepare-agent</goal>
-						</goals>
-					</execution>
-					<execution>
-						<id>report</id>
-						<phase>verify</phase>
-						<goals>
-							<goal>report</goal>
-						</goals>
-					</execution>
-				</executions>
-				<configuration>
-					<excludes>
-						<exclude>**/domain/**</exclude>
-						<exclude>**/gateway/**</exclude>
-						<exclude>**/controller/**</exclude>
-						<exclude>**/dto/**</exclude>
-						<exclude>**/config/**</exclude>
-						<exclude>**/exception/**</exclude>
-						<exclude>**/*Application*</exclude>
-						<exclude>**/*Request*</exclude>
-						<exclude>**/*Response*</exclude>
-						<exclude>**/*Entity*</exclude>
-						<exclude>**/*Fixture*</exclude>
-					</excludes>
+					<argLine>-javaagent:${org.mockito:mockito-core:jar}</argLine>
 				</configuration>
 			</plugin>
 		</plugins>
