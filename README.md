@@ -92,11 +92,23 @@ Principais variáveis de ambiente usadas no `docker-compose.yml`: `MAIL_HOST`, `
 
 Este repositório contém apenas o **ECS Service** (a aplicação em si). A solução completa do projeto **G52 | Tech Challenge** está distribuída nos seguintes repositórios:
 
-| Recurso | Tipo      | Link Repositório |
-|---|-----------|---|
-| ECS Cluster | Infra     | https://github.com/Teplotax/g52-infra-ecs-tech-challenge |
-| Load Balancer | Infra     | https://github.com/Teplotax/g52-infra-lb-tech-challenge |
-| ECS Service | App       | https://github.com/Teplotax/g52-app-tech-challenge |
-| API Gateway | Infra     | https://github.com/Teplotax/g52-infra-gateway-tech-challenge |
-| API Gateway | Resources | https://github.com/Teplotax/g52-api-tech-challenge-v1-ext |
-| API Gateway | Doc       | https://github.com/Teplotax/doc-api-tech-challenge-v1 |
+| Recurso | Tipo     | Link Repositório |
+|---|----------|---|
+| ECS Cluster | Infra    | https://github.com/Teplotax/g52-infra-ecs-tech-challenge |
+| Load Balancer | Infra    | https://github.com/Teplotax/g52-infra-lb-tech-challenge |
+| ECS Service | App      | https://github.com/Teplotax/g52-app-tech-challenge |
+| API Gateway | Infra    | https://github.com/Teplotax/g52-infra-gateway-tech-challenge |
+| API Gateway | Contract | https://github.com/Teplotax/g52-api-tech-challenge-v1-ext |
+| API Gateway | Doc      | https://github.com/Teplotax/doc-api-tech-challenge-v1 |
+
+## Workflows (GitHub Actions)
+
+Aqui vou precisar me justificar pelo exagero 😅 — IaC está no meu plano de desenvolvimento pessoal e não quis perder a chance de exercitar o skill de subir e destruir infra de forma automatizada. Então montei um "esqueleto" de pipeline pra orquestrar build, deploy e PRs automáticas entre as branches. Não está otimizado, tem bastante o que melhorar, mas como ficou fora do escopo dos entregáveis assumi que poderia ter alguns débitos técnicos por aqui.
+
+O fluxo de branches é `feature → develop → release → main`, e cada etapa tem seu próprio workflow:
+
+- **1 - Build & PR** (`feature/**` → `develop`): ao dar push numa branch `feature/*`, abre automaticamente um PR pra `develop` (se ainda não existir um aberto).
+- **2 - Build and Deploy** (`develop`): o mais "pesado". Lê configs do `.pipes.yml` e do `terraform.tfvars`, builda o JAR, builda e sobe a imagem Docker pra ECR, roda o Terraform (plan em PR, apply ou destroy em push direto), força um novo deploy no ECS e, no final, cria/reaproveita uma branch `release/vX.Y.Z` com PR de `develop` pra ela.
+- **3 - Promote & Deploy** (`release/**` → `main`): quando o PR de `develop` pra `release/*` é mergeado, abre automaticamente o PR de `release/*` pra `main`.
+
+Autenticação com a AWS é via OIDC (sem credenciais fixas), e o state do Terraform fica num bucket S3.
