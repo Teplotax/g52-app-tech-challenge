@@ -47,8 +47,7 @@ public class EstoqueControllerTest {
     }
 
     @Test
-    @WithMockUser
-    public void findByEanSucesso() throws Exception {
+    void findByEanSucesso() throws Exception {
         when(findProdutoByEanGateway.execute(any(String.class))).thenReturn(pecaFixture());
 
         mvc.perform(MockMvcRequestBuilders.get("/produtos/ean/{ean}", "7891234560001"))
@@ -59,8 +58,7 @@ public class EstoqueControllerTest {
     }
 
     @Test
-    @WithMockUser
-    public void entradaEstoqueSucesso() throws Exception {
+    void entradaEstoqueSucesso() throws Exception {
         when(movimentarEstoqueGateway.entrada(any(), any())).thenReturn(List.of(pecaFixture()));
 
         mvc.perform(MockMvcRequestBuilders.post("/produtos/estoque/entrada")
@@ -73,8 +71,7 @@ public class EstoqueControllerTest {
     }
 
     @Test
-    @WithMockUser
-    public void saidaEstoqueSucesso() throws Exception {
+    void saidaEstoqueSucesso() throws Exception {
         when(movimentarEstoqueGateway.saida(any(), any())).thenReturn(List.of(pecaFixture()));
 
         mvc.perform(MockMvcRequestBuilders.post("/produtos/estoque/saida")

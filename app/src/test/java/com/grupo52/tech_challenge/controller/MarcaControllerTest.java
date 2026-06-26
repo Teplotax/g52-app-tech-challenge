@@ -36,8 +36,7 @@ public class MarcaControllerTest {
     private ListModelosByMarcaGateway listModelosByMarcaGateway;
 
     @Test
-    @WithMockUser
-    public void listMarcasSucesso() throws Exception {
+    void listMarcasSucesso() throws Exception {
         when(listMarcasGateway.execute()).thenReturn(List.of(
                 Marca.builder().id(1L).nome("Toyota").build()
         ));
@@ -50,8 +49,7 @@ public class MarcaControllerTest {
     }
 
     @Test
-    @WithMockUser
-    public void listModelosByMarcaSucesso() throws Exception {
+    void listModelosByMarcaSucesso() throws Exception {
         when(listModelosByMarcaGateway.execute(any(Long.class))).thenReturn(List.of(
                 Modelo.builder().id(1L).nome("Corolla").build()
         ));

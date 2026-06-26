@@ -58,8 +58,7 @@ public class ServicoControllerTest {
     }
 
     @Test
-    @WithMockUser
-    public void createServicoSucesso() throws Exception {
+    void createServicoSucesso() throws Exception {
         when(createServicoGateway.execute(any(Servico.class))).thenReturn(servicoFixture());
 
         mvc.perform(MockMvcRequestBuilders.post("/servicos")
@@ -72,8 +71,7 @@ public class ServicoControllerTest {
     }
 
     @Test
-    @WithMockUser
-    public void listServicosSucesso() throws Exception {
+    void listServicosSucesso() throws Exception {
         when(listServicosGateway.execute(any(Pageable.class)))
                 .thenReturn(new PageImpl<>(List.of(servicoFixture())));
 
@@ -85,8 +83,7 @@ public class ServicoControllerTest {
     }
 
     @Test
-    @WithMockUser
-    public void findServicoSucesso() throws Exception {
+    void findServicoSucesso() throws Exception {
         when(findServicoGateway.execute(any(Long.class))).thenReturn(servicoFixture());
 
         mvc.perform(MockMvcRequestBuilders.get("/servicos/{servicoId}", 1L))
@@ -97,8 +94,7 @@ public class ServicoControllerTest {
     }
 
     @Test
-    @WithMockUser
-    public void updateServicoSucesso() throws Exception {
+    void updateServicoSucesso() throws Exception {
         when(updateServicoGateway.execute(any(Servico.class))).thenReturn(servicoFixture());
 
         mvc.perform(MockMvcRequestBuilders.put("/servicos/{servicoId}", 1L)
@@ -111,8 +107,7 @@ public class ServicoControllerTest {
     }
 
     @Test
-    @WithMockUser
-    public void deleteServicoSucesso() throws Exception {
+    void deleteServicoSucesso() throws Exception {
         doNothing().when(deleteServicoGateway).execute(any(Long.class));
 
         mvc.perform(MockMvcRequestBuilders.delete("/servicos/{servicoId}", 1L))

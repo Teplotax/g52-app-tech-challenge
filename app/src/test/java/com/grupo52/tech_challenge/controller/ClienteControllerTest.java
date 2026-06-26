@@ -103,8 +103,7 @@ public class ClienteControllerTest {
     }
 
     @Test
-    @WithMockUser
-    public void createClienteSucesso() throws Exception {
+    void createClienteSucesso() throws Exception {
         when(createClienteGateway.execute(any(Cliente.class))).thenReturn(clienteFixture());
 
         mvc.perform(MockMvcRequestBuilders.post("/clientes")
@@ -117,8 +116,7 @@ public class ClienteControllerTest {
     }
 
     @Test
-    @WithMockUser
-    public void findClienteSucesso() throws Exception {
+    void findClienteSucesso() throws Exception {
         when(findClienteGateway.execute(any(Long.class))).thenReturn(clienteFixture());
 
         mvc.perform(MockMvcRequestBuilders.get("/clientes/{clienteId}", 1L))
@@ -129,8 +127,7 @@ public class ClienteControllerTest {
     }
 
     @Test
-    @WithMockUser
-    public void findClienteByDocumentoSucesso() throws Exception {
+    void findClienteByDocumentoSucesso() throws Exception {
         when(findClienteByDocumentGateway.execute(any(String.class))).thenReturn(clienteFixture());
 
         mvc.perform(MockMvcRequestBuilders.get("/clientes/documento/{documento}", VALID_CPF))
@@ -141,8 +138,7 @@ public class ClienteControllerTest {
     }
 
     @Test
-    @WithMockUser
-    public void listClientesSucesso() throws Exception {
+    void listClientesSucesso() throws Exception {
         when(listClientesGateway.execute(any(Pageable.class)))
                 .thenReturn(new PageImpl<>(List.of(clienteFixture())));
 
@@ -154,8 +150,7 @@ public class ClienteControllerTest {
     }
 
     @Test
-    @WithMockUser
-    public void listVeiculosByClienteSucesso() throws Exception {
+    void listVeiculosByClienteSucesso() throws Exception {
         when(listVeiculosByClienteGateway.execute(any(Long.class)))
                 .thenReturn(List.of(veiculoFixture()));
 
@@ -167,8 +162,7 @@ public class ClienteControllerTest {
     }
 
     @Test
-    @WithMockUser
-    public void updateClienteSucesso() throws Exception {
+    void updateClienteSucesso() throws Exception {
         when(updateClienteGateway.execute(any(Cliente.class))).thenReturn(clienteFixture());
 
         mvc.perform(MockMvcRequestBuilders.put("/clientes/{clienteId}", 1L)
@@ -181,8 +175,7 @@ public class ClienteControllerTest {
     }
 
     @Test
-    @WithMockUser
-    public void deleteClienteSucesso() throws Exception {
+    void deleteClienteSucesso() throws Exception {
         doNothing().when(deleteClienteGateway).execute(any(Long.class));
 
         mvc.perform(MockMvcRequestBuilders.delete("/clientes/{clienteId}", 1L))

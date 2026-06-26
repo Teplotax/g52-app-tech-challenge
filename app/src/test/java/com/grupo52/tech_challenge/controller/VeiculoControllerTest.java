@@ -62,8 +62,7 @@ public class VeiculoControllerTest {
     }
 
     @Test
-    @WithMockUser
-    public void createVeiculoSucesso() throws Exception {
+    void createVeiculoSucesso() throws Exception {
         when(createVeiculoGateway.execute(any(Veiculo.class))).thenReturn(veiculoFixture());
 
         mvc.perform(MockMvcRequestBuilders.post("/veiculos")
@@ -76,8 +75,7 @@ public class VeiculoControllerTest {
     }
 
     @Test
-    @WithMockUser
-    public void findVeiculoSucesso() throws Exception {
+    void findVeiculoSucesso() throws Exception {
         when(findVeiculoGateway.execute(any(Long.class))).thenReturn(veiculoFixture());
 
         mvc.perform(MockMvcRequestBuilders.get("/veiculos/{veiculoId}", 1L))
@@ -88,8 +86,7 @@ public class VeiculoControllerTest {
     }
 
     @Test
-    @WithMockUser
-    public void findVeiculoByPlacaSucesso() throws Exception {
+    void findVeiculoByPlacaSucesso() throws Exception {
         when(findVeiculoByPlacaGateway.execute(any(String.class))).thenReturn(veiculoFixture());
 
         mvc.perform(MockMvcRequestBuilders.get("/veiculos/placa/{placa}", VALID_PLACA_MERCOSUL))
@@ -100,8 +97,7 @@ public class VeiculoControllerTest {
     }
 
     @Test
-    @WithMockUser
-    public void listVeiculosSucesso() throws Exception {
+    void listVeiculosSucesso() throws Exception {
         when(listVeiculosGateway.execute(any(Pageable.class)))
                 .thenReturn(new PageImpl<>(List.of(veiculoFixture())));
 
@@ -113,8 +109,7 @@ public class VeiculoControllerTest {
     }
 
     @Test
-    @WithMockUser
-    public void updateVeiculoSucesso() throws Exception {
+    void updateVeiculoSucesso() throws Exception {
         when(updateVeiculoGateway.execute(any(Veiculo.class))).thenReturn(veiculoFixture());
 
         mvc.perform(MockMvcRequestBuilders.put("/veiculos/{veiculoId}", 1L)
@@ -127,8 +122,7 @@ public class VeiculoControllerTest {
     }
 
     @Test
-    @WithMockUser
-    public void deleteVeiculoSucesso() throws Exception {
+    void deleteVeiculoSucesso() throws Exception {
         doNothing().when(deleteVeiculoGateway).execute(any(Long.class));
 
         mvc.perform(MockMvcRequestBuilders.delete("/veiculos/{veiculoId}", 1L))

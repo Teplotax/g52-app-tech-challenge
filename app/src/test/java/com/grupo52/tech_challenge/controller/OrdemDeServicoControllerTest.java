@@ -68,8 +68,7 @@ public class OrdemDeServicoControllerTest {
     private EntregarOSService entregarOSService;
 
     @Test
-    @WithMockUser
-    public void diagnosticarSucesso() throws Exception {
+    void diagnosticarSucesso() throws Exception {
         Long osId = 1L;
 
         when(evaluateOSService.execute(any(Long.class))).thenReturn(OrdemDeServicoFixture.emDiagnostico(osId));
@@ -83,8 +82,7 @@ public class OrdemDeServicoControllerTest {
     }
 
     @Test
-    @WithMockUser
-    public void solicitarAprovacaoSucesso() throws Exception {
+    void solicitarAprovacaoSucesso() throws Exception {
         Long osId = 1L;
 
         when(requestApprovalService.execute(any(Long.class))).thenReturn(OrdemDeServicoFixture.aguardandoAprovacao(osId));
@@ -98,8 +96,7 @@ public class OrdemDeServicoControllerTest {
     }
 
     @Test
-    @WithMockUser
-    public void aprovarTodosSucesso() throws Exception {
+    void aprovarTodosSucesso() throws Exception {
         Long osId = 1L;
 
         when(approveOSService.approveAll(any(Long.class))).thenReturn(OrdemDeServicoFixture.aguardandoAprovacao(osId));
@@ -113,8 +110,7 @@ public class OrdemDeServicoControllerTest {
     }
 
     @Test
-    @WithMockUser
-    public void aprovarParcialSucesso() throws Exception {
+    void aprovarParcialSucesso() throws Exception {
         Long osId = 1L;
 
         when(approveOSService.parcialApprove(any(Long.class), anyList())).thenReturn(OrdemDeServicoFixture.aguardandoAprovacao(osId));
@@ -130,8 +126,7 @@ public class OrdemDeServicoControllerTest {
     }
 
     @Test
-    @WithMockUser
-    public void executarSucesso() throws Exception {
+    void executarSucesso() throws Exception {
         Long osId = 1L;
 
         when(executeOSService.execute(any(Long.class))).thenReturn(OrdemDeServicoFixture.aguardandoAprovacao(osId));
@@ -145,8 +140,7 @@ public class OrdemDeServicoControllerTest {
     }
 
     @Test
-    @WithMockUser
-    public void finalizarSucesso() throws Exception {
+    void finalizarSucesso() throws Exception {
         Long osId = 1L;
 
         when(finalizeOSService.execute(any(Long.class))).thenReturn(OrdemDeServicoFixture.finalizada(osId));
@@ -160,8 +154,7 @@ public class OrdemDeServicoControllerTest {
     }
 
     @Test
-    @WithMockUser
-    public void cancelarSucesso() throws Exception {
+    void cancelarSucesso() throws Exception {
         Long osId = 1L;
 
         when(cancelOSService.execute(any(Long.class))).thenReturn(OrdemDeServicoFixture.cancelada(osId));
@@ -175,8 +168,7 @@ public class OrdemDeServicoControllerTest {
     }
 
     @Test
-    @WithMockUser
-    public void entregarSucesso() throws Exception {
+    void entregarSucesso() throws Exception {
         Long osId = 1L;
 
         when(entregarOSService.execute(any(Long.class))).thenReturn(OrdemDeServicoFixture.entregue(osId));
