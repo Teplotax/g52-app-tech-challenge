@@ -1,22 +1,25 @@
 package com.grupo52.tech_challenge.controller;
 
+import com.grupo52.tech_challenge.domain.Enums.StatusOS;
 import com.grupo52.tech_challenge.fixture.OrdemDeServicoFixture;
 import com.grupo52.tech_challenge.gateway.CreateOSGateway;
 import com.grupo52.tech_challenge.gateway.FindOSGateway;
 import com.grupo52.tech_challenge.gateway.ListOSGateway;
 import com.grupo52.tech_challenge.service.*;
-import com.grupo52.tech_challenge.service.EntregarOSService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.security.oauth2.server.resource.autoconfigure.servlet.OAuth2ResourceServerAutoConfiguration;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
-import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+
+import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
@@ -26,7 +29,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ExtendWith(SpringExtension.class)
 @WebMvcTest(controllers = OrdemDeServicoController.class,
         excludeAutoConfiguration = OAuth2ResourceServerAutoConfiguration.class)
-public class OrdemDeServicoControllerTest {
+class OrdemDeServicoControllerTest {
 
     @Autowired
     private MockMvc mvc;
@@ -68,14 +71,24 @@ public class OrdemDeServicoControllerTest {
     private EntregarOSService entregarOSService;
 
     @Test
-    @WithMockUser
-    public void diagnosticarSucesso() throws Exception {
-        Long osId = 1L;
+    void criarOSSucesso() throws Exception {
+        when(createOSGateway.execute(any())).thenReturn(OrdemDeServicoFixture.recebida(1L));
+        when(calculateOSPriceService.calculateServicosDesejados(any())).thenReturn(OrdemDeServicoFixture.recebida(1L));
 
-        when(evaluateOSService.execute(any(Long.class))).thenReturn(OrdemDeServicoFixture.emDiagnostico(osId));
+        mvc.perform(MockMvcRequestBuilders.post("/ordensDeServico")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"clienteId\":1,\"veiculoId\":1,\"tagChave\":\"001\",\"servicosDesejados\":[1]}"))
+                .andExpect(status().isCreated());
 
-        mvc.perform(MockMvcRequestBuilders.post("/ordensDeServico/{osId}/diagnosticar", osId)
-                        .header("x-correlationid", "9491b617-43e6-4667-9710-a6b51516744a"))
+        verify(createOSGateway, times(1)).execute(any());
+        verify(calculateOSPriceService, times(1)).calculateServicosDesejados(any());
+    }
+
+    @Test
+    void diagnosticarSucesso() throws Exception {
+        when(evaluateOSService.execute(any(Long.class))).thenReturn(OrdemDeServicoFixture.emDiagnostico(1L));
+
+        mvc.perform(MockMvcRequestBuilders.post("/ordensDeServico/{osId}/diagnosticar", 1L))
                 .andExpect(status().isOk());
 
         verify(evaluateOSService, times(1)).execute(any(Long.class));
@@ -83,14 +96,23 @@ public class OrdemDeServicoControllerTest {
     }
 
     @Test
-    @WithMockUser
-    public void solicitarAprovacaoSucesso() throws Exception {
-        Long osId = 1L;
+    void adicionarServicosSucesso() throws Exception {
+        when(addServicosOSService.execute(any())).thenReturn(OrdemDeServicoFixture.emDiagnostico(1L));
 
-        when(requestApprovalService.execute(any(Long.class))).thenReturn(OrdemDeServicoFixture.aguardandoAprovacao(osId));
+        mvc.perform(MockMvcRequestBuilders.post("/ordensDeServico/{osId}/adicionarServicos", 1L)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"servicosNecessarios\":[2],\"justificativaNecessarios\":\"Desgaste identificado\"}"))
+                .andExpect(status().isOk());
 
-        mvc.perform(MockMvcRequestBuilders.post("/ordensDeServico/{osId}/solicitarAprovacao", osId)
-                        .header("x-correlationid", "9491b617-43e6-4667-9710-a6b51516744a"))
+        verify(addServicosOSService, times(1)).execute(any());
+        verifyNoMoreInteractions(addServicosOSService);
+    }
+
+    @Test
+    void solicitarAprovacaoSucesso() throws Exception {
+        when(requestApprovalService.execute(any(Long.class))).thenReturn(OrdemDeServicoFixture.aguardandoAprovacao(1L));
+
+        mvc.perform(MockMvcRequestBuilders.post("/ordensDeServico/{osId}/solicitarAprovacao", 1L))
                 .andExpect(status().isOk());
 
         verify(requestApprovalService, times(1)).execute(any(Long.class));
@@ -98,14 +120,10 @@ public class OrdemDeServicoControllerTest {
     }
 
     @Test
-    @WithMockUser
-    public void aprovarTodosSucesso() throws Exception {
-        Long osId = 1L;
+    void aprovarTodosSucesso() throws Exception {
+        when(approveOSService.approveAll(any(Long.class))).thenReturn(OrdemDeServicoFixture.aguardandoAprovacao(1L));
 
-        when(approveOSService.approveAll(any(Long.class))).thenReturn(OrdemDeServicoFixture.aguardandoAprovacao(osId));
-
-        mvc.perform(MockMvcRequestBuilders.post("/ordensDeServico/{osId}/aprovar", osId)
-                        .header("x-correlationid", "9491b617-43e6-4667-9710-a6b51516744a"))
+        mvc.perform(MockMvcRequestBuilders.post("/ordensDeServico/{osId}/aprovar", 1L))
                 .andExpect(status().isOk());
 
         verify(approveOSService, times(1)).approveAll(any(Long.class));
@@ -113,14 +131,23 @@ public class OrdemDeServicoControllerTest {
     }
 
     @Test
-    @WithMockUser
-    public void aprovarParcialSucesso() throws Exception {
-        Long osId = 1L;
+    void aprovarComListaVaziaCaiNoApproveAll() throws Exception {
+        when(approveOSService.approveAll(any(Long.class))).thenReturn(OrdemDeServicoFixture.aguardandoAprovacao(1L));
 
-        when(approveOSService.parcialApprove(any(Long.class), anyList())).thenReturn(OrdemDeServicoFixture.aguardandoAprovacao(osId));
+        mvc.perform(MockMvcRequestBuilders.post("/ordensDeServico/{osId}/aprovar", 1L)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"servicosAprovados\":[]}"))
+                .andExpect(status().isOk());
 
-        mvc.perform(MockMvcRequestBuilders.post("/ordensDeServico/{osId}/aprovar", osId)
-                        .header("x-correlationid", "9491b617-43e6-4667-9710-a6b51516744a")
+        verify(approveOSService, times(1)).approveAll(any(Long.class));
+        verifyNoMoreInteractions(approveOSService);
+    }
+
+    @Test
+    void aprovarParcialSucesso() throws Exception {
+        when(approveOSService.parcialApprove(any(Long.class), anyList())).thenReturn(OrdemDeServicoFixture.aguardandoAprovacao(1L));
+
+        mvc.perform(MockMvcRequestBuilders.post("/ordensDeServico/{osId}/aprovar", 1L)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"servicosAprovados\":[1,3]}"))
                 .andExpect(status().isOk());
@@ -130,14 +157,10 @@ public class OrdemDeServicoControllerTest {
     }
 
     @Test
-    @WithMockUser
-    public void executarSucesso() throws Exception {
-        Long osId = 1L;
+    void executarSucesso() throws Exception {
+        when(executeOSService.execute(any(Long.class))).thenReturn(OrdemDeServicoFixture.aguardandoAprovacao(1L));
 
-        when(executeOSService.execute(any(Long.class))).thenReturn(OrdemDeServicoFixture.aguardandoAprovacao(osId));
-
-        mvc.perform(MockMvcRequestBuilders.post("/ordensDeServico/{osId}/executar", osId)
-                        .header("x-correlationid", "9491b617-43e6-4667-9710-a6b51516744a"))
+        mvc.perform(MockMvcRequestBuilders.post("/ordensDeServico/{osId}/executar", 1L))
                 .andExpect(status().isOk());
 
         verify(executeOSService, times(1)).execute(any(Long.class));
@@ -145,14 +168,10 @@ public class OrdemDeServicoControllerTest {
     }
 
     @Test
-    @WithMockUser
-    public void finalizarSucesso() throws Exception {
-        Long osId = 1L;
+    void finalizarSucesso() throws Exception {
+        when(finalizeOSService.execute(any(Long.class))).thenReturn(OrdemDeServicoFixture.finalizada(1L));
 
-        when(finalizeOSService.execute(any(Long.class))).thenReturn(OrdemDeServicoFixture.finalizada(osId));
-
-        mvc.perform(MockMvcRequestBuilders.post("/ordensDeServico/{osId}/finalizar", osId)
-                        .header("x-correlationid", "9491b617-43e6-4667-9710-a6b51516744a"))
+        mvc.perform(MockMvcRequestBuilders.post("/ordensDeServico/{osId}/finalizar", 1L))
                 .andExpect(status().isOk());
 
         verify(finalizeOSService, times(1)).execute(any(Long.class));
@@ -160,14 +179,10 @@ public class OrdemDeServicoControllerTest {
     }
 
     @Test
-    @WithMockUser
-    public void cancelarSucesso() throws Exception {
-        Long osId = 1L;
+    void cancelarSucesso() throws Exception {
+        when(cancelOSService.execute(any(Long.class))).thenReturn(OrdemDeServicoFixture.cancelada(1L));
 
-        when(cancelOSService.execute(any(Long.class))).thenReturn(OrdemDeServicoFixture.cancelada(osId));
-
-        mvc.perform(MockMvcRequestBuilders.post("/ordensDeServico/{osId}/cancelar", osId)
-                        .header("x-correlationid", "9491b617-43e6-4667-9710-a6b51516744a"))
+        mvc.perform(MockMvcRequestBuilders.post("/ordensDeServico/{osId}/cancelar", 1L))
                 .andExpect(status().isOk());
 
         verify(cancelOSService, times(1)).execute(any(Long.class));
@@ -175,17 +190,52 @@ public class OrdemDeServicoControllerTest {
     }
 
     @Test
-    @WithMockUser
-    public void entregarSucesso() throws Exception {
-        Long osId = 1L;
+    void entregarSucesso() throws Exception {
+        when(entregarOSService.execute(any(Long.class))).thenReturn(OrdemDeServicoFixture.entregue(1L));
 
-        when(entregarOSService.execute(any(Long.class))).thenReturn(OrdemDeServicoFixture.entregue(osId));
-
-        mvc.perform(MockMvcRequestBuilders.post("/ordensDeServico/{osId}/entregar", osId)
-                        .header("x-correlationid", "9491b617-43e6-4667-9710-a6b51516744a"))
+        mvc.perform(MockMvcRequestBuilders.post("/ordensDeServico/{osId}/entregar", 1L))
                 .andExpect(status().isOk());
 
         verify(entregarOSService, times(1)).execute(any(Long.class));
         verifyNoMoreInteractions(entregarOSService);
+    }
+
+    @Test
+    void findOSSucesso() throws Exception {
+        when(findOSGateway.execute(any(Long.class))).thenReturn(OrdemDeServicoFixture.emDiagnostico(1L));
+
+        mvc.perform(MockMvcRequestBuilders.get("/ordensDeServico/{osId}", 1L))
+                .andExpect(status().isOk());
+
+        verify(findOSGateway, times(1)).execute(1L);
+        verifyNoMoreInteractions(findOSGateway);
+    }
+
+    @Test
+    void listOSSucesso() throws Exception {
+        when(listOSGateway.execute(any(), any(), any(), any(), any(), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(OrdemDeServicoFixture.emDiagnostico(1L))));
+
+        mvc.perform(MockMvcRequestBuilders.get("/ordensDeServico"))
+                .andExpect(status().isOk());
+
+        verify(listOSGateway, times(1)).execute(any(), any(), any(), any(), any(), any(Pageable.class));
+        verifyNoMoreInteractions(listOSGateway);
+    }
+
+    @Test
+    void listOSComFiltrosSucesso() throws Exception {
+        when(listOSGateway.execute(any(), any(), any(), any(), any(), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(OrdemDeServicoFixture.emDiagnostico(1L))));
+
+        mvc.perform(MockMvcRequestBuilders.get("/ordensDeServico")
+                        .param("placa", "ABC1D23")
+                        .param("status", StatusOS.EM_DIAGNOSTICO.name())
+                        .param("dataInicio", "2024-01-01")
+                        .param("dataFim", "2024-12-31"))
+                .andExpect(status().isOk());
+
+        verify(listOSGateway, times(1)).execute(any(), any(), any(), any(), any(), any(Pageable.class));
+        verifyNoMoreInteractions(listOSGateway);
     }
 }

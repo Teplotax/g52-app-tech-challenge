@@ -46,14 +46,9 @@ public class ClienteDatabase {
     @Embedded
     private EnderecoDatabase endereco;
 
-
     @OneToMany(mappedBy = "cliente", cascade = CascadeType.ALL, orphanRemoval = true)
-//    @Builder.Default
+    @Builder.Default
     private List<VeiculoDatabase> veiculos = new ArrayList<>();
-
-//    @OneToMany(mappedBy = "cliente", cascade = CascadeType.ALL, orphanRemoval = true)
-//    @Builder.Default
-//    private List<OrdemDeServicoDatabase> ordensDeServico = new ArrayList<>();
 
     public static ClienteDatabase fromDomain(Cliente cliente) {
         return ClienteDatabase.builder()
