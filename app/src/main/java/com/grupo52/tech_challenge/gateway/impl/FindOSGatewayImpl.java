@@ -8,6 +8,7 @@ import com.grupo52.tech_challenge.gateway.database.model.OrdemDeServicoDatabase;
 import com.grupo52.tech_challenge.gateway.database.repository.OrdemDeServicoRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 
@@ -18,6 +19,7 @@ public class FindOSGatewayImpl implements FindOSGateway {
     private final OrdemDeServicoRepository repository;
 
     @Override
+    @Transactional(readOnly = true)
     public OrdemDeServico execute(Long osId) throws GatewayException {
         try {
             Optional<OrdemDeServicoDatabase> osOptional = repository.findById(osId);
