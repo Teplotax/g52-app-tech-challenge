@@ -5,11 +5,14 @@ import com.grupo52.tech_challenge.gateway.CreateOSGateway;
 import com.grupo52.tech_challenge.gateway.FindOSGateway;
 import com.grupo52.tech_challenge.gateway.ListOSGateway;
 import com.grupo52.tech_challenge.service.*;
+import com.grupo52.tech_challenge.service.EntregarOSService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.security.oauth2.server.resource.autoconfigure.servlet.OAuth2ResourceServerAutoConfiguration;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.servlet.MockMvc;
@@ -21,7 +24,8 @@ import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @ExtendWith(SpringExtension.class)
-@WebMvcTest(controllers = OrdemDeServicoController.class)
+@WebMvcTest(controllers = OrdemDeServicoController.class,
+        excludeAutoConfiguration = OAuth2ResourceServerAutoConfiguration.class)
 public class OrdemDeServicoControllerTest {
 
     @Autowired
@@ -64,6 +68,7 @@ public class OrdemDeServicoControllerTest {
     private EntregarOSService entregarOSService;
 
     @Test
+    @WithMockUser
     public void diagnosticarSucesso() throws Exception {
         Long osId = 1L;
 
@@ -78,6 +83,7 @@ public class OrdemDeServicoControllerTest {
     }
 
     @Test
+    @WithMockUser
     public void solicitarAprovacaoSucesso() throws Exception {
         Long osId = 1L;
 
@@ -92,6 +98,7 @@ public class OrdemDeServicoControllerTest {
     }
 
     @Test
+    @WithMockUser
     public void aprovarTodosSucesso() throws Exception {
         Long osId = 1L;
 
@@ -106,6 +113,7 @@ public class OrdemDeServicoControllerTest {
     }
 
     @Test
+    @WithMockUser
     public void aprovarParcialSucesso() throws Exception {
         Long osId = 1L;
 
@@ -122,6 +130,7 @@ public class OrdemDeServicoControllerTest {
     }
 
     @Test
+    @WithMockUser
     public void executarSucesso() throws Exception {
         Long osId = 1L;
 
@@ -136,6 +145,7 @@ public class OrdemDeServicoControllerTest {
     }
 
     @Test
+    @WithMockUser
     public void finalizarSucesso() throws Exception {
         Long osId = 1L;
 
@@ -150,6 +160,7 @@ public class OrdemDeServicoControllerTest {
     }
 
     @Test
+    @WithMockUser
     public void cancelarSucesso() throws Exception {
         Long osId = 1L;
 
@@ -164,6 +175,7 @@ public class OrdemDeServicoControllerTest {
     }
 
     @Test
+    @WithMockUser
     public void entregarSucesso() throws Exception {
         Long osId = 1L;
 

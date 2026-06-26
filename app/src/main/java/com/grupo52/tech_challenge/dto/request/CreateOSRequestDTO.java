@@ -6,10 +6,12 @@ import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
+import com.grupo52.tech_challenge.validation.annotation.SafeDto;
 import lombok.*;
 
 import java.util.List;
 
+@SafeDto
 @Getter
 @Setter
 @AllArgsConstructor

@@ -15,6 +15,7 @@ import com.grupo52.tech_challenge.service.UpdateOSStatusService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 @Component
 @RequiredArgsConstructor
@@ -26,6 +27,7 @@ public class CreateOSGatewayImpl implements CreateOSGateway {
     private final VeiculoRepository veiculoRepository;
 
     @Override
+    @Transactional
     public OrdemDeServico execute(OrdemDeServico os) throws GatewayException, ServiceException {
         try {
             updateOSStatusService.execute(os, StatusOS.RECEBIDA);
@@ -38,7 +40,7 @@ public class CreateOSGatewayImpl implements CreateOSGateway {
 
             OrdemDeServicoDatabase osDatabase = OrdemDeServicoDatabase.fromDomain(os, cliente, veiculo);
 
-            return ordemDeServicoRepository.save(osDatabase).toDomain();
+            return ordemDeServicoRepository.saveAndFlush(osDatabase).toDomain();
         } catch (DataIntegrityViolationException e) {
             String cause = e.getMostSpecificCause().getMessage().toLowerCase();
             if (cause.contains("tagchave") || cause.contains("tag_chave")) {
