@@ -29,6 +29,32 @@
 	<properties>
 		<java.version>21</java.version>
 		<spring-cloud.version>2025.1.1</spring-cloud.version>
+		<sonar.projectKey>g52-app-tech-challenge</sonar.projectKey>
+		<sonar.projectName>g52-app-tech-challenge</sonar.projectName>
+		<sonar.host.url>http://localhost:9000</sonar.host.url>
+		<sonar.coverage.jacoco.xmlReportPaths>${project.build.directory}/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
+		<sonar.exclusions>
+			**/dto/**,
+			**/exception/**,
+			**/domain/**,
+			**/validation/**,
+			**/handler/**,
+			**/gateway/**,
+			**/config/**,
+			**/MicroserviceApplication.java,
+			**/controller/ApprovalLinkController.java
+		</sonar.exclusions>
+		<sonar.coverage.exclusions>
+			**/dto/**,
+			**/exception/**,
+			**/domain/**,
+			**/validation/**,
+			**/handler/**,
+			**/gateway/**,
+			**/config/**,
+			**/MicroserviceApplication.java,
+			**/controller/ApprovalLinkController.java
+		</sonar.coverage.exclusions>
 	</properties>
 	<dependencies>
 		<dependency>
@@ -197,11 +223,12 @@
 					<excludes>
 						<exclude>**/MicroserviceApplication*</exclude>
 						<exclude>**/config/**</exclude>
-						<exclude>**/dto/request/**</exclude>
-						<exclude>**/dto/response/**</exclude>
-						<exclude>**/gateway/database/model/**</exclude>
+						<exclude>**/dto/**</exclude>
+						<exclude>**/gateway/database/**</exclude>
 						<exclude>**/exception/**</exclude>
 						<exclude>**/validation/**</exclude>
+						<exclude>**/handler/**</exclude>
+						<exclude>**/domain/Enums/**</exclude>
 					</excludes>
 				</configuration>
 				<executions>

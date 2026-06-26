@@ -12,7 +12,6 @@ import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
-import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.servlet.MockMvc;
@@ -27,7 +26,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ExtendWith(SpringExtension.class)
 @WebMvcTest(controllers = VeiculoController.class,
         excludeAutoConfiguration = OAuth2ResourceServerAutoConfiguration.class)
-public class VeiculoControllerTest {
+class VeiculoControllerTest {
 
     @Autowired
     private MockMvc mvc;
@@ -68,6 +67,19 @@ public class VeiculoControllerTest {
         mvc.perform(MockMvcRequestBuilders.post("/veiculos")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"clienteId\":1,\"modeloId\":1,\"placa\":\"" + VALID_PLACA_MERCOSUL + "\",\"cor\":\"Prata\",\"ano\":2020}"))
+                .andExpect(status().isCreated());
+
+        verify(createVeiculoGateway, times(1)).execute(any(Veiculo.class));
+        verifyNoMoreInteractions(createVeiculoGateway);
+    }
+
+    @Test
+    void createVeiculoPlacaAntigaSucesso() throws Exception {
+        when(createVeiculoGateway.execute(any(Veiculo.class))).thenReturn(veiculoFixture());
+
+        mvc.perform(MockMvcRequestBuilders.post("/veiculos")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"clienteId\":1,\"modeloId\":1,\"placa\":\"" + VALID_PLACA_ANTIGA + "\",\"cor\":\"Prata\",\"ano\":2020}"))
                 .andExpect(status().isCreated());
 
         verify(createVeiculoGateway, times(1)).execute(any(Veiculo.class));
