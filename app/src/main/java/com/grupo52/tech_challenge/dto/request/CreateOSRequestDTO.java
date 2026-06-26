@@ -1,12 +1,15 @@
 package com.grupo52.tech_challenge.dto.request;
 
-import com.grupo52.tech_challenge.domain.*;
-import com.grupo52.tech_challenge.domain.Enums.StatusOS;
-import jakarta.validation.constraints.NotEmpty;
+import com.grupo52.tech_challenge.domain.OrdemDeServico;
+import com.grupo52.tech_challenge.domain.Servico;
+import com.grupo52.tech_challenge.domain.ServicoOS;
+import com.grupo52.tech_challenge.domain.Veiculo;
+import com.grupo52.tech_challenge.validation.annotation.Placa;
+import com.grupo52.tech_challenge.validation.annotation.SafeDto;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
-import com.grupo52.tech_challenge.validation.annotation.SafeDto;
 import lombok.*;
 
 import java.util.List;
@@ -19,13 +22,9 @@ import java.util.List;
 @Builder
 public class CreateOSRequestDTO {
 
-    @NotNull
-    @Positive
-    private Long clienteId;
-
-    @NotNull
-    @Positive
-    private Long veiculoId;
+    @NotBlank
+    @Placa
+    private String placa;
 
     private String sintomas;
 
@@ -37,8 +36,7 @@ public class CreateOSRequestDTO {
 
     public OrdemDeServico toDomain() {
         return OrdemDeServico.builder()
-                .cliente(Cliente.builder().id(this.clienteId).build())
-                .veiculo(Veiculo.builder().id(this.veiculoId).build())
+                .veiculo(Veiculo.builder().placa(this.placa).build())
                 .tagChave(this.tagChave)
                 .sintomas(this.sintomas != null && !this.sintomas.isBlank() ? this.sintomas : null)
                 .servicosDesejados(getServicosDesejadosDomain())

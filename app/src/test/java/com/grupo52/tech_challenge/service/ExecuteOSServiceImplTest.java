@@ -21,7 +21,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-public class ExecuteOSServiceImplTest {
+class ExecuteOSServiceImplTest {
 
     @Mock
     private FindOSGateway findOSGateway;
