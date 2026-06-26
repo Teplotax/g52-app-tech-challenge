@@ -133,7 +133,7 @@ public class OrdemDeServicoController {
     }
 
     @PostMapping("/{osId}/finalizar")
-    public ResponseEntity<FinalizeOSResponseDTO> finalize(
+    public ResponseEntity<FinalizeOSResponseDTO> finalizar(
             @PathVariable Long osId) throws GatewayException, ValidationException, ServiceException {
 
         OrdemDeServico os = finalizeOSService.execute(osId);
