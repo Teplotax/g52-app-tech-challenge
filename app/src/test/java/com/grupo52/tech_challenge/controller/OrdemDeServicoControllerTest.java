@@ -77,7 +77,7 @@ class OrdemDeServicoControllerTest {
 
         mvc.perform(MockMvcRequestBuilders.post("/ordensDeServico")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"clienteId\":1,\"veiculoId\":1,\"tagChave\":\"001\",\"servicosDesejados\":[1]}"))
+                        .content("{\"placa\":\"ABC1A23\",\"tagChave\":\"001\",\"servicosDesejados\":[1]}"))
                 .andExpect(status().isCreated());
 
         verify(createOSGateway, times(1)).execute(any());
