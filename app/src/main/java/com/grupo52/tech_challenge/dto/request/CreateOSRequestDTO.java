@@ -47,6 +47,7 @@ public class CreateOSRequestDTO {
         return this.servicosDesejados.stream().map(servicoId -> ServicoOS.builder()
                 .servico(Servico.builder().id(servicoId)
                         .build())
+                .aprovado(false)
                 .build()).toList();
     }
 }

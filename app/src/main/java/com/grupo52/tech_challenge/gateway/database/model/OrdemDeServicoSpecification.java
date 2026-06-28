@@ -1,6 +1,7 @@
 package com.grupo52.tech_challenge.gateway.database.model;
 
 
+import com.grupo52.tech_challenge.domain.Enums.ComplexidadeOS;
 import com.grupo52.tech_challenge.domain.Enums.StatusOS;
 import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.jpa.domain.Specification;
@@ -17,6 +18,7 @@ public class OrdemDeServicoSpecification {
             String placa,
             String documentoCliente,
             StatusOS status,
+            ComplexidadeOS complexidade,
             LocalDateTime dataInicio,
             LocalDateTime dataFim
     ) {
@@ -39,6 +41,10 @@ public class OrdemDeServicoSpecification {
 
             if (status != null) {
                 predicates.add(cb.equal(root.get("status"), status));
+            }
+
+            if (complexidade != null) {
+                predicates.add(cb.equal(root.get("complexidade"), complexidade));
             }
 
             if (dataInicio != null) {

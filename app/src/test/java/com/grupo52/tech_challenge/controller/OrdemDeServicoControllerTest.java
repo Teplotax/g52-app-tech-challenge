@@ -213,19 +213,19 @@ class OrdemDeServicoControllerTest {
 
     @Test
     void listOSSucesso() throws Exception {
-        when(listOSGateway.execute(any(), any(), any(), any(), any(), any(Pageable.class)))
+        when(listOSGateway.execute(any(), any(), any(), any(), any(), any(), any(Pageable.class)))
                 .thenReturn(new PageImpl<>(List.of(OrdemDeServicoFixture.emDiagnostico(1L))));
 
         mvc.perform(MockMvcRequestBuilders.get("/ordensDeServico"))
                 .andExpect(status().isOk());
 
-        verify(listOSGateway, times(1)).execute(any(), any(), any(), any(), any(), any(Pageable.class));
+        verify(listOSGateway, times(1)).execute(any(), any(), any(), any(), any(), any(), any(Pageable.class));
         verifyNoMoreInteractions(listOSGateway);
     }
 
     @Test
     void listOSComFiltrosSucesso() throws Exception {
-        when(listOSGateway.execute(any(), any(), any(), any(), any(), any(Pageable.class)))
+        when(listOSGateway.execute(any(), any(), any(), any(), any(), any(), any(Pageable.class)))
                 .thenReturn(new PageImpl<>(List.of(OrdemDeServicoFixture.emDiagnostico(1L))));
 
         mvc.perform(MockMvcRequestBuilders.get("/ordensDeServico")
@@ -235,7 +235,7 @@ class OrdemDeServicoControllerTest {
                         .param("dataFim", "2024-12-31"))
                 .andExpect(status().isOk());
 
-        verify(listOSGateway, times(1)).execute(any(), any(), any(), any(), any(), any(Pageable.class));
+        verify(listOSGateway, times(1)).execute(any(), any(), any(), any(), any(), any(), any(Pageable.class));
         verifyNoMoreInteractions(listOSGateway);
     }
 }

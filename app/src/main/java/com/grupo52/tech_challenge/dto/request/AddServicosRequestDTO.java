@@ -45,6 +45,7 @@ public class AddServicosRequestDTO {
         return this.servicosNecessarios.stream().map(servicoId -> ServicoOS.builder()
                 .servico(Servico.builder().id(servicoId)
                         .build())
+                .aprovado(false)
                 .build()).toList();
     }
 
@@ -56,6 +57,7 @@ public class AddServicosRequestDTO {
         return this.servicosAdicionais.stream().map(servicoId -> ServicoOS.builder()
                 .servico(Servico.builder().id(servicoId)
                         .build())
+                .aprovado(false)
                 .build()).toList();
     }
 }
