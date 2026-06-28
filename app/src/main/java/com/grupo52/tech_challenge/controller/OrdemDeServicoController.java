@@ -1,5 +1,6 @@
 package com.grupo52.tech_challenge.controller;
 
+import com.grupo52.tech_challenge.domain.Enums.ComplexidadeOS;
 import com.grupo52.tech_challenge.domain.Enums.StatusOS;
 import com.grupo52.tech_challenge.domain.OrdemDeServico;
 import com.grupo52.tech_challenge.dto.PagedResponse;
@@ -172,12 +173,13 @@ public class OrdemDeServicoController {
             @RequestParam(required = false) String placa,
             @RequestParam(required = false) String documentoCliente,
             @RequestParam(required = false) StatusOS status,
+            @RequestParam(required = false) ComplexidadeOS complexidade,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dataInicio,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dataFim,
             @PageableDefault(size = 20, page = 0) Pageable pageable) throws GatewayException {
 
         Page<OrdemDeServico> ordemDeServicos = listOSGateway.execute(
-                placa, documentoCliente, status, dataInicio, dataFim, pageable);
+                placa, documentoCliente, status, complexidade, dataInicio, dataFim, pageable);
 
         return ResponseEntity.ok(OSInfoResponseDTO.fromDomain(ordemDeServicos));
     }
