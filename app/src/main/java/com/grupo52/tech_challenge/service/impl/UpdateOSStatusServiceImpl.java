@@ -18,7 +18,6 @@ public class UpdateOSStatusServiceImpl implements UpdateOSStatusService {
     private static final Map<StatusOS, Set<StatusOS>> VALID_TRANSITIONS = Map.of(
             StatusOS.RECEBIDA,              Set.of(StatusOS.EM_DIAGNOSTICO, StatusOS.CANCELADA),
             StatusOS.EM_DIAGNOSTICO,        Set.of(StatusOS.AGUARDANDO_APROVACAO, StatusOS.CANCELADA),
-//            StatusOS.EM_DIAGNOSTICO,        Set.of(StatusOS.AGUARDANDO_APROVACAO, StatusOS.CANCELADA, StatusOS.APROVADA), // For local test
             StatusOS.AGUARDANDO_APROVACAO,  Set.of(StatusOS.APROVADA, StatusOS.CANCELADA),
             StatusOS.APROVADA,              Set.of(StatusOS.EM_EXECUCAO, StatusOS.CANCELADA),
             StatusOS.EM_EXECUCAO,           Set.of(StatusOS.FINALIZADA, StatusOS.CANCELADA),
