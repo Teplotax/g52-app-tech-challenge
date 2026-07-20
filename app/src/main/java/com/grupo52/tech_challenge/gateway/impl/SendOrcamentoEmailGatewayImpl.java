@@ -1,6 +1,6 @@
 package com.grupo52.tech_challenge.gateway.impl;
 
-import com.grupo52.tech_challenge.domain.OrdemDeServico;
+import com.grupo52.tech_challenge.domain.Ordem;
 import com.grupo52.tech_challenge.exception.GatewayException;
 import com.grupo52.tech_challenge.gateway.OrcamentoDocumentGateway;
 import com.grupo52.tech_challenge.gateway.SendOrcamentoEmailGateway;
@@ -23,7 +23,7 @@ public class SendOrcamentoEmailGatewayImpl implements SendOrcamentoEmailGateway 
     private String from;
 
     @Override
-    public void execute(OrdemDeServico os) throws GatewayException {
+    public void execute(Ordem os) throws GatewayException {
         String destinatario = os.getCliente().getEmail();
         System.out.println("=================================");
         System.out.println("Destinatário: " + destinatario);

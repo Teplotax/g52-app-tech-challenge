@@ -1,9 +1,9 @@
 package com.grupo52.tech_challenge.dto.response;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.grupo52.tech_challenge.domain.Enums.ComplexidadeOS;
-import com.grupo52.tech_challenge.domain.Enums.StatusOS;
-import com.grupo52.tech_challenge.domain.OrdemDeServico;
+import com.grupo52.tech_challenge.domain.Enums.Complexidade;
+import com.grupo52.tech_challenge.domain.Enums.Status;
+import com.grupo52.tech_challenge.domain.Ordem;
 import com.grupo52.tech_challenge.dto.PagedResponse;
 import lombok.*;
 import org.springframework.data.domain.Page;
@@ -26,9 +26,9 @@ public class OSInfoResponseDTO {
 
     private Long veiculoId;
 
-    private StatusOS status;
+    private Status status;
 
-    private ComplexidadeOS complexidade;
+    private Complexidade complexidade;
 
     private String clienteNomeSocial;
 
@@ -44,7 +44,7 @@ public class OSInfoResponseDTO {
 
     private BigDecimal precoTotal;
 
-    public static OSInfoResponseDTO fromDomain(OrdemDeServico os) {
+    public static OSInfoResponseDTO fromDomain(Ordem os) {
         return OSInfoResponseDTO.builder()
                 .id(os.getId())
                 .status(os.getStatus())
@@ -63,12 +63,12 @@ public class OSInfoResponseDTO {
                 .build();
     }
 
-    public static List<OSInfoResponseDTO> fromDomain(List<OrdemDeServico> list) {
+    public static List<OSInfoResponseDTO> fromDomain(List<Ordem> list) {
         if (list == null) return List.of();
         return list.stream().map(OSInfoResponseDTO::fromDomain).toList();
     }
 
-    public static PagedResponse<OSInfoResponseDTO> fromDomain(Page<OrdemDeServico> page) {
+    public static PagedResponse<OSInfoResponseDTO> fromDomain(Page<Ordem> page) {
         return PagedResponse.<OSInfoResponseDTO>builder()
                 .content(page.getContent().stream()
                         .map(OSInfoResponseDTO::fromDomain)

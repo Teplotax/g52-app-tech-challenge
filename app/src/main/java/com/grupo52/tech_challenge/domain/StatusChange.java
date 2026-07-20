@@ -1,6 +1,6 @@
 package com.grupo52.tech_challenge.domain;
 
-import com.grupo52.tech_challenge.domain.Enums.StatusOS;
+import com.grupo52.tech_challenge.domain.Enums.Status;
 import lombok.*;
 
 import java.time.LocalDateTime;
@@ -14,7 +14,7 @@ public class StatusChange {
 
     private Long id;
 
-    private StatusOS status;
+    private Status status;
 
     private LocalDateTime createdAt;
 }

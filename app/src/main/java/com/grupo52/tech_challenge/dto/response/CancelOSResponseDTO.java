@@ -1,8 +1,8 @@
 package com.grupo52.tech_challenge.dto.response;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.grupo52.tech_challenge.domain.Enums.ComplexidadeOS;
-import com.grupo52.tech_challenge.domain.Enums.StatusOS;
+import com.grupo52.tech_challenge.domain.Enums.Complexidade;
+import com.grupo52.tech_challenge.domain.Enums.Status;
 import com.grupo52.tech_challenge.domain.*;
 import lombok.*;
 
@@ -25,9 +25,9 @@ public class CancelOSResponseDTO {
 
     private Long veiculoId;
 
-    private StatusOS status;
+    private Status status;
 
-    private ComplexidadeOS complexidade;
+    private Complexidade complexidade;
 
     private String clienteNomeSocial;
 
@@ -46,7 +46,7 @@ public class CancelOSResponseDTO {
 
     private List<StatusChangeDTO> historico;
 
-    public static CancelOSResponseDTO fromDomain(OrdemDeServico os) {
+    public static CancelOSResponseDTO fromDomain(Ordem os) {
         return CancelOSResponseDTO.builder()
                 .id(os.getId())
                 .status(os.getStatus())
@@ -73,7 +73,7 @@ public class CancelOSResponseDTO {
     @NoArgsConstructor
     @Builder
     public static class StatusChangeDTO {
-        private StatusOS status;
+        private Status status;
         private LocalDateTime createdAt;
 
         public static StatusChangeDTO fromDomain(StatusChange statusChange) {
