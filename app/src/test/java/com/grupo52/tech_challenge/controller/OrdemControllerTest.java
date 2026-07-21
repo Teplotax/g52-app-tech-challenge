@@ -2,7 +2,6 @@ package com.grupo52.tech_challenge.controller;
 
 import com.grupo52.tech_challenge.domain.Enums.Status;
 import com.grupo52.tech_challenge.fixture.OrdemDeServicoFixture;
-import com.grupo52.tech_challenge.gateway.CreateOrdemGateway;
 import com.grupo52.tech_challenge.gateway.FindOrdemGateway;
 import com.grupo52.tech_challenge.gateway.ListOrdemGateway;
 import com.grupo52.tech_challenge.usecase.*;
@@ -35,10 +34,7 @@ class OrdemControllerTest {
     private MockMvc mvc;
 
     @MockitoBean
-    private CreateOrdemGateway createOrdemGateway;
-
-    @MockitoBean
-    private CalculateOrdemPriceUseCase calculateOrdemPriceUseCase;
+    private CreateOrdemUseCase createOrdemUseCase;
 
     @MockitoBean
     private FindOrdemGateway findOrdemGateway;
@@ -72,16 +68,15 @@ class OrdemControllerTest {
 
     @Test
     void criarOSSucesso() throws Exception {
-        when(createOrdemGateway.execute(any())).thenReturn(OrdemDeServicoFixture.recebida(1L));
-        when(calculateOrdemPriceUseCase.calculateServicosDesejados(any())).thenReturn(OrdemDeServicoFixture.recebida(1L));
+        when(createOrdemUseCase.execute(any())).thenReturn(OrdemDeServicoFixture.recebida(1L));
 
         mvc.perform(MockMvcRequestBuilders.post("/ordensDeServico")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"placa\":\"ABC1A23\",\"tagChave\":\"001\",\"servicosDesejados\":[1]}"))
                 .andExpect(status().isCreated());
 
-        verify(createOrdemGateway, times(1)).execute(any());
-        verify(calculateOrdemPriceUseCase, times(1)).calculateServicosDesejados(any());
+        verify(createOrdemUseCase, times(1)).execute(any());
+        verifyNoMoreInteractions(createOrdemUseCase);
     }
 
     @Test
