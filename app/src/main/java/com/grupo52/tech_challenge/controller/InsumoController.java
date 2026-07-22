@@ -1,5 +1,6 @@
 package com.grupo52.tech_challenge.controller;
 
+import com.grupo52.tech_challenge.api.InsumoApi;
 import com.grupo52.tech_challenge.domain.Enums.TipoProduto;
 import com.grupo52.tech_challenge.domain.Insumo;
 import com.grupo52.tech_challenge.dto.request.CreateInsumoRequestDTO;
@@ -12,19 +13,17 @@ import com.grupo52.tech_challenge.gateway.CreateInsumoGateway;
 import com.grupo52.tech_challenge.gateway.DeleteProdutoGateway;
 import com.grupo52.tech_challenge.gateway.FindInsumoGateway;
 import com.grupo52.tech_challenge.gateway.UpdateInsumoGateway;
-import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
 
 @RestController
-@RequestMapping("/produtos/insumos")
 @Validated
-public class InsumoController {
+public class InsumoController implements InsumoApi {
 
     @Autowired
     private CreateInsumoGateway createInsumoGateway;
@@ -38,31 +37,29 @@ public class InsumoController {
     @Autowired
     private DeleteProdutoGateway deleteProdutoGateway;
 
-    @PostMapping
-    public ResponseEntity<CreateInsumoResponseDTO> createInsumo(@RequestBody @Valid CreateInsumoRequestDTO createInsumoRequestDTO) throws GatewayException {
+    @Override
+    public ResponseEntity<CreateInsumoResponseDTO> createInsumo(CreateInsumoRequestDTO createInsumoRequestDTO) throws GatewayException {
         Insumo insumo = createInsumoGateway.execute(createInsumoRequestDTO.toDomain());
 
         return ResponseEntity.created(buildLocationUri(insumo)).body(CreateInsumoResponseDTO.fromDomain(insumo));
     }
 
-    @GetMapping("/{insumoId}")
-    public ResponseEntity<FindInsumoResponseDTO> findInsumo(@PathVariable Long insumoId) throws GatewayException {
+    @Override
+    public ResponseEntity<FindInsumoResponseDTO> findInsumo(Long insumoId) throws GatewayException {
         Insumo insumo = findInsumoGateway.execute(insumoId);
 
         return ResponseEntity.ok().body(FindInsumoResponseDTO.fromDomain(insumo));
     }
 
-    @PutMapping("/{insumoId}")
-    public ResponseEntity<UpdateInsumoResponseDTO> updateInsumo(
-            @PathVariable Long insumoId,
-            @RequestBody @Valid UpdateInsumoRequestDTO updateInsumoRequestDTO) throws GatewayException {
+    @Override
+    public ResponseEntity<UpdateInsumoResponseDTO> updateInsumo(Long insumoId, UpdateInsumoRequestDTO updateInsumoRequestDTO) throws GatewayException {
         Insumo insumo = updateInsumoGateway.execute(updateInsumoRequestDTO.toDomain(insumoId));
 
         return ResponseEntity.ok().body(UpdateInsumoResponseDTO.fromDomain(insumo));
     }
 
-    @DeleteMapping("/{insumoId}")
-    public ResponseEntity<Void> deleteInsumo(@PathVariable Long insumoId) throws GatewayException {
+    @Override
+    public ResponseEntity<Void> deleteInsumo(Long insumoId) throws GatewayException {
         deleteProdutoGateway.execute(insumoId, TipoProduto.INSUMO);
 
         return ResponseEntity.noContent().header("Location", buildLocationUri()
