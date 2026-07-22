@@ -8,6 +8,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Stream;
 
 @Getter
 @AllArgsConstructor
@@ -73,5 +74,25 @@ public class Ordem {
                         .status(status)
                         .build()
         );
+    }
+
+    private Stream<OrdemServico> servicosAprovados() {
+        return Stream.of(servicosDesejados, servicosNecessarios, servicosAdicionais)
+                .flatMap(List::stream)
+                .filter(servico -> Boolean.TRUE.equals(servico.getAprovado()));
+    }
+
+    public List<OrdemPeca> getPecasNaoReservadas() {
+        return servicosAprovados()
+                .flatMap(servico -> servico.getPecas().stream())
+                .filter(ordemPeca -> !Boolean.TRUE.equals(ordemPeca.getReservado()))
+                .toList();
+    }
+
+    public List<OrdemInsumo> getInsumosNaoReservados() {
+        return servicosAprovados()
+                .flatMap(servico -> servico.getInsumos().stream())
+                .filter(ordemInsumo -> !Boolean.TRUE.equals(ordemInsumo.getReservado()))
+                .toList();
     }
 }

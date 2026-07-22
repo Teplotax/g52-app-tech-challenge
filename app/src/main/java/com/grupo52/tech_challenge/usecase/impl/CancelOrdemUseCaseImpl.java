@@ -47,7 +47,7 @@ public class CancelOrdemUseCaseImpl implements CancelOrdemUseCase {
 
             switch (statusAtual) {
                 case RECEBIDA, EM_DIAGNOSTICO, AGUARDANDO_APROVACAO -> releaseAll(os);
-                case APROVADA, EM_EXECUCAO, FINALIZADA -> releaseApproved(os);
+                case APROVADA, AGUARDANDO_AQUISICAO, EM_EXECUCAO, FINALIZADA -> releaseApproved(os);
             }
 
             return updateOrdemGateway.execute(os);

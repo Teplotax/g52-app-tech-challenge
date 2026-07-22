@@ -29,6 +29,42 @@ class UpdateOrdemStatusUseCaseImplTest {
     }
 
     @Test
+    public void executeAguardandoAprovacaoParaAguardandoAquisicao() throws GatewayException, ValidationException, UseCaseException {
+        Ordem os = OrdemDeServicoFixture.aguardandoAprovacao(1L);
+
+        updateOSStatusService.execute(os, Status.AGUARDANDO_AQUISICAO);
+
+        assertEquals(Status.AGUARDANDO_AQUISICAO, os.getStatus());
+    }
+
+    @Test
+    public void executeAguardandoAquisicaoParaAprovada() throws GatewayException, ValidationException, UseCaseException {
+        Ordem os = Ordem.builder().id(1L).status(Status.AGUARDANDO_AQUISICAO).build();
+
+        updateOSStatusService.execute(os, Status.APROVADA);
+
+        assertEquals(Status.APROVADA, os.getStatus());
+    }
+
+    @Test
+    public void executeAguardandoAquisicaoParaCancelada() throws GatewayException, ValidationException, UseCaseException {
+        Ordem os = Ordem.builder().id(1L).status(Status.AGUARDANDO_AQUISICAO).build();
+
+        updateOSStatusService.execute(os, Status.CANCELADA);
+
+        assertEquals(Status.CANCELADA, os.getStatus());
+    }
+
+    @Test
+    public void onInvalidTransitionFromAguardandoAquisicao() {
+        Ordem os = Ordem.builder().id(1L).status(Status.AGUARDANDO_AQUISICAO).build();
+
+        assertThrows(InvalidStatusChangeException.class, () -> {
+            updateOSStatusService.execute(os, Status.EM_EXECUCAO);
+        });
+    }
+
+    @Test
     public void onNewOSWithoutCurrentStatus() throws GatewayException, ValidationException, UseCaseException {
         Ordem os = Ordem.builder().id(1L).build();
 

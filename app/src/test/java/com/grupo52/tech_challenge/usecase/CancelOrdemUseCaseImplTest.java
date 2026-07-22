@@ -167,6 +167,41 @@ class CancelOrdemUseCaseImplTest {
     }
 
     @Test
+    public void cancelFromAguardandoAquisicaoReleasesOnlyApproved() throws GatewayException, ValidationException, UseCaseException {
+        Peca pecaAprovadaReservada = pecaComEstoqueReservado(2);
+        Peca pecaNaoReservada = pecaComEstoqueReservado(0);
+
+        OrdemServico servicoAprovado = servicoComAprovado(pecaAprovadaReservada, true);
+        OrdemServico servicoAprovadoSemEstoque = OrdemServico.builder()
+                .servico(Servico.builder().nome("Troca de disco").build())
+                .aprovado(true)
+                .pecas(new ArrayList<>(List.of(
+                        OrdemPeca.builder().peca(pecaNaoReservada).quantidade(2).precoTotal(BigDecimal.TEN).reservado(false).build()
+                )))
+                .insumos(new ArrayList<>())
+                .build();
+
+        Ordem os = osComStatus(Status.AGUARDANDO_AQUISICAO,
+                List.of(servicoAprovado, servicoAprovadoSemEstoque),
+                List.of(),
+                List.of());
+
+        when(findOrdemGateway.execute(any(Long.class))).thenReturn(os);
+        doAnswer(invocation -> { os.setStatus(invocation.getArgument(1)); return null; })
+                .when(updateOrdemStatusUseCase).execute(any(Ordem.class), any(Status.class));
+        when(updateOrdemGateway.execute(any(Ordem.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(updatePecaGateway.execute(any(Peca.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        Ordem result = cancelOSService.execute(1L);
+
+        assertEquals(Status.CANCELADA, result.getStatus());
+        assertEquals(0, pecaAprovadaReservada.getEstoqueReservado());
+        assertEquals(0, pecaNaoReservada.getEstoqueReservado());
+        verify(updatePecaGateway, times(1)).execute(pecaAprovadaReservada);
+        verify(updatePecaGateway, never()).execute(pecaNaoReservada);
+    }
+
+    @Test
     public void cancelReleasesAcrossAllThreeLists() throws GatewayException, ValidationException, UseCaseException {
         Peca pecaDesejado = pecaComEstoqueReservado(1);
         Peca pecaNecessario = pecaComEstoqueReservado(2);

@@ -18,7 +18,8 @@ public class UpdateOrdemStatusUseCaseImpl implements UpdateOrdemStatusUseCase {
     private static final Map<Status, Set<Status>> VALID_TRANSITIONS = Map.of(
             Status.RECEBIDA,              Set.of(Status.EM_DIAGNOSTICO, Status.CANCELADA),
             Status.EM_DIAGNOSTICO,        Set.of(Status.AGUARDANDO_APROVACAO, Status.CANCELADA),
-            Status.AGUARDANDO_APROVACAO,  Set.of(Status.APROVADA, Status.CANCELADA),
+            Status.AGUARDANDO_APROVACAO,  Set.of(Status.APROVADA, Status.AGUARDANDO_AQUISICAO, Status.CANCELADA),
+            Status.AGUARDANDO_AQUISICAO,  Set.of(Status.APROVADA, Status.CANCELADA),
             Status.APROVADA,              Set.of(Status.EM_EXECUCAO, Status.CANCELADA),
             Status.EM_EXECUCAO,           Set.of(Status.FINALIZADA, Status.CANCELADA),
             Status.FINALIZADA,            Set.of(Status.ENTREGUE),

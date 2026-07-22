@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -128,7 +129,7 @@ public class ApprovalLinkController implements ApprovalLinkApi {
     }
 
     private ResponseEntity<String> html(int status, String body) {
-        return ResponseEntity.status(status).contentType(MediaType.TEXT_HTML).body(body);
+        return ResponseEntity.status(status).contentType(new MediaType(MediaType.TEXT_HTML, StandardCharsets.UTF_8)).body(body);
     }
 
     private String scale(BigDecimal value) {

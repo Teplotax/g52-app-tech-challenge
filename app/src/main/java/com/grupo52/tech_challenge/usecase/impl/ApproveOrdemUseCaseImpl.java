@@ -7,6 +7,7 @@ import com.grupo52.tech_challenge.exception.GatewayException;
 import com.grupo52.tech_challenge.exception.UseCaseException;
 import com.grupo52.tech_challenge.exception.ValidationException;
 import com.grupo52.tech_challenge.gateway.FindOrdemGateway;
+import com.grupo52.tech_challenge.gateway.SendAquisicaoEmailGateway;
 import com.grupo52.tech_challenge.usecase.ApproveOrdemUseCase;
 import com.grupo52.tech_challenge.usecase.CalculateOrdemPriceUseCase;
 import com.grupo52.tech_challenge.usecase.UpdateOrdemStatusUseCase;
@@ -27,16 +28,18 @@ public class ApproveOrdemUseCaseImpl implements ApproveOrdemUseCase {
     @Autowired
     private CalculateOrdemPriceUseCase calculateOrdemPriceUseCase;
 
+    @Autowired
+    private SendAquisicaoEmailGateway sendAquisicaoEmailGateway;
+
     @Override
     public Ordem approveAll(Long osId) throws GatewayException, ValidationException, UseCaseException {
         try {
             Ordem os = findOrdemGateway.execute(osId);
-            updateOrdemStatusUseCase.execute(os, Status.APROVADA);
             os.getServicosDesejados().forEach(servicoOS -> servicoOS.setAprovado(true));
             os.getServicosNecessarios().forEach(servicoOS -> servicoOS.setAprovado(true));
             os.getServicosAdicionais().forEach(servicoOS -> servicoOS.setAprovado(true));
 
-            return calculateOrdemPriceUseCase.calculateApprovedPrice(os);
+            return finalizeApproval(os);
         } catch (ValidationException | GatewayException e) {
             throw e;
         } catch (Exception e) {
@@ -48,7 +51,6 @@ public class ApproveOrdemUseCaseImpl implements ApproveOrdemUseCase {
     public Ordem parcialApprove(Long osId, List<Long> servicosAprovados) throws GatewayException, ValidationException, UseCaseException {
         try {
             Ordem os = findOrdemGateway.execute(osId);
-            updateOrdemStatusUseCase.execute(os, Status.APROVADA);
 
             for (OrdemServico ordemServico : os.getServicosDesejados()) {
                 ordemServico.setAprovado(servicosAprovados.contains(ordemServico.getId()));
@@ -60,11 +62,25 @@ public class ApproveOrdemUseCaseImpl implements ApproveOrdemUseCase {
                 ordemServico.setAprovado(servicosAprovados.contains(ordemServico.getId()));
             }
 
-            return calculateOrdemPriceUseCase.calculateApprovedPrice(os);
+            return finalizeApproval(os);
         } catch (ValidationException | GatewayException e) {
             throw e;
         } catch (Exception e) {
             throw new UseCaseException("Falha inesperada ao aprovar OS parcialmente: " + e.getLocalizedMessage(), e);
         }
+    }
+
+    private Ordem finalizeApproval(Ordem os) throws GatewayException, UseCaseException, ValidationException {
+        boolean precisaAquisicao = !os.getPecasNaoReservadas().isEmpty() || !os.getInsumosNaoReservados().isEmpty();
+
+        updateOrdemStatusUseCase.execute(os, precisaAquisicao ? Status.AGUARDANDO_AQUISICAO : Status.APROVADA);
+
+        Ordem result = calculateOrdemPriceUseCase.calculateApprovedPrice(os);
+
+        if (precisaAquisicao) {
+            sendAquisicaoEmailGateway.execute(result);
+        }
+
+        return result;
     }
 }
