@@ -1,8 +1,8 @@
 package com.grupo52.tech_challenge.dto.response;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.grupo52.tech_challenge.domain.Enums.ComplexidadeOS;
-import com.grupo52.tech_challenge.domain.Enums.StatusOS;
+import com.grupo52.tech_challenge.domain.Enums.Complexidade;
+import com.grupo52.tech_challenge.domain.Enums.Status;
 import com.grupo52.tech_challenge.domain.*;
 import lombok.*;
 
@@ -21,9 +21,9 @@ public class EvaluateOSResponseDTO {
 
     private Long id;
 
-    private StatusOS status;
+    private Status status;
 
-    private ComplexidadeOS complexidade;
+    private Complexidade complexidade;
 
     private Long clienteId;
 
@@ -62,7 +62,7 @@ public class EvaluateOSResponseDTO {
 
     private List<StatusChangeDTO> historico;
 
-    public static EvaluateOSResponseDTO fromDomain(OrdemDeServico os) {
+    public static EvaluateOSResponseDTO fromDomain(Ordem os) {
         return EvaluateOSResponseDTO.builder()
                 .id(os.getId())
                 .status(os.getStatus())
@@ -105,15 +105,15 @@ public class EvaluateOSResponseDTO {
         private List<PecaOSDetailDTO> pecas;
         private List<InsumoOSDetailDTO> insumos;
 
-        public static ServicoOSDetailDTO fromDomain(ServicoOS servicoOS) {
+        public static ServicoOSDetailDTO fromDomain(OrdemServico ordemServico) {
             return ServicoOSDetailDTO.builder()
-                    .id(servicoOS.getId())
-                    .servico(servicoOS.getServico().getNome())
-                    .aprovado(servicoOS.getAprovado())
-                    .precoTotal(scale(servicoOS.getPrecoTotal()))
-                    .precoHorasTecnicas(scale(servicoOS.getPrecoHorasTecnicas()))
-                    .pecas(PecaOSDetailDTO.fromDomain(servicoOS.getPecas()))
-                    .insumos(InsumoOSDetailDTO.fromDomain(servicoOS.getInsumos()))
+                    .id(ordemServico.getId())
+                    .servico(ordemServico.getServico().getNome())
+                    .aprovado(ordemServico.getAprovado())
+                    .precoTotal(scale(ordemServico.getPrecoTotal()))
+                    .precoHorasTecnicas(scale(ordemServico.getPrecoHorasTecnicas()))
+                    .pecas(PecaOSDetailDTO.fromDomain(ordemServico.getPecas()))
+                    .insumos(InsumoOSDetailDTO.fromDomain(ordemServico.getInsumos()))
                     .build();
         }
 
@@ -121,7 +121,7 @@ public class EvaluateOSResponseDTO {
             return value != null ? value.setScale(2, RoundingMode.HALF_UP) : null;
         }
 
-        public static List<ServicoOSDetailDTO> fromDomain(List<ServicoOS> servicos) {
+        public static List<ServicoOSDetailDTO> fromDomain(List<OrdemServico> servicos) {
             if (servicos == null) return List.of();
             return servicos.stream().map(ServicoOSDetailDTO::fromDomain).toList();
         }
@@ -138,17 +138,17 @@ public class EvaluateOSResponseDTO {
         private BigDecimal precoUnitario;
         private BigDecimal precoTotal;
 
-        public static PecaOSDetailDTO fromDomain(PecaOS pecaOS) {
+        public static PecaOSDetailDTO fromDomain(OrdemPeca ordemPeca) {
             return PecaOSDetailDTO.builder()
-                    .peca(pecaOS.getPeca().getNome())
-                    .ean(pecaOS.getPeca().getEan())
-                    .quantidade(pecaOS.getQuantidade())
-                    .precoUnitario(pecaOS.getPeca().getPreco().setScale(2, RoundingMode.HALF_UP))
-                    .precoTotal(pecaOS.getPrecoTotal().setScale(2, RoundingMode.HALF_UP))
+                    .peca(ordemPeca.getPeca().getNome())
+                    .ean(ordemPeca.getPeca().getEan())
+                    .quantidade(ordemPeca.getQuantidade())
+                    .precoUnitario(ordemPeca.getPeca().getPreco().setScale(2, RoundingMode.HALF_UP))
+                    .precoTotal(ordemPeca.getPrecoTotal().setScale(2, RoundingMode.HALF_UP))
                     .build();
         }
 
-        public static List<PecaOSDetailDTO> fromDomain(List<PecaOS> pecas) {
+        public static List<PecaOSDetailDTO> fromDomain(List<OrdemPeca> pecas) {
             if (pecas == null) return List.of();
             return pecas.stream().map(PecaOSDetailDTO::fromDomain).toList();
         }
@@ -165,17 +165,17 @@ public class EvaluateOSResponseDTO {
         private BigDecimal precoUnitario;
         private BigDecimal precoTotal;
 
-        public static InsumoOSDetailDTO fromDomain(InsumoOS insumoOS) {
+        public static InsumoOSDetailDTO fromDomain(OrdemInsumo ordemInsumo) {
             return InsumoOSDetailDTO.builder()
-                    .insumo(insumoOS.getInsumo().getNome())
-                    .ean(insumoOS.getInsumo().getEan())
-                    .quantidade(insumoOS.getQuantidade())
-                    .precoUnitario(insumoOS.getInsumo().getPreco().setScale(2, RoundingMode.HALF_UP))
-                    .precoTotal(insumoOS.getPrecoTotal().setScale(2, RoundingMode.HALF_UP))
+                    .insumo(ordemInsumo.getInsumo().getNome())
+                    .ean(ordemInsumo.getInsumo().getEan())
+                    .quantidade(ordemInsumo.getQuantidade())
+                    .precoUnitario(ordemInsumo.getInsumo().getPreco().setScale(2, RoundingMode.HALF_UP))
+                    .precoTotal(ordemInsumo.getPrecoTotal().setScale(2, RoundingMode.HALF_UP))
                     .build();
         }
 
-        public static List<InsumoOSDetailDTO> fromDomain(List<InsumoOS> insumos) {
+        public static List<InsumoOSDetailDTO> fromDomain(List<OrdemInsumo> insumos) {
             if (insumos == null) return List.of();
             return insumos.stream().map(InsumoOSDetailDTO::fromDomain).toList();
         }
@@ -186,7 +186,7 @@ public class EvaluateOSResponseDTO {
     @NoArgsConstructor
     @Builder
     public static class StatusChangeDTO {
-        private StatusOS status;
+        private Status status;
         private LocalDateTime createdAt;
 
         public static StatusChangeDTO fromDomain(StatusChange statusChange) {

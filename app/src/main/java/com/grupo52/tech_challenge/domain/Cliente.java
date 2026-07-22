@@ -35,6 +35,6 @@ public class Cliente {
     private List<Veiculo> veiculos = new ArrayList<>();
 
     @Builder.Default
-    private List<OrdemDeServico> ordensDeServico = new ArrayList<>();
+    private List<Ordem> ordensDeServico = new ArrayList<>();
 
 }

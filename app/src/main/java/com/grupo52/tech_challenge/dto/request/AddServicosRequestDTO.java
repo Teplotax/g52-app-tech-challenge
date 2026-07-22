@@ -1,8 +1,8 @@
 package com.grupo52.tech_challenge.dto.request;
 
-import com.grupo52.tech_challenge.domain.OrdemDeServico;
+import com.grupo52.tech_challenge.domain.Ordem;
 import com.grupo52.tech_challenge.domain.Servico;
-import com.grupo52.tech_challenge.domain.ServicoOS;
+import com.grupo52.tech_challenge.domain.OrdemServico;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import com.grupo52.tech_challenge.validation.annotation.SafeDto;
@@ -27,8 +27,8 @@ public class AddServicosRequestDTO {
 
     private List<@NotNull @Positive Long> servicosAdicionais;
 
-    public OrdemDeServico toDomain(Long osId) {
-        return OrdemDeServico.builder()
+    public Ordem toDomain(Long osId) {
+        return Ordem.builder()
                 .id(osId)
                 .justificativaNecessarios(this.justificativaNecessarios)
                 .justificativaAdicionais(this.justificativaAdicionais)
@@ -37,24 +37,24 @@ public class AddServicosRequestDTO {
                 .build();
     }
 
-    private List<ServicoOS> getServicosNecessariosDomain() {
+    private List<OrdemServico> getServicosNecessariosDomain() {
         if( this.servicosNecessarios == null ||  this.servicosNecessarios.isEmpty()) {
             return new ArrayList<>();
         }
 
-        return this.servicosNecessarios.stream().map(servicoId -> ServicoOS.builder()
+        return this.servicosNecessarios.stream().map(servicoId -> OrdemServico.builder()
                 .servico(Servico.builder().id(servicoId)
                         .build())
                 .aprovado(false)
                 .build()).toList();
     }
 
-    private List<ServicoOS> getServicosAdicionaisDomain() {
+    private List<OrdemServico> getServicosAdicionaisDomain() {
         if( this.servicosAdicionais == null ||  this.servicosAdicionais.isEmpty()) {
             return new ArrayList<>();
         }
 
-        return this.servicosAdicionais.stream().map(servicoId -> ServicoOS.builder()
+        return this.servicosAdicionais.stream().map(servicoId -> OrdemServico.builder()
                 .servico(Servico.builder().id(servicoId)
                         .build())
                 .aprovado(false)

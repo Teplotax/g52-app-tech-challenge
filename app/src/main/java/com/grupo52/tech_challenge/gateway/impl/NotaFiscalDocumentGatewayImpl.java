@@ -1,7 +1,7 @@
 package com.grupo52.tech_challenge.gateway.impl;
 
-import com.grupo52.tech_challenge.domain.OrdemDeServico;
-import com.grupo52.tech_challenge.domain.ServicoOS;
+import com.grupo52.tech_challenge.domain.Ordem;
+import com.grupo52.tech_challenge.domain.OrdemServico;
 import com.grupo52.tech_challenge.exception.GatewayException;
 import com.grupo52.tech_challenge.gateway.NotaFiscalDocumentGateway;
 import com.openhtmltopdf.pdfboxout.PdfRendererBuilder;
@@ -16,7 +16,7 @@ import java.util.List;
 public class NotaFiscalDocumentGatewayImpl implements NotaFiscalDocumentGateway {
 
     @Override
-    public String buildHtml(OrdemDeServico os) {
+    public String buildHtml(Ordem os) {
         StringBuilder sb = new StringBuilder();
         sb.append("<html><head><meta charset=\"UTF-8\"/><style>")
                 .append("body{font-family:Arial,sans-serif;color:#222;}")
@@ -49,7 +49,7 @@ public class NotaFiscalDocumentGatewayImpl implements NotaFiscalDocumentGateway 
     }
 
     @Override
-    public byte[] buildPdf(OrdemDeServico os) throws GatewayException {
+    public byte[] buildPdf(Ordem os) throws GatewayException {
         try {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             PdfRendererBuilder builder = new PdfRendererBuilder();
@@ -63,14 +63,14 @@ public class NotaFiscalDocumentGatewayImpl implements NotaFiscalDocumentGateway 
         }
     }
 
-    private void appendServicosTable(StringBuilder sb, String titulo, List<ServicoOS> servicos) {
+    private void appendServicosTable(StringBuilder sb, String titulo, List<OrdemServico> servicos) {
         if (servicos == null || servicos.isEmpty()) return;
         boolean hasApproved = servicos.stream().anyMatch(s -> Boolean.TRUE.equals(s.getAprovado()));
         if (!hasApproved) return;
 
         sb.append("<h2>").append(titulo).append("</h2>");
         sb.append("<table><tr><th>Serviço</th><th>Valor</th></tr>");
-        for (ServicoOS s : servicos) {
+        for (OrdemServico s : servicos) {
             if (Boolean.TRUE.equals(s.getAprovado())) {
                 sb.append("<tr><td>").append(s.getServico().getNome()).append("</td>")
                         .append("<td>R$ ").append(scale(s.getPrecoTotal())).append("</td></tr>");

@@ -1,52 +1,46 @@
 package com.grupo52.tech_challenge.controller;
 
-import com.grupo52.tech_challenge.domain.Enums.StatusOS;
-import com.grupo52.tech_challenge.domain.OrdemDeServico;
-import com.grupo52.tech_challenge.domain.ServicoOS;
+import com.grupo52.tech_challenge.api.ApprovalLinkApi;
+import com.grupo52.tech_challenge.domain.Enums.Status;
+import com.grupo52.tech_challenge.domain.Ordem;
+import com.grupo52.tech_challenge.domain.OrdemServico;
 import com.grupo52.tech_challenge.gateway.ApprovalTokenGateway;
-import com.grupo52.tech_challenge.gateway.FindOSGateway;
-import com.grupo52.tech_challenge.service.ApproveOSService;
+import com.grupo52.tech_challenge.gateway.FindOrdemGateway;
+import com.grupo52.tech_challenge.usecase.ApproveOrdemUseCase;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
 @RestController
-@RequestMapping("/aprovacao")
-public class ApprovalLinkController {
+public class ApprovalLinkController implements ApprovalLinkApi {
 
     @Autowired
     private ApprovalTokenGateway approvalTokenGateway;
 
     @Autowired
-    private FindOSGateway findOSGateway;
+    private FindOrdemGateway findOrdemGateway;
 
     @Autowired
-    private ApproveOSService approveOSService;
+    private ApproveOrdemUseCase approveOrdemUseCase;
 
-    @GetMapping("/{osId}")
-    public ResponseEntity<String> confirmPage(
-            @PathVariable Long osId,
-            @RequestParam String token) {
+    @Override
+    public ResponseEntity<String> confirmPage(Long osId, String token) {
 
         if (!approvalTokenGateway.isValid(osId, token)) {
             return html(403, page("Link inválido ou expirado", "Solicite um novo orçamento à oficina.", null));
         }
 
         try {
-            OrdemDeServico os = findOSGateway.execute(osId);
+            Ordem os = findOrdemGateway.execute(osId);
 
-            if (os.getStatus() == StatusOS.APROVADA) {
+            if (os.getStatus() == Status.APROVADA) {
                 return html(200, page("Orçamento já aprovado", "A ordem de serviço #" + osId + " já estava aprovada.", null));
             }
 
@@ -59,20 +53,17 @@ public class ApprovalLinkController {
         }
     }
 
-    @PostMapping("/{osId}")
-    public ResponseEntity<String> approve(
-            @PathVariable Long osId,
-            @RequestParam String token,
-            @RequestParam(name = "servicosAprovados", required = false) List<Long> servicosAprovados) {
+    @Override
+    public ResponseEntity<String> approve(Long osId, String token, List<Long> servicosAprovados) {
 
         if (!approvalTokenGateway.isValid(osId, token)) {
             return html(403, page("Link inválido ou expirado", "Solicite um novo orçamento à oficina.", null));
         }
 
         try {
-            OrdemDeServico os = findOSGateway.execute(osId);
+            Ordem os = findOrdemGateway.execute(osId);
 
-            if (os.getStatus() == StatusOS.APROVADA) {
+            if (os.getStatus() == Status.APROVADA) {
                 return html(200, page("Orçamento já aprovado", "A ordem de serviço #" + osId + " já estava aprovada.", null));
             }
 
@@ -80,14 +71,14 @@ public class ApprovalLinkController {
             if (aprovados.isEmpty()) {
                 return html(422, page("Nenhum serviço selecionado", "Selecione ao menos um serviço para confirmar a aprovação.", null));
             }
-            approveOSService.parcialApprove(osId, aprovados);
+            approveOrdemUseCase.parcialApprove(osId, aprovados);
             return html(200, page("Orçamento aprovado!", "A ordem de serviço #" + osId + " foi aprovada com sucesso.", null));
         } catch (Exception e) {
             return html(500, page("Não foi possível aprovar", "Tente novamente mais tarde ou contate a oficina.", null));
         }
     }
 
-    private String buildForm(Long osId, String token, OrdemDeServico os) {
+    private String buildForm(Long osId, String token, Ordem os) {
         StringBuilder sb = new StringBuilder();
         sb.append("<form method=\"POST\" action=\"/aprovacao/").append(osId).append("\">");
         sb.append("<input type=\"hidden\" name=\"token\" value=\"").append(token).append("\"/>");
@@ -113,20 +104,20 @@ public class ApprovalLinkController {
         sb.append("</form>");
         return sb.toString();
     }
-    private String servicoSection(String titulo, List<ServicoOS> servicos, boolean preChecked) {
+    private String servicoSection(String titulo, List<OrdemServico> servicos, boolean preChecked) {
         StringBuilder sb = new StringBuilder();
         sb.append("<div style=\"margin:20px auto;max-width:480px;text-align:left;\">")
                 .append("<h3 style=\"font-size:14px;color:#444;border-bottom:1px solid #ddd;padding-bottom:6px;margin-bottom:12px;\">")
                 .append(titulo).append("</h3>");
 
-        for (ServicoOS servicoOS : servicos) {
+        for (OrdemServico ordemServico : servicos) {
             String checked = preChecked ? " checked" : "";
-            String nomeServico = servicoOS.getServico() != null ? servicoOS.getServico().getNome() : "Serviço #" + servicoOS.getId();
-            String preco = servicoOS.getPrecoTotal() != null ? " &mdash; R$ " + scale(servicoOS.getPrecoTotal()) : "";
-            String precoRaw = servicoOS.getPrecoTotal() != null ? servicoOS.getPrecoTotal().toPlainString() : "0";
+            String nomeServico = ordemServico.getServico() != null ? ordemServico.getServico().getNome() : "Serviço #" + ordemServico.getId();
+            String preco = ordemServico.getPrecoTotal() != null ? " &mdash; R$ " + scale(ordemServico.getPrecoTotal()) : "";
+            String precoRaw = ordemServico.getPrecoTotal() != null ? ordemServico.getPrecoTotal().toPlainString() : "0";
 
             sb.append("<label style=\"display:flex;align-items:center;gap:10px;margin-bottom:10px;font-size:14px;cursor:pointer;\">")
-                    .append("<input type=\"checkbox\" name=\"servicosAprovados\" value=\"").append(servicoOS.getId()).append("\"")
+                    .append("<input type=\"checkbox\" name=\"servicosAprovados\" value=\"").append(ordemServico.getId()).append("\"")
                     .append(" data-preco=\"").append(precoRaw).append("\"")
                     .append(checked).append(" style=\"width:16px;height:16px;\"/>")
                     .append("<span>").append(nomeServico).append(preco).append("</span>")
@@ -138,7 +129,7 @@ public class ApprovalLinkController {
     }
 
     private ResponseEntity<String> html(int status, String body) {
-        return ResponseEntity.status(status).contentType(MediaType.TEXT_HTML).body(body);
+        return ResponseEntity.status(status).contentType(new MediaType(MediaType.TEXT_HTML, StandardCharsets.UTF_8)).body(body);
     }
 
     private String scale(BigDecimal value) {
