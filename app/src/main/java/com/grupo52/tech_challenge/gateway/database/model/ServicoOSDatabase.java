@@ -124,12 +124,17 @@ public class ServicoOSDatabase {
         @Column(nullable = false)
         private BigDecimal precoTotal;
 
+        @Builder.Default
+        @Column(nullable = false)
+        private Boolean reservado = false;
+
         public static PecaOSDatabase fromDomain(OrdemPeca domain, ServicoOSDatabase servicoOS) {
             return PecaOSDatabase.builder()
                     .servicoOS(servicoOS)
                     .produto(ProdutoDatabase.builder().id(domain.getPeca().getId()).build())
                     .quantidade(domain.getQuantidade())
                     .precoTotal(domain.getPrecoTotal())
+                    .reservado(domain.getReservado() != null ? domain.getReservado() : false)
                     .build();
         }
 
@@ -138,6 +143,7 @@ public class ServicoOSDatabase {
                     .peca(this.produto.toPecaDomain())
                     .quantidade(this.quantidade)
                     .precoTotal(this.precoTotal)
+                    .reservado(this.reservado != null ? this.reservado : false)
                     .build();
         }
     }
@@ -168,12 +174,17 @@ public class ServicoOSDatabase {
         @Column(nullable = false)
         private BigDecimal precoTotal;
 
+        @Builder.Default
+        @Column(nullable = false)
+        private Boolean reservado = false;
+
         public static InsumoOSDatabase fromDomain(OrdemInsumo domain, ServicoOSDatabase servicoOS) {
             return InsumoOSDatabase.builder()
                     .servicoOS(servicoOS)
                     .produto(ProdutoDatabase.builder().id(domain.getInsumo().getId()).build())
                     .quantidade(domain.getQuantidade())
                     .precoTotal(domain.getPrecoTotal())
+                    .reservado(domain.getReservado() != null ? domain.getReservado() : false)
                     .build();
         }
 
@@ -182,6 +193,7 @@ public class ServicoOSDatabase {
                     .insumo(this.produto.toInsumoDomain())
                     .quantidade(this.quantidade)
                     .precoTotal(this.precoTotal)
+                    .reservado(this.reservado != null ? this.reservado : false)
                     .build();
         }
     }

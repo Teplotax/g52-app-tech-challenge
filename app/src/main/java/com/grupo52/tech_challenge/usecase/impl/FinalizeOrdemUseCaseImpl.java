@@ -67,14 +67,20 @@ public class FinalizeOrdemUseCaseImpl implements FinalizeOrdemUseCase {
 
     private void consumeServicoOS(OrdemServico ordemServico) throws GatewayException {
         for (OrdemPeca ordemPeca : ordemServico.getPecas()) {
-            ordemPeca.getPeca().removerEstoqueReservado(ordemPeca.getQuantidade());
-            ordemPeca.getPeca().removerEstoque(ordemPeca.getQuantidade());
-            updatePecaGateway.execute(ordemPeca.getPeca());
+            if (Boolean.TRUE.equals(ordemPeca.getReservado())) {
+                ordemPeca.getPeca().removerEstoqueReservado(ordemPeca.getQuantidade());
+                ordemPeca.getPeca().removerEstoque(ordemPeca.getQuantidade());
+                updatePecaGateway.execute(ordemPeca.getPeca());
+                ordemPeca.setReservado(false);
+            }
         }
         for (OrdemInsumo ordemInsumo : ordemServico.getInsumos()) {
-            ordemInsumo.getInsumo().removerEstoqueReservado(ordemInsumo.getQuantidade());
-            ordemInsumo.getInsumo().removerEstoque(ordemInsumo.getQuantidade());
-            updateInsumoGateway.execute(ordemInsumo.getInsumo());
+            if (Boolean.TRUE.equals(ordemInsumo.getReservado())) {
+                ordemInsumo.getInsumo().removerEstoqueReservado(ordemInsumo.getQuantidade());
+                ordemInsumo.getInsumo().removerEstoque(ordemInsumo.getQuantidade());
+                updateInsumoGateway.execute(ordemInsumo.getInsumo());
+                ordemInsumo.setReservado(false);
+            }
         }
     }
 }

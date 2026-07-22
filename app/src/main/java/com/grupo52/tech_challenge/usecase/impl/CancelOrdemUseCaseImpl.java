@@ -86,12 +86,18 @@ public class CancelOrdemUseCaseImpl implements CancelOrdemUseCase {
 
     private void releaseServicoOS(OrdemServico ordemServico) throws GatewayException {
         for (OrdemPeca ordemPeca : ordemServico.getPecas()) {
-            ordemPeca.getPeca().removerEstoqueReservado(ordemPeca.getQuantidade());
-            updatePecaGateway.execute(ordemPeca.getPeca());
+            if (Boolean.TRUE.equals(ordemPeca.getReservado())) {
+                ordemPeca.getPeca().removerEstoqueReservado(ordemPeca.getQuantidade());
+                updatePecaGateway.execute(ordemPeca.getPeca());
+                ordemPeca.setReservado(false);
+            }
         }
         for (OrdemInsumo ordemInsumo : ordemServico.getInsumos()) {
-            ordemInsumo.getInsumo().removerEstoqueReservado(ordemInsumo.getQuantidade());
-            updateInsumoGateway.execute(ordemInsumo.getInsumo());
+            if (Boolean.TRUE.equals(ordemInsumo.getReservado())) {
+                ordemInsumo.getInsumo().removerEstoqueReservado(ordemInsumo.getQuantidade());
+                updateInsumoGateway.execute(ordemInsumo.getInsumo());
+                ordemInsumo.setReservado(false);
+            }
         }
     }
 }

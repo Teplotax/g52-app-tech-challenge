@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.util.Comparator;
 import java.util.List;
 
 @Service
@@ -156,12 +157,15 @@ public class CalculateOrdemPriceUseCaseImpl implements CalculateOrdemPriceUseCas
             Integer quantidade = servicoTipoPeca.getQuantidade();
 
             List<Peca> pecasDisponiveis = findPecaByVeiculoGateway.execute(servicoTipoPeca.getTipoPeca(), veiculo);
+            if (pecasDisponiveis.isEmpty()) {
+                throw new UseCaseException(
+                        "Nenhuma peça do tipo " + servicoTipoPeca.getTipoPeca() + " cadastrada para o veículo", 422);
+            }
+
             Peca peca = pecasDisponiveis.stream()
                     .filter(p -> (p.getEstoque() - p.getEstoqueReservado()) >= quantidade)
                     .findFirst()
-                    .orElseThrow(() -> new UseCaseException(
-                            "Estoque insuficiente para peça do tipo " + servicoTipoPeca.getTipoPeca()
-                                    + ". Seleção automática entre múltiplos fornecedores está no backlog.", 422));
+                    .orElseGet(() -> maiorEstoqueDisponivel(pecasDisponiveis));
 
             BigDecimal precoPecas = peca.getPreco().multiply(BigDecimal.valueOf(quantidade));
 
@@ -177,6 +181,11 @@ public class CalculateOrdemPriceUseCaseImpl implements CalculateOrdemPriceUseCas
 
         for (TipoInsumo tipoInsumo : servico.getInsumos()) {
             List<Insumo> insumosDisponiveis = findInsumoByVeiculoGateway.execute(tipoInsumo, veiculo);
+            if (insumosDisponiveis.isEmpty()) {
+                throw new UseCaseException(
+                        "Nenhum insumo do tipo " + tipoInsumo + " cadastrado para o veículo", 422);
+            }
+
             Insumo insumo = insumosDisponiveis.stream()
                     .filter(i -> {
                         AplicacaoProduto ap = i.getAplicacoes().stream()
@@ -185,9 +194,7 @@ public class CalculateOrdemPriceUseCaseImpl implements CalculateOrdemPriceUseCas
                         return ap != null && (i.getEstoque() - i.getEstoqueReservado()) >= ap.getQuantidade();
                     })
                     .findFirst()
-                    .orElseThrow(() -> new UseCaseException(
-                            "Estoque insuficiente para insumo do tipo " + tipoInsumo
-                                    + ". Seleção automática entre múltiplos fornecedores está no backlog.", 422));
+                    .orElseGet(() -> maiorEstoqueDisponivel(insumosDisponiveis));
 
             AplicacaoProduto aplicacao = insumo.getAplicacoes().stream()
                     .filter(ap -> ap.getModelo() != null
@@ -211,26 +218,38 @@ public class CalculateOrdemPriceUseCaseImpl implements CalculateOrdemPriceUseCas
     private void reserveProdutos(OrdemServico ordemServico) throws GatewayException {
         for (OrdemPeca ordemPeca : ordemServico.getPecas()) {
             Peca peca = ordemPeca.getPeca();
-            peca.adicionarEstoqueReservado(ordemPeca.getQuantidade());
-            updatePecaGateway.execute(peca);
+            if (peca.getEstoque() - peca.getEstoqueReservado() >= ordemPeca.getQuantidade()) {
+                peca.adicionarEstoqueReservado(ordemPeca.getQuantidade());
+                updatePecaGateway.execute(peca);
+                ordemPeca.setReservado(true);
+            }
         }
         for (OrdemInsumo ordemInsumo : ordemServico.getInsumos()) {
             Insumo insumo = ordemInsumo.getInsumo();
-            insumo.adicionarEstoqueReservado(ordemInsumo.getQuantidade());
-            updateInsumoGateway.execute(insumo);
+            if (insumo.getEstoque() - insumo.getEstoqueReservado() >= ordemInsumo.getQuantidade()) {
+                insumo.adicionarEstoqueReservado(ordemInsumo.getQuantidade());
+                updateInsumoGateway.execute(insumo);
+                ordemInsumo.setReservado(true);
+            }
         }
     }
 
     private void releaseReservedProdutos(OrdemServico ordemServico) throws GatewayException {
         for (OrdemPeca ordemPeca : ordemServico.getPecas()) {
-            Peca peca = ordemPeca.getPeca();
-            peca.removerEstoqueReservado(ordemPeca.getQuantidade());
-            updatePecaGateway.execute(peca);
+            if (Boolean.TRUE.equals(ordemPeca.getReservado())) {
+                Peca peca = ordemPeca.getPeca();
+                peca.removerEstoqueReservado(ordemPeca.getQuantidade());
+                updatePecaGateway.execute(peca);
+                ordemPeca.setReservado(false);
+            }
         }
         for (OrdemInsumo ordemInsumo : ordemServico.getInsumos()) {
-            Insumo insumo = ordemInsumo.getInsumo();
-            insumo.removerEstoqueReservado(ordemInsumo.getQuantidade());
-            updateInsumoGateway.execute(insumo);
+            if (Boolean.TRUE.equals(ordemInsumo.getReservado())) {
+                Insumo insumo = ordemInsumo.getInsumo();
+                insumo.removerEstoqueReservado(ordemInsumo.getQuantidade());
+                updateInsumoGateway.execute(insumo);
+                ordemInsumo.setReservado(false);
+            }
         }
     }
 
@@ -248,6 +267,12 @@ public class CalculateOrdemPriceUseCaseImpl implements CalculateOrdemPriceUseCas
         }
 
         os.setComplexidade(getComplexidade(horasTecnicas));
+    }
+
+    private <T extends Produto> T maiorEstoqueDisponivel(List<T> candidatos) {
+        return candidatos.stream()
+                .max(Comparator.comparingInt(p -> p.getEstoque() - p.getEstoqueReservado()))
+                .orElseThrow();
     }
 
     private Complexidade getComplexidade(BigDecimal horasTecnicas) {

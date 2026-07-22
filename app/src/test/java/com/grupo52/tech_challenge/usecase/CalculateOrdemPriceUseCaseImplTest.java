@@ -161,10 +161,12 @@ class CalculateOrdemPriceUseCaseImplTest {
         Ordem result = calculateOSPriceService.calculateServicosDesejados(os);
 
         assertEquals(100L, ordemServico.getPecas().getFirst().getPeca().getId());
+        assertEquals(true, ordemServico.getPecas().getFirst().getReservado());
+        assertEquals(true, ordemServico.getInsumos().getFirst().getReservado());
     }
 
     @Test
-    public void calculateServicosDesejadosThrowsWhenNoPecaHasSufficientStock() throws GatewayException {
+    public void calculateServicosDesejadosSelectsPecaWithHighestStockWhenNoneSufficient() throws GatewayException, UseCaseException {
         Long servicoId = 10L;
         Veiculo veiculo = veiculoComModelo();
         OrdemServico ordemServico = OrdemServico.builder().servico(Servico.builder().id(servicoId).build()).build();
@@ -177,26 +179,52 @@ class CalculateOrdemPriceUseCaseImplTest {
 
         Servico servico = servicoComPecaEInsumo(servicoId);
 
-        Peca pecaSemEstoque = Peca.builder()
+        Peca pecaMenorEstoqueDisponivel = Peca.builder()
                 .id(100L)
-                .nome("Pastilha de freio")
+                .nome("Pastilha A")
                 .preco(new BigDecimal("10.00"))
                 .estoque(1)
                 .estoqueReservado(1)
                 .build();
 
+        Peca pecaMaiorEstoqueDisponivel = Peca.builder()
+                .id(101L)
+                .nome("Pastilha B")
+                .preco(new BigDecimal("10.00"))
+                .estoque(3)
+                .estoqueReservado(2)
+                .build();
+
+        AplicacaoProduto aplicacao = AplicacaoProduto.builder()
+                .modelo(veiculo.getModelo())
+                .quantidade(3)
+                .build();
+
+        Insumo insumo = Insumo.builder()
+                .id(200L)
+                .nome("Fluido de freio DOT 4")
+                .preco(new BigDecimal("5.00"))
+                .estoque(10)
+                .estoqueReservado(0)
+                .aplicacoes(List.of(aplicacao))
+                .build();
+
         when(findServicoGateway.execute(servicoId)).thenReturn(servico);
-        when(findPecaByVeiculoGateway.execute(TipoPeca.PASTILHA_FREIO, veiculo)).thenReturn(List.of(pecaSemEstoque));
+        when(findPecaByVeiculoGateway.execute(TipoPeca.PASTILHA_FREIO, veiculo))
+                .thenReturn(List.of(pecaMenorEstoqueDisponivel, pecaMaiorEstoqueDisponivel));
+        when(findInsumoByVeiculoGateway.execute(TipoInsumo.FLUIDO_FREIO, veiculo)).thenReturn(List.of(insumo));
+        when(updateOrdemGateway.execute(any(Ordem.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        UseCaseException ex = assertThrows(UseCaseException.class, () ->
-                calculateOSPriceService.calculateServicosDesejados(os)
-        );
+        calculateOSPriceService.calculateServicosDesejados(os);
 
-        assertEquals(422, ex.getStatus());
+        assertEquals(101L, ordemServico.getPecas().getFirst().getPeca().getId());
+        assertEquals(false, ordemServico.getPecas().getFirst().getReservado());
+        assertEquals(2, pecaMaiorEstoqueDisponivel.getEstoqueReservado());
+        verify(updatePecaGateway, never()).execute(pecaMaiorEstoqueDisponivel);
     }
 
     @Test
-    public void calculateServicosDesejadosThrowsWhenNoInsumoHasSufficientStock() throws GatewayException {
+    public void calculateServicosDesejadosSelectsInsumoWithHighestStockWhenNoneSufficient() throws GatewayException, UseCaseException {
         Long servicoId = 10L;
         Veiculo veiculo = veiculoComModelo();
         OrdemServico ordemServico = OrdemServico.builder().servico(Servico.builder().id(servicoId).build()).build();
@@ -222,18 +250,55 @@ class CalculateOrdemPriceUseCaseImplTest {
                 .quantidade(3)
                 .build();
 
-        Insumo insumoSemEstoque = Insumo.builder()
+        Insumo insumoMenorEstoqueDisponivel = Insumo.builder()
                 .id(200L)
-                .nome("Fluido de freio DOT 4")
+                .nome("Fluido A")
                 .preco(new BigDecimal("5.00"))
                 .estoque(2)
                 .estoqueReservado(2)
                 .aplicacoes(List.of(aplicacao))
                 .build();
 
+        Insumo insumoMaiorEstoqueDisponivel = Insumo.builder()
+                .id(201L)
+                .nome("Fluido B")
+                .preco(new BigDecimal("5.00"))
+                .estoque(4)
+                .estoqueReservado(2)
+                .aplicacoes(List.of(aplicacao))
+                .build();
+
         when(findServicoGateway.execute(servicoId)).thenReturn(servico);
         when(findPecaByVeiculoGateway.execute(TipoPeca.PASTILHA_FREIO, veiculo)).thenReturn(List.of(peca));
-        when(findInsumoByVeiculoGateway.execute(TipoInsumo.FLUIDO_FREIO, veiculo)).thenReturn(List.of(insumoSemEstoque));
+        when(findInsumoByVeiculoGateway.execute(TipoInsumo.FLUIDO_FREIO, veiculo))
+                .thenReturn(List.of(insumoMenorEstoqueDisponivel, insumoMaiorEstoqueDisponivel));
+        when(updateOrdemGateway.execute(any(Ordem.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(updatePecaGateway.execute(any(Peca.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        calculateOSPriceService.calculateServicosDesejados(os);
+
+        assertEquals(201L, ordemServico.getInsumos().getFirst().getInsumo().getId());
+        assertEquals(false, ordemServico.getInsumos().getFirst().getReservado());
+        assertEquals(2, insumoMaiorEstoqueDisponivel.getEstoqueReservado());
+        verify(updateInsumoGateway, never()).execute(insumoMaiorEstoqueDisponivel);
+    }
+
+    @Test
+    public void calculateServicosDesejadosThrowsWhenNoPecaCadastradaParaVeiculo() throws GatewayException {
+        Long servicoId = 10L;
+        Veiculo veiculo = veiculoComModelo();
+        OrdemServico ordemServico = OrdemServico.builder().servico(Servico.builder().id(servicoId).build()).build();
+
+        Ordem os = Ordem.builder()
+                .id(1L)
+                .veiculo(veiculo)
+                .servicosDesejados(new ArrayList<>(List.of(ordemServico)))
+                .build();
+
+        Servico servico = servicoComPecaEInsumo(servicoId);
+
+        when(findServicoGateway.execute(servicoId)).thenReturn(servico);
+        when(findPecaByVeiculoGateway.execute(TipoPeca.PASTILHA_FREIO, veiculo)).thenReturn(List.of());
 
         UseCaseException ex = assertThrows(UseCaseException.class, () ->
                 calculateOSPriceService.calculateServicosDesejados(os)
@@ -302,7 +367,7 @@ class CalculateOrdemPriceUseCaseImplTest {
         OrdemServico servicoRecusado = OrdemServico.builder()
                 .servico(Servico.builder().nome("Revisão de freios").horasTecnicas(new BigDecimal("2.0")).build())
                 .precoTotal(new BigDecimal("320.00"))
-                .pecas(new ArrayList<>(List.of(OrdemPeca.builder().peca(peca).quantidade(4).precoTotal(new BigDecimal("140.00")).build())))
+                .pecas(new ArrayList<>(List.of(OrdemPeca.builder().peca(peca).quantidade(4).precoTotal(new BigDecimal("140.00")).reservado(true).build())))
                 .insumos(new ArrayList<>())
                 .aprovado(false)
                 .build();
@@ -449,8 +514,10 @@ class CalculateOrdemPriceUseCaseImplTest {
         assertEquals(0, new BigDecimal("105.00").compareTo(ordemServico.getPrecoTotal()));
         assertEquals(1, ordemServico.getPecas().size());
         assertEquals(0, new BigDecimal("20.00").compareTo(ordemServico.getPecas().getFirst().getPrecoTotal()));
+        assertEquals(true, ordemServico.getPecas().getFirst().getReservado());
         assertEquals(1, ordemServico.getInsumos().size());
         assertEquals(0, new BigDecimal("15.00").compareTo(ordemServico.getInsumos().getFirst().getPrecoTotal()));
+        assertEquals(true, ordemServico.getInsumos().getFirst().getReservado());
         assertEquals(0, new BigDecimal("105.00").compareTo(precoServicoCategoria));
         assertEquals(0, new BigDecimal("105.00").compareTo(precoTotal));
     }

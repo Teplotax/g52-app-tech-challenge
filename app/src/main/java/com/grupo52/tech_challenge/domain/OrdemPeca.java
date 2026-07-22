@@ -16,4 +16,8 @@ public class OrdemPeca {
     private Integer quantidade;
 
     private BigDecimal precoTotal;
+
+    @Setter
+    @Builder.Default
+    private Boolean reservado = false;
 }

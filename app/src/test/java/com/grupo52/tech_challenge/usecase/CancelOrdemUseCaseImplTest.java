@@ -192,6 +192,37 @@ class CancelOrdemUseCaseImplTest {
     }
 
     @Test
+    public void cancelSkipsReleaseForProdutosNuncaReservados() throws GatewayException, ValidationException, UseCaseException {
+        Peca pecaNaoReservada = pecaComEstoqueReservado(0);
+        Insumo insumoNaoReservado = insumoComEstoqueReservado(0);
+
+        OrdemServico servico = OrdemServico.builder()
+                .servico(Servico.builder().nome("Revisão de freios").build())
+                .aprovado(null)
+                .pecas(new ArrayList<>(List.of(
+                        OrdemPeca.builder().peca(pecaNaoReservada).quantidade(2).precoTotal(BigDecimal.TEN).reservado(false).build()
+                )))
+                .insumos(new ArrayList<>(List.of(
+                        OrdemInsumo.builder().insumo(insumoNaoReservado).quantidade(1).precoTotal(BigDecimal.TEN).reservado(false).build()
+                )))
+                .build();
+
+        Ordem os = osComStatus(Status.RECEBIDA, List.of(servico), List.of(), List.of());
+
+        when(findOrdemGateway.execute(any(Long.class))).thenReturn(os);
+        doAnswer(invocation -> { os.setStatus(invocation.getArgument(1)); return null; })
+                .when(updateOrdemStatusUseCase).execute(any(Ordem.class), any(Status.class));
+        when(updateOrdemGateway.execute(any(Ordem.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        Ordem result = cancelOSService.execute(1L);
+
+        assertEquals(Status.CANCELADA, result.getStatus());
+        assertEquals(0, pecaNaoReservada.getEstoqueReservado());
+        assertEquals(0, insumoNaoReservado.getEstoqueReservado());
+        verifyNoInteractions(updatePecaGateway, updateInsumoGateway);
+    }
+
+    @Test
     public void onGatewayException() throws GatewayException {
         doThrow(GatewayException.class).when(findOrdemGateway).execute(any(Long.class));
 
@@ -237,10 +268,10 @@ class CancelOrdemUseCaseImplTest {
                 .servico(Servico.builder().nome("Revisão de freios").build())
                 .aprovado(null)
                 .pecas(new ArrayList<>(List.of(
-                        OrdemPeca.builder().peca(peca).quantidade(peca.getEstoqueReservado()).precoTotal(BigDecimal.TEN).build()
+                        OrdemPeca.builder().peca(peca).quantidade(peca.getEstoqueReservado()).precoTotal(BigDecimal.TEN).reservado(true).build()
                 )))
                 .insumos(new ArrayList<>(List.of(
-                        OrdemInsumo.builder().insumo(insumo).quantidade(insumo.getEstoqueReservado()).precoTotal(BigDecimal.TEN).build()
+                        OrdemInsumo.builder().insumo(insumo).quantidade(insumo.getEstoqueReservado()).precoTotal(BigDecimal.TEN).reservado(true).build()
                 )))
                 .build();
     }
@@ -250,7 +281,7 @@ class CancelOrdemUseCaseImplTest {
                 .servico(Servico.builder().nome("Balanceamento").build())
                 .aprovado(null)
                 .pecas(new ArrayList<>(List.of(
-                        OrdemPeca.builder().peca(peca).quantidade(peca.getEstoqueReservado()).precoTotal(BigDecimal.TEN).build()
+                        OrdemPeca.builder().peca(peca).quantidade(peca.getEstoqueReservado()).precoTotal(BigDecimal.TEN).reservado(true).build()
                 )))
                 .insumos(new ArrayList<>())
                 .build();
@@ -261,7 +292,7 @@ class CancelOrdemUseCaseImplTest {
                 .servico(Servico.builder().nome("Serviço").build())
                 .aprovado(aprovado)
                 .pecas(new ArrayList<>(List.of(
-                        OrdemPeca.builder().peca(peca).quantidade(peca.getEstoqueReservado()).precoTotal(BigDecimal.TEN).build()
+                        OrdemPeca.builder().peca(peca).quantidade(peca.getEstoqueReservado()).precoTotal(BigDecimal.TEN).reservado(true).build()
                 )))
                 .insumos(new ArrayList<>())
                 .build();

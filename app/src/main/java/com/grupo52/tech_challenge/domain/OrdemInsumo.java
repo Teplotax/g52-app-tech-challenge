@@ -17,4 +17,7 @@ public class OrdemInsumo {
     private Integer quantidade;
 
     private BigDecimal precoTotal;
+
+    @Builder.Default
+    private Boolean reservado = false;
 }
