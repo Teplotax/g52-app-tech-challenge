@@ -119,7 +119,7 @@ resource "aws_ecs_task_definition" "app" {
         command     = ["CMD-SHELL", "curl -f http://localhost:${var.keycloak_port}/realms/g52 || exit 1"]
         interval    = 10
         timeout     = 5
-        retries     = 15
+        retries     = 10
         startPeriod = 30
       }
     },
