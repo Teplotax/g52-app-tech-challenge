@@ -1,8 +1,8 @@
 package com.grupo52.tech_challenge.gateway.database.model;
 
-import com.grupo52.tech_challenge.domain.InsumoOS;
-import com.grupo52.tech_challenge.domain.PecaOS;
-import com.grupo52.tech_challenge.domain.ServicoOS;
+import com.grupo52.tech_challenge.domain.OrdemInsumo;
+import com.grupo52.tech_challenge.domain.OrdemPeca;
+import com.grupo52.tech_challenge.domain.OrdemServico;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -54,7 +54,7 @@ public class ServicoOSDatabase {
     private List<InsumoOSDatabase> insumos = new ArrayList<>();
 
 
-    public static ServicoOSDatabase fromDomain(ServicoOS domain, OrdemDeServicoDatabase os, TipoServicoOS tipo) {
+    public static ServicoOSDatabase fromDomain(OrdemServico domain, OrdemDeServicoDatabase os, TipoServicoOS tipo) {
         ServicoOSDatabase entity = ServicoOSDatabase.builder()
                 .id(domain.getId())
                 .ordemDeServico(os)
@@ -81,8 +81,8 @@ public class ServicoOSDatabase {
         return entity;
     }
 
-    public ServicoOS toDomain() {
-        return ServicoOS.builder()
+    public OrdemServico toDomain() {
+        return OrdemServico.builder()
                 .id(this.id)
                 .servico(this.servico.toDomain())
                 .aprovado(this.aprovado)
@@ -124,20 +124,26 @@ public class ServicoOSDatabase {
         @Column(nullable = false)
         private BigDecimal precoTotal;
 
-        public static PecaOSDatabase fromDomain(PecaOS domain, ServicoOSDatabase servicoOS) {
+        @Builder.Default
+        @Column(nullable = false)
+        private Boolean reservado = false;
+
+        public static PecaOSDatabase fromDomain(OrdemPeca domain, ServicoOSDatabase servicoOS) {
             return PecaOSDatabase.builder()
                     .servicoOS(servicoOS)
                     .produto(ProdutoDatabase.builder().id(domain.getPeca().getId()).build())
                     .quantidade(domain.getQuantidade())
                     .precoTotal(domain.getPrecoTotal())
+                    .reservado(domain.getReservado() != null ? domain.getReservado() : false)
                     .build();
         }
 
-        public PecaOS toDomain() {
-            return PecaOS.builder()
+        public OrdemPeca toDomain() {
+            return OrdemPeca.builder()
                     .peca(this.produto.toPecaDomain())
                     .quantidade(this.quantidade)
                     .precoTotal(this.precoTotal)
+                    .reservado(this.reservado != null ? this.reservado : false)
                     .build();
         }
     }
@@ -168,20 +174,26 @@ public class ServicoOSDatabase {
         @Column(nullable = false)
         private BigDecimal precoTotal;
 
-        public static InsumoOSDatabase fromDomain(InsumoOS domain, ServicoOSDatabase servicoOS) {
+        @Builder.Default
+        @Column(nullable = false)
+        private Boolean reservado = false;
+
+        public static InsumoOSDatabase fromDomain(OrdemInsumo domain, ServicoOSDatabase servicoOS) {
             return InsumoOSDatabase.builder()
                     .servicoOS(servicoOS)
                     .produto(ProdutoDatabase.builder().id(domain.getInsumo().getId()).build())
                     .quantidade(domain.getQuantidade())
                     .precoTotal(domain.getPrecoTotal())
+                    .reservado(domain.getReservado() != null ? domain.getReservado() : false)
                     .build();
         }
 
-        public InsumoOS toDomain() {
-            return InsumoOS.builder()
+        public OrdemInsumo toDomain() {
+            return OrdemInsumo.builder()
                     .insumo(this.produto.toInsumoDomain())
                     .quantidade(this.quantidade)
                     .precoTotal(this.precoTotal)
+                    .reservado(this.reservado != null ? this.reservado : false)
                     .build();
         }
     }

@@ -36,6 +36,8 @@ public class CreateVeiculoGatewayImpl implements CreateVeiculoGateway {
             );
 
             return veiculoRepository.save(VeiculoDatabase.fromDomain(veiculo, modeloDatabase, clienteDatabase)).toDomain();
+        } catch (NotFoundGatewayException e) {
+            throw e;
         } catch (DataIntegrityViolationException e) {
             throw new GatewayException("Falha ao cadastrar Veículo, placa já cadastrada", 409);
         } catch (Exception e) {

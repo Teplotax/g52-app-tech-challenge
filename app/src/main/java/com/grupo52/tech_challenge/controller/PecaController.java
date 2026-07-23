@@ -1,5 +1,6 @@
 package com.grupo52.tech_challenge.controller;
 
+import com.grupo52.tech_challenge.api.PecaApi;
 import com.grupo52.tech_challenge.domain.Enums.TipoProduto;
 import com.grupo52.tech_challenge.domain.Peca;
 import com.grupo52.tech_challenge.dto.request.CreatePecaRequestDTO;
@@ -12,19 +13,17 @@ import com.grupo52.tech_challenge.gateway.CreatePecaGateway;
 import com.grupo52.tech_challenge.gateway.DeleteProdutoGateway;
 import com.grupo52.tech_challenge.gateway.FindPecaGateway;
 import com.grupo52.tech_challenge.gateway.UpdatePecaGateway;
-import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
 
 @RestController
-@RequestMapping("/produtos/pecas")
 @Validated
-public class PecaController {
+public class PecaController implements PecaApi {
 
     @Autowired
     private CreatePecaGateway createPecaGateway;
@@ -38,31 +37,29 @@ public class PecaController {
     @Autowired
     private DeleteProdutoGateway deleteProdutoGateway;
 
-    @PostMapping
-    public ResponseEntity<CreatePecaResponseDTO> createPeca(@RequestBody @Valid CreatePecaRequestDTO createPecaRequestDTO) throws GatewayException {
+    @Override
+    public ResponseEntity<CreatePecaResponseDTO> createPeca(CreatePecaRequestDTO createPecaRequestDTO) throws GatewayException {
         Peca peca = createPecaGateway.execute(createPecaRequestDTO.toDomain());
 
         return ResponseEntity.created(buildLocationUri(peca)).body(CreatePecaResponseDTO.fromDomain(peca));
     }
 
-    @GetMapping("/{pecaId}")
-    public ResponseEntity<FindPecaResponseDTO> findPeca(@PathVariable Long pecaId) throws GatewayException {
+    @Override
+    public ResponseEntity<FindPecaResponseDTO> findPeca(Long pecaId) throws GatewayException {
         Peca peca = findPecaGateway.execute(pecaId);
 
         return ResponseEntity.ok().body(FindPecaResponseDTO.fromDomain(peca));
     }
 
-    @PutMapping("/{pecaId}")
-    public ResponseEntity<UpdatePecaResponseDTO> updatePeca(
-            @PathVariable Long pecaId,
-            @RequestBody @Valid UpdatePecaRequestDTO updatePecaRequestDTO) throws GatewayException {
+    @Override
+    public ResponseEntity<UpdatePecaResponseDTO> updatePeca(Long pecaId, UpdatePecaRequestDTO updatePecaRequestDTO) throws GatewayException {
         Peca peca = updatePecaGateway.execute(updatePecaRequestDTO.toDomain(pecaId));
 
         return ResponseEntity.ok().body(UpdatePecaResponseDTO.fromDomain(peca));
     }
 
-    @DeleteMapping("/{pecaId}")
-    public ResponseEntity<Void> deletePeca(@PathVariable Long pecaId) throws GatewayException {
+    @Override
+    public ResponseEntity<Void> deletePeca(Long pecaId) throws GatewayException {
         deleteProdutoGateway.execute(pecaId, TipoProduto.PECA);
 
         return ResponseEntity.noContent().header("Location", buildLocationUri()

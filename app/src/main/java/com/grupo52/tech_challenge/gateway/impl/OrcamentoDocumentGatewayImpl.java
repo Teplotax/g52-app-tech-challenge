@@ -1,9 +1,9 @@
 package com.grupo52.tech_challenge.gateway.impl;
 
-import com.grupo52.tech_challenge.domain.InsumoOS;
-import com.grupo52.tech_challenge.domain.OrdemDeServico;
-import com.grupo52.tech_challenge.domain.PecaOS;
-import com.grupo52.tech_challenge.domain.ServicoOS;
+import com.grupo52.tech_challenge.domain.OrdemInsumo;
+import com.grupo52.tech_challenge.domain.Ordem;
+import com.grupo52.tech_challenge.domain.OrdemPeca;
+import com.grupo52.tech_challenge.domain.OrdemServico;
 import com.grupo52.tech_challenge.exception.GatewayException;
 import com.grupo52.tech_challenge.gateway.ApprovalTokenGateway;
 import com.grupo52.tech_challenge.gateway.OrcamentoDocumentGateway;
@@ -27,7 +27,7 @@ public class OrcamentoDocumentGatewayImpl implements OrcamentoDocumentGateway {
     private String baseUrl;
 
     @Override
-    public String buildHtml(OrdemDeServico os) {
+    public String buildHtml(Ordem os) {
         StringBuilder sb = new StringBuilder();
         sb.append("<html><head><meta charset=\"UTF-8\"/><style>")
                 .append("body{font-family:Arial,sans-serif;color:#222;}")
@@ -74,7 +74,7 @@ public class OrcamentoDocumentGatewayImpl implements OrcamentoDocumentGateway {
     }
 
     @Override
-    public byte[] buildPdf(OrdemDeServico os) throws GatewayException {
+    public byte[] buildPdf(Ordem os) throws GatewayException {
         try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             PdfRendererBuilder builder = new PdfRendererBuilder();
             builder.useFastMode();
@@ -87,7 +87,7 @@ public class OrcamentoDocumentGatewayImpl implements OrcamentoDocumentGateway {
         }
     }
 
-    private String buildPdfHtml(OrdemDeServico os) {
+    private String buildPdfHtml(Ordem os) {
         String html = buildHtml(os);
         int divStart = html.indexOf("<div style=\"text-align:center;margin-top:24px;\">");
         if (divStart < 0) {
@@ -100,7 +100,7 @@ public class OrcamentoDocumentGatewayImpl implements OrcamentoDocumentGateway {
         return html.substring(0, divStart) + html.substring(divEnd + "</div>".length());
     }
 
-    private void appendServicoSection(StringBuilder sb, String titulo, List<ServicoOS> servicos, String justificativa, boolean showJustificativa) {
+    private void appendServicoSection(StringBuilder sb, String titulo, List<OrdemServico> servicos, String justificativa, boolean showJustificativa) {
         if (servicos == null || servicos.isEmpty()) {
             return;
         }
@@ -109,7 +109,7 @@ public class OrcamentoDocumentGatewayImpl implements OrcamentoDocumentGateway {
             sb.append("<p><em>").append(safe(justificativa)).append("</em></p>");
         }
         sb.append("<table><tr><th>Serviço</th><th>Mão de obra</th><th>Peças/Insumos</th><th>Total</th></tr>");
-        for (ServicoOS servico : servicos) {
+        for (OrdemServico servico : servicos) {
             sb.append("<tr><td>").append(safe(servico.getServico().getNome())).append("</td>");
             sb.append("<td>R$ ").append(scale(servico.getPrecoHorasTecnicas())).append("</td>");
             sb.append("<td>").append(itensDescricao(servico)).append("</td>");
@@ -118,15 +118,15 @@ public class OrcamentoDocumentGatewayImpl implements OrcamentoDocumentGateway {
         sb.append("</table>");
     }
 
-    private String itensDescricao(ServicoOS servico) {
+    private String itensDescricao(OrdemServico servico) {
         StringBuilder itens = new StringBuilder();
         if (servico.getPecas() != null) {
-            for (PecaOS peca : servico.getPecas()) {
+            for (OrdemPeca peca : servico.getPecas()) {
                 itens.append(peca.getQuantidade()).append("x ").append(safe(peca.getPeca().getNome())).append("<br/>");
             }
         }
         if (servico.getInsumos() != null) {
-            for (InsumoOS insumo : servico.getInsumos()) {
+            for (OrdemInsumo insumo : servico.getInsumos()) {
                 itens.append(insumo.getQuantidade()).append("x ").append(safe(insumo.getInsumo().getNome())).append("<br/>");
             }
         }

@@ -1,6 +1,6 @@
 package com.grupo52.tech_challenge.gateway.database.model;
 
-import com.grupo52.tech_challenge.domain.Enums.StatusOS;
+import com.grupo52.tech_challenge.domain.Enums.Status;
 import com.grupo52.tech_challenge.domain.StatusChange;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -29,7 +29,7 @@ public class StatusChangeDatabase {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private StatusOS status;
+    private Status status;
 
     @CreationTimestamp
     @Column(nullable = false, updatable = false)

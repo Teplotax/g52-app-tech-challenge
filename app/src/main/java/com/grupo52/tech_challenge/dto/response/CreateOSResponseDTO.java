@@ -1,12 +1,12 @@
 package com.grupo52.tech_challenge.dto.response;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.grupo52.tech_challenge.domain.Enums.ComplexidadeOS;
-import com.grupo52.tech_challenge.domain.Enums.StatusOS;
-import com.grupo52.tech_challenge.domain.InsumoOS;
-import com.grupo52.tech_challenge.domain.OrdemDeServico;
-import com.grupo52.tech_challenge.domain.PecaOS;
-import com.grupo52.tech_challenge.domain.ServicoOS;
+import com.grupo52.tech_challenge.domain.Enums.Complexidade;
+import com.grupo52.tech_challenge.domain.Enums.Status;
+import com.grupo52.tech_challenge.domain.OrdemInsumo;
+import com.grupo52.tech_challenge.domain.Ordem;
+import com.grupo52.tech_challenge.domain.OrdemPeca;
+import com.grupo52.tech_challenge.domain.OrdemServico;
 import lombok.*;
 
 import java.math.BigDecimal;
@@ -23,9 +23,9 @@ import java.util.List;
 public class CreateOSResponseDTO {
     private Long id;
 
-    private StatusOS status;
+    private Status status;
 
-    private ComplexidadeOS complexidade;
+    private Complexidade complexidade;
 
     private String sintomas;
 
@@ -45,7 +45,7 @@ public class CreateOSResponseDTO {
 
     private List<ServicoOSDTO> servicosDesejados;
 
-    public static CreateOSResponseDTO fromDomain(OrdemDeServico os) {
+    public static CreateOSResponseDTO fromDomain(Ordem os) {
         return CreateOSResponseDTO.builder()
                 .id(os.getId())
                 .status(os.getStatus())
@@ -75,19 +75,19 @@ public class CreateOSResponseDTO {
         private List<PecaOSDTO> pecas;
         private List<InsumoOSDTO> insumos;
 
-        public static ServicoOSDTO fromDomain(ServicoOS servicoOS) {
+        public static ServicoOSDTO fromDomain(OrdemServico ordemServico) {
             return ServicoOSDTO.builder()
-                    .id(servicoOS.getId())
-                    .servico(servicoOS.getServico().getNome())
-                    .aprovado(servicoOS.getAprovado())
-                    .precoTotal(servicoOS.getPrecoTotal().setScale(2, RoundingMode.HALF_UP))
-                    .precoHorasTecnicas(servicoOS.getPrecoHorasTecnicas().setScale(2, RoundingMode.HALF_UP))
-                    .pecas(PecaOSDTO.fromDomain(servicoOS.getPecas()))
-                    .insumos(InsumoOSDTO.fromDomain(servicoOS.getInsumos()))
+                    .id(ordemServico.getId())
+                    .servico(ordemServico.getServico().getNome())
+                    .aprovado(ordemServico.getAprovado())
+                    .precoTotal(ordemServico.getPrecoTotal().setScale(2, RoundingMode.HALF_UP))
+                    .precoHorasTecnicas(ordemServico.getPrecoHorasTecnicas().setScale(2, RoundingMode.HALF_UP))
+                    .pecas(PecaOSDTO.fromDomain(ordemServico.getPecas()))
+                    .insumos(InsumoOSDTO.fromDomain(ordemServico.getInsumos()))
                     .build();
         }
 
-        public static List<ServicoOSDTO> fromDomain(List<ServicoOS> servicos) {
+        public static List<ServicoOSDTO> fromDomain(List<OrdemServico> servicos) {
             return servicos.stream().map(servico -> fromDomain(servico)).toList();
         }
     }
@@ -105,17 +105,17 @@ public class CreateOSResponseDTO {
 
 
 
-        public static PecaOSDTO fromDomain(PecaOS pecaOS) {
+        public static PecaOSDTO fromDomain(OrdemPeca ordemPeca) {
             return PecaOSDTO.builder()
-                    .peca(pecaOS.getPeca().getNome())
-                    .ean(pecaOS.getPeca().getEan())
-                    .quantidade(pecaOS.getQuantidade())
-                    .precoUnitario(pecaOS.getPeca().getPreco().setScale(2, RoundingMode.HALF_UP))
-                    .precoTotal(pecaOS.getPrecoTotal().setScale(2, RoundingMode.HALF_UP))
+                    .peca(ordemPeca.getPeca().getNome())
+                    .ean(ordemPeca.getPeca().getEan())
+                    .quantidade(ordemPeca.getQuantidade())
+                    .precoUnitario(ordemPeca.getPeca().getPreco().setScale(2, RoundingMode.HALF_UP))
+                    .precoTotal(ordemPeca.getPrecoTotal().setScale(2, RoundingMode.HALF_UP))
                     .build();
         }
 
-        public static List<PecaOSDTO> fromDomain(List<PecaOS> pecas) {
+        public static List<PecaOSDTO> fromDomain(List<OrdemPeca> pecas) {
             return pecas.stream().map(peca -> fromDomain(peca)).toList();
         }
     }
@@ -133,17 +133,17 @@ public class CreateOSResponseDTO {
 
 
 
-        public static InsumoOSDTO fromDomain(InsumoOS insumoOS) {
+        public static InsumoOSDTO fromDomain(OrdemInsumo ordemInsumo) {
             return InsumoOSDTO.builder()
-                    .insumo(insumoOS.getInsumo().getNome())
-                    .ean(insumoOS.getInsumo().getEan())
-                    .quantidade(insumoOS.getQuantidade())
-                    .precoUnitario(insumoOS.getInsumo().getPreco().setScale(2, RoundingMode.HALF_UP))
-                    .precoTotal(insumoOS.getPrecoTotal().setScale(2, RoundingMode.HALF_UP))
+                    .insumo(ordemInsumo.getInsumo().getNome())
+                    .ean(ordemInsumo.getInsumo().getEan())
+                    .quantidade(ordemInsumo.getQuantidade())
+                    .precoUnitario(ordemInsumo.getInsumo().getPreco().setScale(2, RoundingMode.HALF_UP))
+                    .precoTotal(ordemInsumo.getPrecoTotal().setScale(2, RoundingMode.HALF_UP))
                     .build();
         }
 
-        public static List<InsumoOSDTO> fromDomain(List<InsumoOS> insumos) {
+        public static List<InsumoOSDTO> fromDomain(List<OrdemInsumo> insumos) {
             return insumos.stream().map(insumo -> fromDomain(insumo)).toList();
         }
     }
