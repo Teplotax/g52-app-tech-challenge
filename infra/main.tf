@@ -53,6 +53,11 @@ resource "aws_security_group" "ecs_tasks" {
   tags = local.service_tags
 }
 
+resource "aws_cloudwatch_log_group" "app" {
+  name              = "/ecs/${var.service_name}"
+  retention_in_days = 3
+}
+
 resource "aws_ecs_task_definition" "app" {
   family                   = var.service_name
   requires_compatibilities = ["FARGATE"]
@@ -88,7 +93,15 @@ resource "aws_ecs_task_definition" "app" {
         interval    = 30
         timeout     = 10
         retries     = 3
-        startPeriod = 60
+        startPeriod = 90
+      }
+      logConfiguration = {
+        logDriver = "awslogs"
+        options = {
+          "awslogs-group"         = aws_cloudwatch_log_group.app.name
+          "awslogs-region"        = var.aws_region
+          "awslogs-stream-prefix" = "app"
+        }
       }
     },
     {
@@ -119,8 +132,16 @@ resource "aws_ecs_task_definition" "app" {
         command     = ["CMD-SHELL", "curl -f http://localhost:${var.keycloak_port}/realms/g52 || exit 1"]
         interval    = 10
         timeout     = 5
-        retries     = 10
-        startPeriod = 30
+        retries     = 15
+        startPeriod = 90
+      }
+      logConfiguration = {
+        logDriver = "awslogs"
+        options = {
+          "awslogs-group"         = aws_cloudwatch_log_group.app.name
+          "awslogs-region"        = var.aws_region
+          "awslogs-stream-prefix" = "keycloak"
+        }
       }
     },
     {
@@ -153,6 +174,14 @@ resource "aws_ecs_task_definition" "app" {
         timeout     = 3
         retries     = 10
         startPeriod = 10
+      }
+      logConfiguration = {
+        logDriver = "awslogs"
+        options = {
+          "awslogs-group"         = aws_cloudwatch_log_group.app.name
+          "awslogs-region"        = var.aws_region
+          "awslogs-stream-prefix" = "mailpit"
+        }
       }
     }
   ])
