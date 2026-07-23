@@ -1,8 +1,8 @@
 package com.grupo52.tech_challenge.gateway.database.model;
 
-import com.grupo52.tech_challenge.domain.Enums.ComplexidadeOS;
-import com.grupo52.tech_challenge.domain.Enums.StatusOS;
-import com.grupo52.tech_challenge.domain.OrdemDeServico;
+import com.grupo52.tech_challenge.domain.Enums.Complexidade;
+import com.grupo52.tech_challenge.domain.Enums.Status;
+import com.grupo52.tech_challenge.domain.Ordem;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -40,7 +40,7 @@ public class OrdemDeServicoDatabase {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     @Setter
-    private StatusOS status;
+    private Status status;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "cliente_id", nullable = false)
@@ -52,7 +52,7 @@ public class OrdemDeServicoDatabase {
 
     @Enumerated(EnumType.STRING)
     @Setter
-    private ComplexidadeOS complexidade;
+    private Complexidade complexidade;
 
     @Setter
     private String sintomas;
@@ -103,7 +103,7 @@ public class OrdemDeServicoDatabase {
     private LocalDateTime createdAt;
 
     public static OrdemDeServicoDatabase fromDomain(
-            OrdemDeServico os,
+            Ordem os,
             ClienteDatabase cliente,
             VeiculoDatabase veiculo) {
 
@@ -151,8 +151,8 @@ public class OrdemDeServicoDatabase {
         return entity;
     }
 
-    public OrdemDeServico toDomain() {
-        return OrdemDeServico.builder()
+    public Ordem toDomain() {
+        return Ordem.builder()
                 .id(this.id)
                 .status(this.status)
                 .cliente(this.cliente.toDomain())

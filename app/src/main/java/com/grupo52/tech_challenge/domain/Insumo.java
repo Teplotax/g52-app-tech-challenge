@@ -42,6 +42,11 @@ public class Insumo implements Produto {
     @Builder.Default
     private TipoProduto tipoProduto = TipoProduto.INSUMO;
 
+    public void adicionarEstoque(Integer quantidade) {
+        validarQuantidade(quantidade);
+        this.estoque += quantidade;
+    }
+
     public void removerEstoque(Integer quantidade) {
         validarQuantidade(quantidade);
 

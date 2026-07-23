@@ -1,8 +1,8 @@
 package com.grupo52.tech_challenge.gateway.database.model;
 
 
-import com.grupo52.tech_challenge.domain.Enums.ComplexidadeOS;
-import com.grupo52.tech_challenge.domain.Enums.StatusOS;
+import com.grupo52.tech_challenge.domain.Enums.Complexidade;
+import com.grupo52.tech_challenge.domain.Enums.Status;
 import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.jpa.domain.Specification;
 
@@ -17,8 +17,8 @@ public class OrdemDeServicoSpecification {
     public static Specification<OrdemDeServicoDatabase> withFilters(
             String placa,
             String documentoCliente,
-            StatusOS status,
-            ComplexidadeOS complexidade,
+            Status status,
+            Complexidade complexidade,
             LocalDateTime dataInicio,
             LocalDateTime dataFim
     ) {
