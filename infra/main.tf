@@ -1,4 +1,3 @@
-# ECS Cluster
 data "terraform_remote_state" "ecs_cluster" {
   backend = "s3"
   config = {
@@ -30,14 +29,13 @@ resource "aws_iam_role_policy_attachment" "ecs_task_execution_role_policy" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
 
-# Security group for ECS tasks — allows inbound from VPC on container port
 resource "aws_security_group" "ecs_tasks" {
   name        = "${var.service_name}-ecs-tasks-sg"
   description = "Allow inbound traffic on container port from within the VPC"
   vpc_id      = var.vpc_id
 
   ingress {
-    description = "Allow NLB and VPC traffic on container port"
+    description = "Allow NLB traffic on container port"
     from_port   = var.container_port
     to_port     = var.container_port
     protocol    = "tcp"
@@ -59,19 +57,30 @@ resource "aws_ecs_task_definition" "app" {
   family                   = var.service_name
   requires_compatibilities = ["FARGATE"]
   network_mode             = "awsvpc"
-  cpu                      = "256"
-  memory                   = "512"
+  cpu                      = var.task_cpu
+  memory                   = var.task_memory
   execution_role_arn       = aws_iam_role.ecs_task_execution_role.arn
 
   container_definitions = jsonencode([
     {
-      name         = var.service_name
-      image        = "${var.repository_url}:${var.image_tag}"
-      environment  = var.task_env_vars
+      name        = var.service_name
+      image       = "${var.repository_url}:${var.image_tag}"
+      essential   = true
+      environment = var.task_env_vars
       portMappings = [
         {
           containerPort = var.container_port
           protocol      = "tcp"
+        }
+      ]
+      dependsOn = [
+        {
+          containerName = "keycloak"
+          condition     = "HEALTHY"
+        },
+        {
+          containerName = "mailpit"
+          condition     = "HEALTHY"
         }
       ]
       healthCheck = {
@@ -81,16 +90,81 @@ resource "aws_ecs_task_definition" "app" {
         retries     = 3
         startPeriod = 60
       }
+    },
+    {
+      name      = "keycloak"
+      image     = "${var.keycloak_repository_url}:${var.keycloak_image_tag}"
+      essential = true
+      environment = [
+        {
+          name  = "KEYCLOAK_ADMIN"
+          value = "admin"
+        },
+        {
+          name  = "KEYCLOAK_ADMIN_PASSWORD"
+          value = "admin"
+        },
+        {
+          name  = "KC_HTTP_PORT"
+          value = tostring(var.keycloak_port)
+        }
+      ]
+      portMappings = [
+        {
+          containerPort = var.keycloak_port
+          protocol      = "tcp"
+        }
+      ]
+      healthCheck = {
+        command     = ["CMD-SHELL", "curl -f http://localhost:${var.keycloak_port}/realms/g52 || exit 1"]
+        interval    = 10
+        timeout     = 5
+        retries     = 15
+        startPeriod = 30
+      }
+    },
+    {
+      name      = "mailpit"
+      image     = "axllent/mailpit:latest"
+      essential = true
+      environment = [
+        {
+          name  = "MP_SMTP_AUTH_ACCEPT_ANY"
+          value = "true"
+        },
+        {
+          name  = "MP_SMTP_AUTH_ALLOW_INSECURE"
+          value = "true"
+        }
+      ]
+      portMappings = [
+        {
+          containerPort = 1025
+          protocol      = "tcp"
+        },
+        {
+          containerPort = 8025
+          protocol      = "tcp"
+        }
+      ]
+      healthCheck = {
+        command     = ["CMD-SHELL", "wget -q -O - http://localhost:8025/readyz || exit 1"]
+        interval    = 5
+        timeout     = 3
+        retries     = 10
+        startPeriod = 10
+      }
     }
   ])
 }
 
 resource "aws_lb_target_group" "app" {
-  name        = "${var.service_name}-tg"
-  port        = var.container_port
-  protocol    = "TCP"
-  target_type = "ip"
-  vpc_id      = var.vpc_id
+  name               = "${var.service_name}-tg"
+  port               = var.container_port
+  protocol           = "TCP"
+  target_type        = "ip"
+  vpc_id             = var.vpc_id
+  preserve_client_ip = false
 
   health_check {
     protocol            = "HTTP"
@@ -125,7 +199,7 @@ resource "aws_ecs_service" "app" {
   network_configuration {
     subnets          = var.subnet_ids
     security_groups  = [aws_security_group.ecs_tasks.id]
-    assign_public_ip = false
+    assign_public_ip = true
   }
 
   capacity_provider_strategy {
@@ -146,5 +220,64 @@ resource "aws_ecs_service" "app" {
 
   tags = local.service_tags
 
+  lifecycle {
+    ignore_changes = [desired_count]
+  }
+
   depends_on = [aws_lb_listener.app]
+}
+
+resource "aws_appautoscaling_target" "app" {
+  max_capacity       = var.max_capacity
+  min_capacity       = var.min_capacity
+  resource_id        = "service/${data.terraform_remote_state.ecs_cluster.outputs.cluster_name}/${var.service_name}"
+  scalable_dimension = "ecs:service:DesiredCount"
+  service_namespace  = "ecs"
+
+  depends_on = [aws_ecs_service.app]
+}
+
+resource "aws_appautoscaling_policy" "cpu" {
+  name               = "${var.service_name}-cpu-scaling"
+  policy_type        = "TargetTrackingScaling"
+  resource_id        = aws_appautoscaling_target.app.resource_id
+  scalable_dimension = aws_appautoscaling_target.app.scalable_dimension
+  service_namespace  = aws_appautoscaling_target.app.service_namespace
+
+  target_tracking_scaling_policy_configuration {
+    predefined_metric_specification {
+      predefined_metric_type = "ECSServiceAverageCPUUtilization"
+    }
+    target_value       = var.cpu_target_value
+    scale_in_cooldown  = 120
+    scale_out_cooldown = 60
+  }
+}
+
+resource "aws_appautoscaling_scheduled_action" "scale_down_night" {
+  name               = "${var.service_name}-scale-down-20h"
+  service_namespace  = aws_appautoscaling_target.app.service_namespace
+  resource_id        = aws_appautoscaling_target.app.resource_id
+  scalable_dimension = aws_appautoscaling_target.app.scalable_dimension
+  schedule           = "cron(0 20 * * ? *)"
+  timezone           = var.schedule_timezone
+
+  scalable_target_action {
+    min_capacity = 0
+    max_capacity = 0
+  }
+}
+
+resource "aws_appautoscaling_scheduled_action" "scale_up_morning" {
+  name               = "${var.service_name}-scale-up-08h"
+  service_namespace  = aws_appautoscaling_target.app.service_namespace
+  resource_id        = aws_appautoscaling_target.app.resource_id
+  scalable_dimension = aws_appautoscaling_target.app.scalable_dimension
+  schedule           = "cron(0 8 * * ? *)"
+  timezone           = var.schedule_timezone
+
+  scalable_target_action {
+    min_capacity = 1
+    max_capacity = var.max_capacity
+  }
 }

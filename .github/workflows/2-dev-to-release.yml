@@ -25,7 +25,9 @@ jobs:
     outputs:
       aws_region: ${{ steps.pipes.outputs.aws_region }}
       ecr_repository: ${{ steps.pipes.outputs.ecr_repository }}
+      ecr_repository_keycloak: ${{ steps.pipes.outputs.ecr_repository_keycloak }}
       app_dir: ${{ steps.pipes.outputs.app_dir }}
+      keycloak_dir: ${{ steps.pipes.outputs.keycloak_dir }}
       java_version: ${{ steps.pipes.outputs.java_version }}
       service_name: ${{ steps.tfvars.outputs.service_name }}
       ecs_cluster: ${{ steps.tfvars.outputs.ecs_cluster }}
@@ -42,10 +44,12 @@ jobs:
           APP_DIR_PATTERN=$(yq '.app_dir' .pipes.yml)
           APP_DIR=$(ls -d $APP_DIR_PATTERN 2>/dev/null | head -1)
 
-          echo "aws_region=$(yq '.aws_region' .pipes.yml)"         >> $GITHUB_OUTPUT
-          echo "ecr_repository=$(yq '.ecr_repository' .pipes.yml)" >> $GITHUB_OUTPUT
-          echo "java_version=$(yq '.java_version' .pipes.yml)"     >> $GITHUB_OUTPUT
-          echo "app_dir=$APP_DIR"                                   >> $GITHUB_OUTPUT
+          echo "aws_region=$(yq '.aws_region' .pipes.yml)"                           >> $GITHUB_OUTPUT
+          echo "ecr_repository=$(yq '.ecr_repository' .pipes.yml)"                   >> $GITHUB_OUTPUT
+          echo "ecr_repository_keycloak=$(yq '.ecr_repository_keycloak' .pipes.yml)" >> $GITHUB_OUTPUT
+          echo "java_version=$(yq '.java_version' .pipes.yml)"                       >> $GITHUB_OUTPUT
+          echo "app_dir=$APP_DIR"                                                     >> $GITHUB_OUTPUT
+          echo "keycloak_dir=$(yq '.keycloak_dir' .pipes.yml)"                       >> $GITHUB_OUTPUT
 
       - name: Read terraform.tfvars
         id: tfvars
@@ -60,9 +64,29 @@ jobs:
       - name: Generate image tag
         id: tag
         run: echo "image_tag=${GITHUB_SHA}" >> $GITHUB_OUTPUT
+  test:
+    name: Run unit tests
+    needs: config
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK ${{ needs.config.outputs.java_version }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ needs.config.outputs.java_version }}
+          distribution: temurin
+          cache: maven
+
+      - name: Run unit tests
+        working-directory: ${{ needs.config.outputs.app_dir }}
+        run: mvn -B test --no-transfer-progress
   build:
     name: Build & Push to ECR
-    needs: config
+    needs: [ config, test ]
     if: |
       needs.config.outputs.destroy != 'true' &&
       (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
@@ -94,17 +118,30 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Build, tag and push Docker image
+      - name: Build, tag and push app image
         env:
           REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           REPOSITORY: ${{ needs.config.outputs.ecr_repository }}
-          SERVICE: ${{ needs.config.outputs.service_name }}
           IMAGE_TAG: ${{ needs.config.outputs.image_tag }}
           APP_DIR: ${{ needs.config.outputs.app_dir }}
         run: |
           FULL_IMAGE="$REGISTRY/$REPOSITORY:$IMAGE_TAG"
 
           docker build -t $FULL_IMAGE $APP_DIR
+          docker push $FULL_IMAGE
+
+          echo "Pushed: $FULL_IMAGE"
+
+      - name: Build, tag and push keycloak image
+        env:
+          REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          REPOSITORY: ${{ needs.config.outputs.ecr_repository_keycloak }}
+          IMAGE_TAG: ${{ needs.config.outputs.image_tag }}
+          KEYCLOAK_DIR: ${{ needs.config.outputs.keycloak_dir }}
+        run: |
+          FULL_IMAGE="$REGISTRY/$REPOSITORY:$IMAGE_TAG"
+
+          docker build -t $FULL_IMAGE $KEYCLOAK_DIR
           docker push $FULL_IMAGE
 
           echo "Pushed: $FULL_IMAGE"
@@ -147,7 +184,8 @@ jobs:
         run: |
           terraform plan \
             -var-file=inventories/dev/terraform.tfvars \
-            -var="image_tag=${{ needs.config.outputs.image_tag }}"
+            -var="image_tag=${{ needs.config.outputs.image_tag }}" \
+            -var="keycloak_image_tag=${{ needs.config.outputs.image_tag }}"
 
       - name: Terraform Destroy
         if: needs.config.outputs.destroy == 'true' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
@@ -160,7 +198,8 @@ jobs:
         run: |
           terraform apply -auto-approve \
             -var-file=inventories/dev/terraform.tfvars \
-            -var="image_tag=${{ needs.config.outputs.image_tag }}"
+            -var="image_tag=${{ needs.config.outputs.image_tag }}" \
+            -var="keycloak_image_tag=${{ needs.config.outputs.image_tag }}"
   deploy:
     name: Deploy to ECS
     needs: [ config, terraform ]
@@ -186,8 +225,6 @@ jobs:
   release:
     name: Create Release Branch & PR
     needs: [config, terraform]
-#    needs: deploy
-#    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     if: |
       always() &&
       (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&

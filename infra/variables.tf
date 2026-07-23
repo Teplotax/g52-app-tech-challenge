@@ -41,6 +41,20 @@ variable "repository_url" {
   type = string
 }
 
+variable "keycloak_repository_url" {
+  type = string
+}
+
+variable "keycloak_image_tag" {
+  type    = string
+  default = "latest"
+}
+
+variable "keycloak_port" {
+  type    = number
+  default = 9000
+}
+
 variable "container_port" {
   type        = number
   description = "Port exposed by the container"
@@ -50,6 +64,36 @@ variable "container_port" {
 variable "desired_count" {
   type        = number
   default     = 1
+}
+
+variable "task_cpu" {
+  type    = string
+  default = "1024"
+}
+
+variable "task_memory" {
+  type    = string
+  default = "3072"
+}
+
+variable "min_capacity" {
+  type    = number
+  default = 0
+}
+
+variable "max_capacity" {
+  type    = number
+  default = 2
+}
+
+variable "cpu_target_value" {
+  type    = number
+  default = 70
+}
+
+variable "schedule_timezone" {
+  type    = string
+  default = "America/Sao_Paulo"
 }
 
 variable "task_env_vars" {
