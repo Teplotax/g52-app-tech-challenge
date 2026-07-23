@@ -1,4 +1,6 @@
 aws_region: "sa-east-1"
 ecr_repository: "grupo52/tech-challenge/ecs-tech-challenge"
+ecr_repository_keycloak: "grupo52/tech-challenge/ecs-tech-challenge-keycloak"
 app_dir: "app"
+keycloak_dir: "keycloak"
 java_version: "21"
