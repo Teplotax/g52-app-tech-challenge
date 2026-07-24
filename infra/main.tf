@@ -50,6 +50,14 @@ resource "aws_security_group" "ecs_tasks" {
     cidr_blocks = var.cidr_blocks
   }
 
+  ingress {
+    description = "Allow NLB traffic to mailpit web UI"
+    from_port   = 8025
+    to_port     = 8025
+    protocol    = "tcp"
+    cidr_blocks = var.cidr_blocks
+  }
+
   egress {
     description = "Allow all outbound"
     from_port   = 0
@@ -252,6 +260,33 @@ resource "aws_lb_listener" "keycloak" {
   }
 }
 
+resource "aws_lb_target_group" "mailpit" {
+  name               = "${var.service_name}-mp-tg"
+  port               = 8025
+  protocol           = "TCP"
+  target_type        = "ip"
+  vpc_id             = var.vpc_id
+  preserve_client_ip = false
+
+  health_check {
+    protocol            = "TCP"
+    interval            = 30
+    healthy_threshold   = 2
+    unhealthy_threshold = 3
+  }
+}
+
+resource "aws_lb_listener" "mailpit" {
+  load_balancer_arn = var.nlb_arn
+  port              = 8025
+  protocol          = "TCP"
+
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.mailpit.arn
+  }
+}
+
 resource "aws_ecs_service" "app" {
   name            = var.service_name
   cluster         = data.terraform_remote_state.ecs_cluster.outputs.cluster_id
@@ -283,6 +318,12 @@ resource "aws_ecs_service" "app" {
     container_port   = var.keycloak_port
   }
 
+  load_balancer {
+    target_group_arn = aws_lb_target_group.mailpit.arn
+    container_name   = "mailpit"
+    container_port   = 8025
+  }
+
   deployment_circuit_breaker {
     enable   = true
     rollback = true
@@ -294,7 +335,7 @@ resource "aws_ecs_service" "app" {
     ignore_changes = [desired_count]
   }
 
-  depends_on = [aws_lb_listener.app, aws_lb_listener.keycloak]
+  depends_on = [aws_lb_listener.app, aws_lb_listener.keycloak, aws_lb_listener.mailpit]
 }
 
 resource "aws_appautoscaling_target" "app" {
