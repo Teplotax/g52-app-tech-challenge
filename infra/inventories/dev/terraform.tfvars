@@ -11,9 +11,12 @@ cidr_blocks       = ["172.31.0.0/16"]
 destroy           = false
 
 desired_count     = 1
-min_capacity      = 0
+min_capacity      = 1
 max_capacity      = 2
 cpu_target_value  = 70
+
+scale_down_cron   = "cron(0 20 * * ? *)"
+scale_up_cron     = "cron(0 8 * * ? *)"
 
 task_env_vars = [
   {

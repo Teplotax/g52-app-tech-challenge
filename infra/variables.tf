@@ -96,6 +96,16 @@ variable "schedule_timezone" {
   default = "America/Sao_Paulo"
 }
 
+variable "scale_down_cron" {
+  type    = string
+  default = "cron(0 20 * * ? *)"
+}
+
+variable "scale_up_cron" {
+  type    = string
+  default = "cron(0 8 * * ? *)"
+}
+
 variable "task_env_vars" {
   type = list(any)
 }
