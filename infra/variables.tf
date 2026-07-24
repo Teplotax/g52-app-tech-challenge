@@ -55,6 +55,11 @@ variable "keycloak_port" {
   default = 9000
 }
 
+variable "keycloak_admin_password" {
+  type      = string
+  sensitive = true
+}
+
 variable "container_port" {
   type        = number
   description = "Port exposed by the container"
