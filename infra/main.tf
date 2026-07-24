@@ -132,7 +132,7 @@ resource "aws_ecs_task_definition" "app" {
         command     = ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/${var.keycloak_port} && exec 3<&-' || exit 1"]
         interval    = 10
         timeout     = 5
-        retries     = 15
+        retries     = 10
         startPeriod = 90
       }
       logConfiguration = {
