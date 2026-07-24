@@ -132,7 +132,7 @@ resource "aws_ecs_task_definition" "app" {
         command     = ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/${var.keycloak_port} && exec 3<&-' || exit 1"]
         interval    = 10
         timeout     = 5
-        retries     = 10
+        retries     = 15
         startPeriod = 90
       }
       logConfiguration = {
@@ -288,7 +288,7 @@ resource "aws_appautoscaling_scheduled_action" "scale_down_night" {
   service_namespace  = aws_appautoscaling_target.app.service_namespace
   resource_id        = aws_appautoscaling_target.app.resource_id
   scalable_dimension = aws_appautoscaling_target.app.scalable_dimension
-  schedule           = "cron(0 20 * * ? *)"
+  schedule           = var.scale_down_cron
   timezone           = var.schedule_timezone
 
   scalable_target_action {
@@ -302,7 +302,7 @@ resource "aws_appautoscaling_scheduled_action" "scale_up_morning" {
   service_namespace  = aws_appautoscaling_target.app.service_namespace
   resource_id        = aws_appautoscaling_target.app.resource_id
   scalable_dimension = aws_appautoscaling_target.app.scalable_dimension
-  schedule           = "cron(0 8 * * ? *)"
+  schedule           = var.scale_up_cron
   timezone           = var.schedule_timezone
 
   scalable_target_action {
