@@ -57,7 +57,7 @@ task_env_vars = [
   },
   {
     name: "APP_BASE_URL"
-    value: "http://tech-challenge-lb-f602dac972c5f268.elb.sa-east-1.amazonaws.com:8080"
+    value: "http://tech-challenge-lb-ab041078c8d35bb0.elb.sa-east-1.amazonaws.com:8080"
   },
   {
     name: "APPROVAL_TTL_MINUTES"
