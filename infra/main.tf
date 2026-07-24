@@ -43,19 +43,19 @@ resource "aws_security_group" "ecs_tasks" {
   }
 
   ingress {
-    description = "Allow NLB traffic to keycloak token endpoint"
+    description = "Allow direct internet traffic to keycloak token endpoint"
     from_port   = var.keycloak_port
     to_port     = var.keycloak_port
     protocol    = "tcp"
-    cidr_blocks = var.cidr_blocks
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   ingress {
-    description = "Allow NLB traffic to mailpit web UI"
+    description = "Allow direct internet traffic to mailpit web UI"
     from_port   = 8025
     to_port     = 8025
     protocol    = "tcp"
-    cidr_blocks = var.cidr_blocks
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   egress {
