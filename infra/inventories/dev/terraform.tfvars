@@ -14,9 +14,9 @@ desired_count     = 1
 min_capacity      = 1
 max_capacity      = 2
 cpu_target_value  = 70
-
 scale_down_cron   = "cron(0 20 * * ? *)"
 scale_up_cron     = "cron(0 8 * * ? *)"
+keycloak_admin_password = "ChangeMe-g52-Dev-2026!"
 
 task_env_vars = [
   {
