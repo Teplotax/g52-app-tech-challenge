@@ -8,7 +8,7 @@ nlb_arn           = "arn:aws:elasticloadbalancing:sa-east-1:403339561517:loadbal
 repository_url    = "403339561517.dkr.ecr.sa-east-1.amazonaws.com/grupo52/tech-challenge/ecs-tech-challenge"
 keycloak_repository_url = "403339561517.dkr.ecr.sa-east-1.amazonaws.com/grupo52/tech-challenge/ecs-tech-challenge-keycloak"
 cidr_blocks       = ["172.31.0.0/16"]
-destroy           = false
+destroy           = true
 
 desired_count     = 1
 min_capacity      = 1
