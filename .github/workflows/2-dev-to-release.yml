@@ -111,7 +111,7 @@ jobs:
       - name: Configure AWS (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: arn:aws:iam::403339561517:role/github-actions-terraform-dev
+          role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/github-actions-terraform-dev
           aws-region: ${{ needs.config.outputs.aws_region }}
 
       - name: Login to ECR
@@ -151,6 +151,7 @@ jobs:
     if: always() && needs.config.result == 'success' && (needs.build.result == 'success' || needs.build.result == 'skipped')
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    environment: dev
 
     defaults:
       run:
@@ -166,13 +167,13 @@ jobs:
       - name: Configure AWS (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: arn:aws:iam::403339561517:role/github-actions-terraform-dev
+          role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/github-actions-terraform-dev
           aws-region: ${{ needs.config.outputs.aws_region }}
 
       - name: Terraform Init
         run: |
           terraform init -reconfigure \
-            -backend-config="bucket=teplotax-terraform-state-dev" \
+            -backend-config="bucket=teplotax-terraform-state-dev-${{ vars.AWS_ACCOUNT_ID }}" \
             -backend-config="key=dev/${{ needs.config.outputs.service_name }}/terraform.tfstate" \
             -backend-config="region=${{ needs.config.outputs.aws_region }}"
 
@@ -213,7 +214,7 @@ jobs:
       - name: Configure AWS (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: arn:aws:iam::403339561517:role/github-actions-terraform-dev
+          role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/github-actions-terraform-dev
           aws-region: ${{ needs.config.outputs.aws_region }}
 
       - name: Force ECS deployment
