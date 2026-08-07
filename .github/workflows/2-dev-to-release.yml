@@ -29,6 +29,7 @@ jobs:
       app_dir: ${{ steps.pipes.outputs.app_dir }}
       keycloak_dir: ${{ steps.pipes.outputs.keycloak_dir }}
       java_version: ${{ steps.pipes.outputs.java_version }}
+      destroy: ${{ steps.pipes.outputs.destroy }}
       image_tag: ${{ steps.tag.outputs.image_tag }}
 
     steps:
@@ -47,6 +48,7 @@ jobs:
           echo "java_version=$(yq '.java_version' .pipes.yml)"                       >> $GITHUB_OUTPUT
           echo "app_dir=$APP_DIR"                                                     >> $GITHUB_OUTPUT
           echo "keycloak_dir=$(yq '.keycloak_dir' .pipes.yml)"                       >> $GITHUB_OUTPUT
+          echo "destroy=$(yq '.destroy' .pipes.yml)"                                 >> $GITHUB_OUTPUT
 
       - name: Generate image tag
         id: tag
@@ -178,6 +180,7 @@ jobs:
           done
 
       - name: Apply manifests
+        if: needs.config.outputs.destroy != 'true'
         run: |
           kubectl apply -f k8s-rendered/namespace.yaml
           kubectl apply -f k8s-rendered/configmap.yaml
@@ -187,8 +190,18 @@ jobs:
           kubectl apply -f k8s-rendered/hpa.yaml
 
       - name: Wait for rollout
+        if: needs.config.outputs.destroy != 'true'
         run: |
           kubectl rollout status deployment/tech-challenge-ms -n tech-challenge --timeout=300s
+
+      - name: Destroy manifests
+        if: needs.config.outputs.destroy == 'true'
+        run: |
+          kubectl delete -f k8s-rendered/hpa.yaml --ignore-not-found
+          kubectl delete -f k8s-rendered/service.yaml --ignore-not-found
+          kubectl delete -f k8s-rendered/deployment.yaml --ignore-not-found
+          kubectl delete -f k8s-rendered/configmap.yaml --ignore-not-found
+          kubectl delete -f k8s-rendered/secret.yaml --ignore-not-found
   release:
     name: Create Release Branch & PR
     needs: [ config, deploy ]
