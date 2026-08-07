@@ -5,3 +5,5 @@ app_dir: "app"
 keycloak_dir: "keycloak"
 java_version: "21"
 destroy: false
+eks_cluster_name: "eks-tech-challenge"
+app_base_url: "http://CHANGE_ME:8080"

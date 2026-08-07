@@ -30,6 +30,8 @@ jobs:
       keycloak_dir: ${{ steps.pipes.outputs.keycloak_dir }}
       java_version: ${{ steps.pipes.outputs.java_version }}
       destroy: ${{ steps.pipes.outputs.destroy }}
+      eks_cluster_name: ${{ steps.pipes.outputs.eks_cluster_name }}
+      app_base_url: ${{ steps.pipes.outputs.app_base_url }}
       image_tag: ${{ steps.tag.outputs.image_tag }}
 
     steps:
@@ -49,6 +51,8 @@ jobs:
           echo "app_dir=$APP_DIR"                                                     >> $GITHUB_OUTPUT
           echo "keycloak_dir=$(yq '.keycloak_dir' .pipes.yml)"                       >> $GITHUB_OUTPUT
           echo "destroy=$(yq '.destroy' .pipes.yml)"                                 >> $GITHUB_OUTPUT
+          echo "eks_cluster_name=$(yq '.eks_cluster_name' .pipes.yml)"               >> $GITHUB_OUTPUT
+          echo "app_base_url=$(yq '.app_base_url' .pipes.yml)"                       >> $GITHUB_OUTPUT
 
       - name: Generate image tag
         id: tag
@@ -144,7 +148,7 @@ jobs:
     env:
       APP_IMAGE: ${{ needs.config.outputs.ecr_repository }}:${{ needs.config.outputs.image_tag }}
       KEYCLOAK_IMAGE: ${{ needs.config.outputs.ecr_repository_keycloak }}:${{ needs.config.outputs.image_tag }}
-      APP_BASE_URL: ${{ vars.APP_BASE_URL }}
+      APP_BASE_URL: ${{ needs.config.outputs.app_base_url }}
       MAIL_PASSWORD: ${{ secrets.MAIL_PASSWORD }}
       APPROVAL_SECRET: ${{ secrets.APPROVAL_SECRET }}
       KEYCLOAK_ADMIN_PASSWORD: ${{ secrets.KEYCLOAK_ADMIN_PASSWORD }}
@@ -166,7 +170,7 @@ jobs:
       - name: Update kubeconfig
         run: |
           aws eks update-kubeconfig \
-            --name ${{ vars.EKS_CLUSTER_NAME }} \
+            --name ${{ needs.config.outputs.eks_cluster_name }} \
             --region ${{ needs.config.outputs.aws_region }}
 
       - name: Render manifests
