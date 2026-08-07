@@ -1,0 +1,67 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: deployment-scaler
+  namespace: tech-challenge
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: deployment-scaler
+  namespace: tech-challenge
+rules:
+  - apiGroups: ["apps"]
+    resources: ["deployments/scale"]
+    verbs: ["patch", "get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: deployment-scaler
+  namespace: tech-challenge
+subjects:
+  - kind: ServiceAccount
+    name: deployment-scaler
+    namespace: tech-challenge
+roleRef:
+  kind: Role
+  name: deployment-scaler
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: scale-down-night
+  namespace: tech-challenge
+spec:
+  schedule: "0 20 * * *"
+  timeZone: "America/Sao_Paulo"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          serviceAccountName: deployment-scaler
+          restartPolicy: Never
+          containers:
+            - name: kubectl
+              image: bitnami/kubectl:latest
+              command: ["kubectl", "scale", "deployment/tech-challenge-ms", "--replicas=0", "-n", "tech-challenge"]
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: scale-up-morning
+  namespace: tech-challenge
+spec:
+  schedule: "0 8 * * *"
+  timeZone: "America/Sao_Paulo"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          serviceAccountName: deployment-scaler
+          restartPolicy: Never
+          containers:
+            - name: kubectl
+              image: bitnami/kubectl:latest
+              command: ["kubectl", "scale", "deployment/tech-challenge-ms", "--replicas=1", "-n", "tech-challenge"]

@@ -15,7 +15,7 @@ services:
       test: ["CMD", "curl", "-f", "http://localhost:8080/realms/g52"]
       interval: 10s
       timeout: 5s
-      retries: 15
+      retries: 10
       start_period: 30s
 
   mailpit:
