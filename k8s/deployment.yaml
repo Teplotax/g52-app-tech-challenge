@@ -1,0 +1,102 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tech-challenge-ms
+  namespace: tech-challenge
+  labels:
+    app: tech-challenge-ms
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tech-challenge-ms
+  template:
+    metadata:
+      labels:
+        app: tech-challenge-ms
+    spec:
+      containers:
+        - name: app
+          image: "${APP_IMAGE}"
+          ports:
+            - containerPort: 8080
+          envFrom:
+            - configMapRef:
+                name: tech-challenge-config
+            - secretRef:
+                name: tech-challenge-secrets
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8080
+            initialDelaySeconds: 60
+            periodSeconds: 15
+            failureThreshold: 6
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8080
+            initialDelaySeconds: 90
+            periodSeconds: 30
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "1Gi"
+            limits:
+              cpu: "1"
+              memory: "3Gi"
+        - name: keycloak
+          image: "${KEYCLOAK_IMAGE}"
+          ports:
+            - containerPort: 9000
+          env:
+            - name: KEYCLOAK_ADMIN
+              valueFrom:
+                configMapKeyRef:
+                  name: tech-challenge-config
+                  key: KEYCLOAK_ADMIN
+            - name: KEYCLOAK_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: tech-challenge-secrets
+                  key: KEYCLOAK_ADMIN_PASSWORD
+            - name: KC_HTTP_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: tech-challenge-config
+                  key: KC_HTTP_PORT
+          readinessProbe:
+            tcpSocket:
+              port: 9000
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            failureThreshold: 10
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "512Mi"
+            limits:
+              cpu: "500m"
+              memory: "1Gi"
+        - name: mailpit
+          image: "axllent/mailpit:latest"
+          ports:
+            - containerPort: 1025
+            - containerPort: 8025
+          env:
+            - name: MP_SMTP_AUTH_ACCEPT_ANY
+              value: "true"
+            - name: MP_SMTP_AUTH_ALLOW_INSECURE
+              value: "true"
+          readinessProbe:
+            exec:
+              command: ["/mailpit", "readyz"]
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "250m"
+              memory: "256Mi"

@@ -1,0 +1,30 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: tech-challenge-nlb
+  namespace: tech-challenge
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-type: "external"
+    service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: "ip"
+    service.beta.kubernetes.io/aws-load-balancer-scheme: "internet-facing"
+    service.beta.kubernetes.io/aws-load-balancer-healthcheck-protocol: "TCP"
+    service.beta.kubernetes.io/aws-load-balancer-healthcheck-interval: "15"
+    service.beta.kubernetes.io/aws-load-balancer-healthcheck-healthy-threshold: "2"
+    service.beta.kubernetes.io/aws-load-balancer-healthcheck-unhealthy-threshold: "3"
+spec:
+  type: LoadBalancer
+  selector:
+    app: tech-challenge-ms
+  ports:
+    - name: app
+      port: 8080
+      targetPort: 8080
+      protocol: TCP
+    - name: keycloak
+      port: 9000
+      targetPort: 9000
+      protocol: TCP
+    - name: mailpit
+      port: 8025
+      targetPort: 8025
+      protocol: TCP
