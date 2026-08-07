@@ -1,4 +1,9 @@
 aws_region: "sa-east-1"
-ecr_repository: "grupo52/tech-challenge/ecs-tech-challenge"
+ecr_repository: "grupo52/tech-challenge/eks-tech-challenge"
+ecr_repository_keycloak: "grupo52/tech-challenge/eks-tech-challenge-keycloak"
 app_dir: "app"
+keycloak_dir: "keycloak"
 java_version: "21"
+destroy: false
+eks_cluster_name: "eks-tech-challenge"
+app_base_url: "http://k8s-techchal-techchal-1ecc9de339-cbb36dcf67bb3499.elb.sa-east-1.amazonaws.com:8080"

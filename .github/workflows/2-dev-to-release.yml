@@ -25,11 +25,13 @@ jobs:
     outputs:
       aws_region: ${{ steps.pipes.outputs.aws_region }}
       ecr_repository: ${{ steps.pipes.outputs.ecr_repository }}
+      ecr_repository_keycloak: ${{ steps.pipes.outputs.ecr_repository_keycloak }}
       app_dir: ${{ steps.pipes.outputs.app_dir }}
+      keycloak_dir: ${{ steps.pipes.outputs.keycloak_dir }}
       java_version: ${{ steps.pipes.outputs.java_version }}
-      service_name: ${{ steps.tfvars.outputs.service_name }}
-      ecs_cluster: ${{ steps.tfvars.outputs.ecs_cluster }}
-      destroy: ${{ steps.tfvars.outputs.destroy }}
+      destroy: ${{ steps.pipes.outputs.destroy }}
+      eks_cluster_name: ${{ steps.pipes.outputs.eks_cluster_name }}
+      app_base_url: ${{ steps.pipes.outputs.app_base_url }}
       image_tag: ${{ steps.tag.outputs.image_tag }}
 
     steps:
@@ -42,32 +44,46 @@ jobs:
           APP_DIR_PATTERN=$(yq '.app_dir' .pipes.yml)
           APP_DIR=$(ls -d $APP_DIR_PATTERN 2>/dev/null | head -1)
 
-          echo "aws_region=$(yq '.aws_region' .pipes.yml)"         >> $GITHUB_OUTPUT
-          echo "ecr_repository=$(yq '.ecr_repository' .pipes.yml)" >> $GITHUB_OUTPUT
-          echo "java_version=$(yq '.java_version' .pipes.yml)"     >> $GITHUB_OUTPUT
-          echo "app_dir=$APP_DIR"                                   >> $GITHUB_OUTPUT
-
-      - name: Read terraform.tfvars
-        id: tfvars
-        working-directory: infra/inventories/dev
-        run: |
-          extract() { grep -E "^$1\s*=" terraform.tfvars | awk -F '=' '{gsub(/[" ]/, "", $2); print $2}'; }
-
-          echo "service_name=$(extract service_name)" >> $GITHUB_OUTPUT
-          echo "ecs_cluster=$(extract cluster_name)"  >> $GITHUB_OUTPUT
-          echo "destroy=$(extract destroy)"           >> $GITHUB_OUTPUT
+          echo "aws_region=$(yq '.aws_region' .pipes.yml)"                           >> $GITHUB_OUTPUT
+          echo "ecr_repository=$(yq '.ecr_repository' .pipes.yml)"                   >> $GITHUB_OUTPUT
+          echo "ecr_repository_keycloak=$(yq '.ecr_repository_keycloak' .pipes.yml)" >> $GITHUB_OUTPUT
+          echo "java_version=$(yq '.java_version' .pipes.yml)"                       >> $GITHUB_OUTPUT
+          echo "app_dir=$APP_DIR"                                                     >> $GITHUB_OUTPUT
+          echo "keycloak_dir=$(yq '.keycloak_dir' .pipes.yml)"                       >> $GITHUB_OUTPUT
+          echo "destroy=$(yq '.destroy' .pipes.yml)"                                 >> $GITHUB_OUTPUT
+          echo "eks_cluster_name=$(yq '.eks_cluster_name' .pipes.yml)"               >> $GITHUB_OUTPUT
+          echo "app_base_url=$(yq '.app_base_url' .pipes.yml)"                       >> $GITHUB_OUTPUT
 
       - name: Generate image tag
         id: tag
         run: echo "image_tag=${GITHUB_SHA}" >> $GITHUB_OUTPUT
-  build:
-    name: Build & Push to ECR
+  test:
+    name: Run unit tests
     needs: config
-    if: |
-      needs.config.outputs.destroy != 'true' &&
-      (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
     runs-on: ubuntu-latest
     timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK ${{ needs.config.outputs.java_version }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ needs.config.outputs.java_version }}
+          distribution: temurin
+          cache: maven
+
+      - name: Run unit tests
+        working-directory: ${{ needs.config.outputs.app_dir }}
+        run: mvn -B test --no-transfer-progress
+  build:
+    name: Build & Push to ECR
+    needs: [ config, test ]
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: dev
 
     steps:
       - name: Checkout
@@ -87,18 +103,17 @@ jobs:
       - name: Configure AWS (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: arn:aws:iam::403339561517:role/github-actions-terraform-dev
+          role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/github-actions-terraform-dev
           aws-region: ${{ needs.config.outputs.aws_region }}
 
       - name: Login to ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Build, tag and push Docker image
+      - name: Build, tag and push app image
         env:
           REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           REPOSITORY: ${{ needs.config.outputs.ecr_repository }}
-          SERVICE: ${{ needs.config.outputs.service_name }}
           IMAGE_TAG: ${{ needs.config.outputs.image_tag }}
           APP_DIR: ${{ needs.config.outputs.app_dir }}
         run: |
@@ -108,94 +123,97 @@ jobs:
           docker push $FULL_IMAGE
 
           echo "Pushed: $FULL_IMAGE"
-  terraform:
-    name: Terraform
-    needs: [ config, build ]
-    if: always() && needs.config.result == 'success' && (needs.build.result == 'success' || needs.build.result == 'skipped')
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
 
-    defaults:
-      run:
-        working-directory: infra
+      - name: Build, tag and push keycloak image
+        env:
+          REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          REPOSITORY: ${{ needs.config.outputs.ecr_repository_keycloak }}
+          IMAGE_TAG: ${{ needs.config.outputs.image_tag }}
+          KEYCLOAK_DIR: ${{ needs.config.outputs.keycloak_dir }}
+        run: |
+          FULL_IMAGE="$REGISTRY/$REPOSITORY:$IMAGE_TAG"
+
+          docker build -t $FULL_IMAGE $KEYCLOAK_DIR
+          docker push $FULL_IMAGE
+
+          echo "Pushed: $FULL_IMAGE"
+  deploy:
+    name: Deploy to EKS
+    needs: [ config, build ]
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: dev
+
+    env:
+      APP_IMAGE: ${{ needs.config.outputs.ecr_repository }}:${{ needs.config.outputs.image_tag }}
+      KEYCLOAK_IMAGE: ${{ needs.config.outputs.ecr_repository_keycloak }}:${{ needs.config.outputs.image_tag }}
+      APP_BASE_URL: ${{ needs.config.outputs.app_base_url }}
+      MAIL_PASSWORD: ${{ secrets.MAIL_PASSWORD }}
+      APPROVAL_SECRET: ${{ secrets.APPROVAL_SECRET }}
+      KEYCLOAK_ADMIN_PASSWORD: ${{ secrets.KEYCLOAK_ADMIN_PASSWORD }}
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
-
       - name: Configure AWS (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: arn:aws:iam::403339561517:role/github-actions-terraform-dev
+          role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/github-actions-terraform-dev
           aws-region: ${{ needs.config.outputs.aws_region }}
 
-      - name: Terraform Init
+      - name: Login to ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Update kubeconfig
         run: |
-          terraform init -reconfigure \
-            -backend-config="bucket=teplotax-terraform-state-dev" \
-            -backend-config="key=dev/${{ needs.config.outputs.service_name }}/terraform.tfstate" \
-            -backend-config="region=${{ needs.config.outputs.aws_region }}"
+          aws eks update-kubeconfig \
+            --name ${{ needs.config.outputs.eks_cluster_name }} \
+            --region ${{ needs.config.outputs.aws_region }}
 
-      - name: Terraform Validate
-        run: terraform validate
-
-      - name: Terraform Plan
-        if: github.event_name == 'pull_request'
+      - name: Render manifests
         run: |
-          terraform plan \
-            -var-file=inventories/dev/terraform.tfvars \
-            -var="image_tag=${{ needs.config.outputs.image_tag }}"
+          export APP_IMAGE="${{ steps.login-ecr.outputs.registry }}/${{ env.APP_IMAGE }}"
+          export KEYCLOAK_IMAGE="${{ steps.login-ecr.outputs.registry }}/${{ env.KEYCLOAK_IMAGE }}"
 
-      - name: Terraform Destroy
-        if: needs.config.outputs.destroy == 'true' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+          mkdir -p k8s-rendered
+          for f in k8s/namespace.yaml k8s/configmap.yaml k8s/secret.yaml k8s/deployment.yaml k8s/service.yaml k8s/hpa.yaml; do
+            envsubst < "$f" > "k8s-rendered/$(basename $f)"
+          done
+
+      - name: Apply manifests
+        if: needs.config.outputs.destroy != 'true'
         run: |
-          terraform destroy -auto-approve \
-            -var-file=inventories/dev/terraform.tfvars
+          kubectl apply -f k8s-rendered/namespace.yaml
+          kubectl apply -f k8s-rendered/configmap.yaml
+          kubectl apply -f k8s-rendered/secret.yaml
+          kubectl apply -f k8s-rendered/deployment.yaml
+          kubectl apply -f k8s-rendered/service.yaml
+          kubectl apply -f k8s-rendered/hpa.yaml
 
-      - name: Terraform Apply
-        if: needs.config.outputs.destroy != 'true' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+      - name: Wait for rollout
+        if: needs.config.outputs.destroy != 'true'
         run: |
-          terraform apply -auto-approve \
-            -var-file=inventories/dev/terraform.tfvars \
-            -var="image_tag=${{ needs.config.outputs.image_tag }}"
-  deploy:
-    name: Deploy to ECS
-    needs: [ config, terraform ]
-    if: |
-      needs.config.outputs.destroy != 'true' &&
-      (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
+          kubectl rollout status deployment/tech-challenge-ms -n tech-challenge --timeout=300s
 
-    steps:
-      - name: Configure AWS (OIDC)
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: arn:aws:iam::403339561517:role/github-actions-terraform-dev
-          aws-region: ${{ needs.config.outputs.aws_region }}
-
-      - name: Force ECS deployment
+      - name: Destroy manifests
+        if: needs.config.outputs.destroy == 'true'
         run: |
-          aws ecs update-service \
-            --cluster ${{ needs.config.outputs.ecs_cluster }} \
-            --service ${{ needs.config.outputs.service_name }} \
-            --force-new-deployment
+          kubectl delete -f k8s-rendered/hpa.yaml --ignore-not-found
+          kubectl delete -f k8s-rendered/service.yaml --ignore-not-found
+          kubectl delete -f k8s-rendered/deployment.yaml --ignore-not-found
+          kubectl delete -f k8s-rendered/configmap.yaml --ignore-not-found
+          kubectl delete -f k8s-rendered/secret.yaml --ignore-not-found
   release:
     name: Create Release Branch & PR
-    needs: [config, terraform]
-#    needs: deploy
-#    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    needs: [ config, deploy ]
     if: |
       always() &&
       (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
       needs.config.result == 'success' &&
-      (
-        needs.terraform.result == 'success' ||
-        needs.terraform.result == 'skipped'
-      )
+      needs.deploy.result == 'success'
 
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -244,7 +262,7 @@ jobs:
 
           echo "branch_name=$BRANCH" >> $GITHUB_OUTPUT
 
-      - name: Open PR (develop → release)
+      - name: Open PR (develop -> release)
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
