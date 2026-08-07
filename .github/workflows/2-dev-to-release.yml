@@ -29,9 +29,6 @@ jobs:
       app_dir: ${{ steps.pipes.outputs.app_dir }}
       keycloak_dir: ${{ steps.pipes.outputs.keycloak_dir }}
       java_version: ${{ steps.pipes.outputs.java_version }}
-      service_name: ${{ steps.tfvars.outputs.service_name }}
-      ecs_cluster: ${{ steps.tfvars.outputs.ecs_cluster }}
-      destroy: ${{ steps.tfvars.outputs.destroy }}
       image_tag: ${{ steps.tag.outputs.image_tag }}
 
     steps:
@@ -50,16 +47,6 @@ jobs:
           echo "java_version=$(yq '.java_version' .pipes.yml)"                       >> $GITHUB_OUTPUT
           echo "app_dir=$APP_DIR"                                                     >> $GITHUB_OUTPUT
           echo "keycloak_dir=$(yq '.keycloak_dir' .pipes.yml)"                       >> $GITHUB_OUTPUT
-
-      - name: Read terraform.tfvars
-        id: tfvars
-        working-directory: infra/inventories/dev
-        run: |
-          extract() { grep -E "^$1\s*=" terraform.tfvars | awk -F '=' '{gsub(/[" ]/, "", $2); print $2}'; }
-
-          echo "service_name=$(extract service_name)" >> $GITHUB_OUTPUT
-          echo "ecs_cluster=$(extract cluster_name)"  >> $GITHUB_OUTPUT
-          echo "destroy=$(extract destroy)"           >> $GITHUB_OUTPUT
 
       - name: Generate image tag
         id: tag
@@ -87,9 +74,7 @@ jobs:
   build:
     name: Build & Push to ECR
     needs: [ config, test ]
-    if: |
-      needs.config.outputs.destroy != 'true' &&
-      (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     environment: dev
@@ -146,96 +131,72 @@ jobs:
           docker push $FULL_IMAGE
 
           echo "Pushed: $FULL_IMAGE"
-  terraform:
-    name: Terraform
+  deploy:
+    name: Deploy to EKS
     needs: [ config, build ]
-    if: always() && needs.config.result == 'success' && (needs.build.result == 'success' || needs.build.result == 'skipped')
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 15
     environment: dev
 
-    defaults:
-      run:
-        working-directory: infra
+    env:
+      APP_IMAGE: ${{ needs.config.outputs.ecr_repository }}:${{ needs.config.outputs.image_tag }}
+      KEYCLOAK_IMAGE: ${{ needs.config.outputs.ecr_repository_keycloak }}:${{ needs.config.outputs.image_tag }}
+      APP_BASE_URL: ${{ vars.APP_BASE_URL }}
+      MAIL_PASSWORD: ${{ secrets.MAIL_PASSWORD }}
+      APPROVAL_SECRET: ${{ secrets.APPROVAL_SECRET }}
+      KEYCLOAK_ADMIN_PASSWORD: ${{ secrets.KEYCLOAK_ADMIN_PASSWORD }}
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
-
       - name: Configure AWS (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/github-actions-terraform-dev
           aws-region: ${{ needs.config.outputs.aws_region }}
 
-      - name: Terraform Init
+      - name: Login to ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Update kubeconfig
         run: |
-          terraform init -reconfigure \
-            -backend-config="bucket=teplotax-terraform-state-dev-${{ vars.AWS_ACCOUNT_ID }}" \
-            -backend-config="key=dev/${{ needs.config.outputs.service_name }}/terraform.tfstate" \
-            -backend-config="region=${{ needs.config.outputs.aws_region }}"
+          aws eks update-kubeconfig \
+            --name ${{ vars.EKS_CLUSTER_NAME }} \
+            --region ${{ needs.config.outputs.aws_region }}
 
-      - name: Terraform Validate
-        run: terraform validate
-
-      - name: Terraform Plan
-        if: github.event_name == 'pull_request'
+      - name: Render manifests
         run: |
-          terraform plan \
-            -var-file=inventories/dev/terraform.tfvars \
-            -var="image_tag=${{ needs.config.outputs.image_tag }}" \
-            -var="keycloak_image_tag=${{ needs.config.outputs.image_tag }}"
+          export APP_IMAGE="${{ steps.login-ecr.outputs.registry }}/${{ env.APP_IMAGE }}"
+          export KEYCLOAK_IMAGE="${{ steps.login-ecr.outputs.registry }}/${{ env.KEYCLOAK_IMAGE }}"
 
-      - name: Terraform Destroy
-        if: needs.config.outputs.destroy == 'true' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+          mkdir -p k8s-rendered
+          for f in k8s/namespace.yaml k8s/configmap.yaml k8s/secret.yaml k8s/deployment.yaml k8s/service.yaml k8s/hpa.yaml; do
+            envsubst < "$f" > "k8s-rendered/$(basename $f)"
+          done
+
+      - name: Apply manifests
         run: |
-          terraform destroy -auto-approve \
-            -var-file=inventories/dev/terraform.tfvars
+          kubectl apply -f k8s-rendered/namespace.yaml
+          kubectl apply -f k8s-rendered/configmap.yaml
+          kubectl apply -f k8s-rendered/secret.yaml
+          kubectl apply -f k8s-rendered/deployment.yaml
+          kubectl apply -f k8s-rendered/service.yaml
+          kubectl apply -f k8s-rendered/hpa.yaml
 
-      - name: Terraform Apply
-        if: needs.config.outputs.destroy != 'true' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+      - name: Wait for rollout
         run: |
-          terraform apply -auto-approve \
-            -var-file=inventories/dev/terraform.tfvars \
-            -var="image_tag=${{ needs.config.outputs.image_tag }}" \
-            -var="keycloak_image_tag=${{ needs.config.outputs.image_tag }}"
-  deploy:
-    name: Deploy to ECS
-    needs: [ config, terraform ]
-    if: |
-      needs.config.outputs.destroy != 'true' &&
-      (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    environment: dev
-
-    steps:
-      - name: Configure AWS (OIDC)
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/github-actions-terraform-dev
-          aws-region: ${{ needs.config.outputs.aws_region }}
-
-      - name: Force ECS deployment
-        run: |
-          aws ecs update-service \
-            --cluster ${{ needs.config.outputs.ecs_cluster }} \
-            --service ${{ needs.config.outputs.service_name }} \
-            --force-new-deployment
+          kubectl rollout status deployment/tech-challenge-ms -n tech-challenge --timeout=300s
   release:
     name: Create Release Branch & PR
-    needs: [config, terraform]
+    needs: [ config, deploy ]
     if: |
       always() &&
       (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
       needs.config.result == 'success' &&
-      (
-        needs.terraform.result == 'success' ||
-        needs.terraform.result == 'skipped'
-      )
+      needs.deploy.result == 'success'
 
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -284,7 +245,7 @@ jobs:
 
           echo "branch_name=$BRANCH" >> $GITHUB_OUTPUT
 
-      - name: Open PR (develop → release)
+      - name: Open PR (develop -> release)
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
