@@ -4,6 +4,6 @@ ecr_repository_keycloak: "grupo52/tech-challenge/eks-tech-challenge-keycloak"
 app_dir: "app"
 keycloak_dir: "keycloak"
 java_version: "21"
-destroy: false
+destroy: true
 eks_cluster_name: "eks-tech-challenge"
 app_base_url: "http://k8s-techchal-techchal-efdd6e8fcc-f7501056067c18e9.elb.us-east-1.amazonaws.com:8080"
