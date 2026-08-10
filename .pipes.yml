@@ -6,4 +6,4 @@ keycloak_dir: "keycloak"
 java_version: "21"
 destroy: false
 eks_cluster_name: "eks-tech-challenge"
-app_base_url: "http://CHANGE_ME:8080"
+app_base_url: "http://k8s-techchal-techchal-efdd6e8fcc-f7501056067c18e9.elb.us-east-1.amazonaws.com:8080"
