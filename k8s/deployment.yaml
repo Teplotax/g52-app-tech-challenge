@@ -40,11 +40,11 @@ spec:
             periodSeconds: 30
           resources:
             requests:
-              cpu: "500m"
-              memory: "1Gi"
+              cpu: "300m"
+              memory: "500Mi"
             limits:
-              cpu: "1"
-              memory: "3Gi"
+              cpu: "700m"
+              memory: "900Mi"
         - name: keycloak
           image: "${KEYCLOAK_IMAGE}"
           ports:
@@ -73,11 +73,11 @@ spec:
             failureThreshold: 10
           resources:
             requests:
-              cpu: "250m"
-              memory: "512Mi"
+              cpu: "150m"
+              memory: "350Mi"
             limits:
-              cpu: "500m"
-              memory: "1Gi"
+              cpu: "400m"
+              memory: "600Mi"
         - name: mailpit
           image: "axllent/mailpit:latest"
           ports:
@@ -95,8 +95,8 @@ spec:
             periodSeconds: 10
           resources:
             requests:
-              cpu: "100m"
-              memory: "128Mi"
+              cpu: "50m"
+              memory: "48Mi"
             limits:
-              cpu: "250m"
-              memory: "256Mi"
+              cpu: "150m"
+              memory: "96Mi"
