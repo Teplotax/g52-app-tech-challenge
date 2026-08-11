@@ -216,8 +216,11 @@ jobs:
       - name: Destroy manifests
         if: needs.config.outputs.destroy == 'true'
         run: |
+          # service.yaml is intentionally not deleted here: tearing down the
+          # LoadBalancer Service deletes the underlying NLB, which gets recreated
+          # with a brand-new DNS name on the next deploy. Keeping the Service
+          # alive keeps the NLB (and its hostname) stable across destroy cycles.
           kubectl delete -f k8s-rendered/hpa.yaml --ignore-not-found
-          kubectl delete -f k8s-rendered/service.yaml --ignore-not-found
           kubectl delete -f k8s-rendered/deployment.yaml --ignore-not-found
           kubectl delete -f k8s-rendered/configmap.yaml --ignore-not-found
           kubectl delete -f k8s-rendered/secret.yaml --ignore-not-found
