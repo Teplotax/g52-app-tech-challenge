@@ -200,6 +200,19 @@ jobs:
         run: |
           kubectl rollout status deployment/tech-challenge-ms -n tech-challenge --timeout=300s
 
+      - name: Debug pod logs
+        if: always() && needs.config.outputs.destroy != 'true'
+        run: |
+          kubectl get pods -n tech-challenge -o wide
+          for pod in $(kubectl get pods -n tech-challenge -l app=tech-challenge-ms -o jsonpath='{.items[*].metadata.name}'); do
+            for container in app keycloak mailpit; do
+              echo "===== $pod / $container (current) ====="
+              kubectl logs -n tech-challenge "$pod" -c "$container" --tail=200 || true
+              echo "===== $pod / $container (previous) ====="
+              kubectl logs -n tech-challenge "$pod" -c "$container" --previous --tail=200 || true
+            done
+          done
+
       - name: Destroy manifests
         if: needs.config.outputs.destroy == 'true'
         run: |
