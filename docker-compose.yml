@@ -1,16 +1,16 @@
 services:
   keycloak:
-    image: quay.io/keycloak/keycloak:24.0
+    build:
+      context: ./keycloak
     container_name: tech-challenge-keycloak
     restart: unless-stopped
-    command: start-dev --import-realm
     ports:
       - "8180:8080"
     environment:
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: admin
-    volumes:
-      - ./keycloak:/opt/keycloak/data/import
+      KEYCLOAK_CLIENT_ID: local-dev-client-id
+      KEYCLOAK_CLIENT_SECRET: local-dev-client-secret
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/realms/g52"]
       interval: 10s
