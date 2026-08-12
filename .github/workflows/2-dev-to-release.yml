@@ -11,6 +11,7 @@ permissions:
   id-token: write
   contents: write
   pull-requests: write
+  actions: write
 
 concurrency:
   group: dev-pipeline
@@ -200,6 +201,39 @@ jobs:
         run: |
           kubectl rollout status deployment/tech-challenge-ms -n tech-challenge --timeout=300s
 
+      - name: Discover NLB hostname
+        if: needs.config.outputs.destroy != 'true'
+        id: nlb
+        run: |
+          for i in $(seq 1 30); do
+            HOSTNAME=$(kubectl get svc tech-challenge-nlb -n tech-challenge -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null)
+            if [ -n "$HOSTNAME" ]; then
+              echo "hostname=$HOSTNAME" >> $GITHUB_OUTPUT
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "NLB hostname never became available" >&2
+          exit 1
+
+      - name: Reapply ConfigMap with real APP_BASE_URL
+        if: needs.config.outputs.destroy != 'true'
+        run: |
+          export APP_BASE_URL="http://${{ steps.nlb.outputs.hostname }}:8080"
+          envsubst < k8s/configmap.yaml > k8s-rendered/configmap.yaml
+          kubectl apply -f k8s-rendered/configmap.yaml
+          kubectl rollout restart deployment/tech-challenge-ms -n tech-challenge
+          kubectl rollout status deployment/tech-challenge-ms -n tech-challenge --timeout=180s
+
+      - name: Publish base URLs as repo variables
+        if: needs.config.outputs.destroy != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh variable set NLB_HOSTNAME --body "${{ steps.nlb.outputs.hostname }}"
+          gh variable set APP_BASE_URL --body "http://${{ steps.nlb.outputs.hostname }}:8080"
+          gh variable set AUTH_BASE_URL --body "http://${{ steps.nlb.outputs.hostname }}:9000"
+
       - name: Debug pod logs
         if: always() && needs.config.outputs.destroy != 'true'
         run: |
@@ -216,11 +250,8 @@ jobs:
       - name: Destroy manifests
         if: needs.config.outputs.destroy == 'true'
         run: |
-          # service.yaml is intentionally not deleted here: tearing down the
-          # LoadBalancer Service deletes the underlying NLB, which gets recreated
-          # with a brand-new DNS name on the next deploy. Keeping the Service
-          # alive keeps the NLB (and its hostname) stable across destroy cycles.
           kubectl delete -f k8s-rendered/hpa.yaml --ignore-not-found
+          kubectl delete -f k8s-rendered/service.yaml --ignore-not-found
           kubectl delete -f k8s-rendered/deployment.yaml --ignore-not-found
           kubectl delete -f k8s-rendered/configmap.yaml --ignore-not-found
           kubectl delete -f k8s-rendered/secret.yaml --ignore-not-found
