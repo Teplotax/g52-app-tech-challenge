@@ -220,7 +220,7 @@ jobs:
           envsubst < k8s/configmap.yaml > k8s-rendered/configmap.yaml
           kubectl apply -f k8s-rendered/configmap.yaml
           kubectl rollout restart deployment/tech-challenge-ms -n tech-challenge
-          kubectl rollout status deployment/tech-challenge-ms -n tech-challenge --timeout=180s
+          kubectl rollout status deployment/tech-challenge-ms -n tech-challenge --timeout=300s
 
       - name: Publish base URLs as repo variables
         if: needs.config.outputs.destroy != 'true'
