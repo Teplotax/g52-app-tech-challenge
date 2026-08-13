@@ -232,17 +232,17 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.VARIABLES_PAT }}
         run: |
-          gh variable set NLB_HOSTNAME --body "$NLB_HOSTNAME"
-          gh variable set APP_BASE_URL --body "$APP_BASE_URL"
-          gh variable set AUTH_BASE_URL --body "$AUTH_BASE_URL"
+          gh variable set NLB_HOSTNAME --body "$NLB_HOSTNAME" --env dev
+          gh variable set APP_BASE_URL --body "$APP_BASE_URL" --env dev
+          gh variable set AUTH_BASE_URL --body "$AUTH_BASE_URL" --env dev
 
       - name: Publish base URLs to api-ext repo
         if: needs.config.outputs.destroy != 'true'
         env:
           GH_TOKEN: ${{ secrets.VARIABLES_PAT }}
         run: |
-          gh variable set APP_BASE_URL --body "$APP_BASE_URL" --repo Teplotax/g52-api-tech-challenge-v1-ext
-          gh variable set AUTH_BASE_URL --body "$AUTH_BASE_URL" --repo Teplotax/g52-api-tech-challenge-v1-ext
+          gh variable set APP_BASE_URL --body "$APP_BASE_URL" --repo Teplotax/g52-api-tech-challenge-v1-ext --env dev
+          gh variable set AUTH_BASE_URL --body "$AUTH_BASE_URL" --repo Teplotax/g52-api-tech-challenge-v1-ext --env dev
 
       - name: Debug pod logs
         if: always() && needs.config.outputs.destroy != 'true'
