@@ -218,6 +218,7 @@ jobs:
           echo "NLB_HOSTNAME=${{ steps.nlb.outputs.hostname }}" >> $GITHUB_ENV
           echo "APP_BASE_URL=http://${{ steps.nlb.outputs.hostname }}:8080" >> $GITHUB_ENV
           echo "AUTH_BASE_URL=http://${{ steps.nlb.outputs.hostname }}:9000" >> $GITHUB_ENV
+          echo "MAILPIT_BASE_URL=http://${{ steps.nlb.outputs.hostname }}:8025" >> $GITHUB_ENV
 
       - name: Reapply ConfigMap with real APP_BASE_URL
         if: needs.config.outputs.destroy != 'true'
@@ -235,6 +236,7 @@ jobs:
           gh variable set NLB_HOSTNAME --body "$NLB_HOSTNAME" --env dev
           gh variable set APP_BASE_URL --body "$APP_BASE_URL" --env dev
           gh variable set AUTH_BASE_URL --body "$AUTH_BASE_URL" --env dev
+          gh variable set MAILPIT_BASE_URL --body "$MAILPIT_BASE_URL" --env dev
 
       - name: Publish base URLs to api-ext repo
         if: needs.config.outputs.destroy != 'true'
@@ -243,6 +245,7 @@ jobs:
         run: |
           gh variable set APP_BASE_URL --body "$APP_BASE_URL" --repo Teplotax/g52-api-tech-challenge-v1-ext --env dev
           gh variable set AUTH_BASE_URL --body "$AUTH_BASE_URL" --repo Teplotax/g52-api-tech-challenge-v1-ext --env dev
+          gh variable set MAILPIT_BASE_URL --body "$MAILPIT_BASE_URL" --repo Teplotax/g52-api-tech-challenge-v1-ext --env dev
 
       - name: Debug pod logs
         if: always() && needs.config.outputs.destroy != 'true'
