@@ -145,6 +145,14 @@ Para e remove os containers (equivalente a `docker compose down`):
 | Keycloak | http://localhost:8180            | Servidor de autenticação (realm `g52`, usuário admin: `admin` / `admin`) |
 | API | http://localhost:8081            | Aplicação Spring Boot |
 
+#### MailPit no ambiente dev (EKS)
+
+O MailPit do ambiente dev é acessado através do API Gateway (`g52-api-tech-challenge-v1-ext`), não diretamente pela NLB. A rota `/mailpit` é provisionada em Terraform separadamente do contrato OpenAPI da aplicação, então não aparece na documentação Swagger:
+
+[https://mjsur3jbx5.execute-api.us-east-1.amazonaws.com/dev/mailpit](https://mjsur3jbx5.execute-api.us-east-1.amazonaws.com/dev/mailpit)
+
+O container do MailPit roda com `MP_WEBROOT=dev/mailpit` (`k8s/deployment.yaml`), fazendo a UI e a API dele responderem sob esse prefixo, o mesmo caminho exposto pelo Gateway. Por isso, acessar o MailPit direto pela NLB (porta 8025) exige o mesmo sufixo: `http://<NLB_HOSTNAME>:8025/dev/mailpit/`. O hostname da NLB muda a cada recriação e está sempre publicado na variável de repositório `NLB_HOSTNAME` (aba `Variables` do ambiente `dev`, GitHub Actions).
+
 ### Deploy em Kubernetes
 
 Pré-requisitos: um cluster EKS já provisionado (ver seção [Provisionamento da infraestrutura com Terraform](#provisionamento-da-infraestrutura-com-terraform)), `kubectl` e `aws` CLI configurados, e as imagens da app/Keycloak publicadas em um registro acessível pelo cluster (ex.: ECR).
