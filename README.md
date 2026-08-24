@@ -28,9 +28,9 @@ O pod da aplicação roda três containers (app, Keycloak e MailPit) no mesmo `D
 ```mermaid
 flowchart LR
     subgraph Pod["Pod tech-challenge-ms"]
-        APP["app (Spring Boot)\nporta 8080"]
-        KC["keycloak\nporta 9000"]
-        MP["mailpit\nportas 1025 / 8025"]
+        APP["app (Spring Boot) porta 8080"]
+        KC["keycloak porta 9000"]
+        MP["mailpit portas 1025 / 8025"]
     end
 
     Client(["Cliente HTTP"]) -->|REST + JWT| APP
@@ -50,13 +50,13 @@ flowchart TB
     subgraph AWS["AWS"]
         subgraph EKS["EKS Cluster (Fargate Profiles)"]
             NS["Namespace tech-challenge"]
-            NS --> DEP["Deployment tech-challenge-ms\n(app + keycloak + mailpit)"]
+            NS --> DEP["Deployment tech-challenge-ms (app + keycloak + mailpit)"]
             NS --> CM["ConfigMap"]
             NS --> SEC["Secret"]
             NS --> HPA["HPA (1-2 réplicas, CPU 70%)"]
-            NS --> CRON["CronJobs scale-down/up\n(noturno)"]
+            NS --> CRON["CronJobs scale-down/up (noturno)"]
         end
-        LBC["AWS Load Balancer Controller"] -->|provisiona| NLB["Network Load Balancer\ninternet-facing"]
+        LBC["AWS Load Balancer Controller"] -->|provisiona| NLB["Network Load Balancer internet-facing"]
         ECR1[("ECR: app")]
         ECR2[("ECR: keycloak")]
         S3[("S3: terraform state")]
@@ -82,12 +82,12 @@ O fluxo de branches é `feature → develop → release → main`, com um workfl
 
 ```mermaid
 flowchart LR
-    F["feature/**"] -->|1 - Build & PR\npush| D["develop"]
-    D -->|2 - Build and Deploy\npush em develop| Build["mvn test\ndocker build & push (ECR)"]
-    Build --> Deploy["aws eks update-kubeconfig\nkubectl apply -f k8s/*"]
-    Deploy --> NLB["Descobre hostname da NLB\npublica APP_BASE_URL/AUTH_BASE_URL\ncomo repo variables"]
-    NLB --> R["Cria/reaproveita\nrelease/vX.Y.Z + PR"]
-    R -->|3 - Promote & Deploy\nPR mergeado| M["main"]
+    F["feature/**"] -->|1 - Build & PR push| D["develop"]
+    D -->|2 - Build and Deploy push em develop| Build["mvn test docker build & push (ECR)"]
+    Build --> Deploy["aws eks update-kubeconfig kubectl apply -f k8s/*"]
+    Deploy --> NLB["Descobre hostname da NLB publica APP_BASE_URL/AUTH_BASE_URL como repo variables"]
+    NLB --> R["Cria/reaproveita release/vX.Y.Z + PR"]
+    R -->|3 - Promote & Deploy PR mergeado| M["main"]
 ```
 
 1. **1 - Build & PR** (`feature/**` → `develop`): ao dar push numa branch `feature/*`, roda os testes unitários e abre automaticamente um PR pra `develop` (se ainda não existir um aberto).
