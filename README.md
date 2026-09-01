@@ -45,27 +45,7 @@ Camadas internas da API (Clean Architecture): `controller` → `usecase`/`servic
 
 A infraestrutura da AWS é provisionada por Terraform no repositório separado [`g52-infra-eks-tech-challenge`](https://github.com/Teplotax/g52-infra-eks-tech-challenge). Este repositório (`g52-app-tech-challenge`) consome essa infraestrutura, mas não a provisiona:
 
-```mermaid
-flowchart TB
-    subgraph AWS["AWS"]
-        subgraph EKS["EKS Cluster (Fargate Profiles)"]
-            NS["Namespace tech-challenge"]
-            NS --> DEP["Deployment tech-challenge-ms (app + keycloak + mailpit)"]
-            NS --> CM["ConfigMap"]
-            NS --> SEC["Secret"]
-            NS --> HPA["HPA (1-2 réplicas, CPU 70%)"]
-            NS --> CRON["CronJobs scale-down/up (noturno)"]
-        end
-        LBC["AWS Load Balancer Controller"] -->|provisiona| NLB["Network Load Balancer internet-facing"]
-        ECR1[("ECR: app")]
-        ECR2[("ECR: keycloak")]
-        S3[("S3: terraform state")]
-    end
-
-    NLB --> DEP
-    ECR1 -.imagem.-> DEP
-    ECR2 -.imagem.-> DEP
-```
+![Componentes e infraestrutura provisionada na AWS](docs/images/g52-arquitetura-componentes-e-infraestrutura.png)
 
 | Recurso | Provisionado por | Descrição |
 |---|---|---|
@@ -80,15 +60,7 @@ flowchart TB
 
 O fluxo de branches é `feature → develop → release → main`, com um workflow do GitHub Actions por etapa:
 
-```mermaid
-flowchart LR
-    F["feature/**"] -->|1 - Build & PR push| D["develop"]
-    D -->|2 - Build and Deploy push em develop| Build["mvn test docker build & push (ECR)"]
-    Build --> Deploy["aws eks update-kubeconfig kubectl apply -f k8s/*"]
-    Deploy --> NLB["Descobre hostname da NLB publica APP_BASE_URL/AUTH_BASE_URL como repo variables"]
-    NLB --> R["Cria/reaproveita release/vX.Y.Z + PR"]
-    R -->|3 - Promote & Deploy PR mergeado| M["main"]
-```
+![Fluxo de deploy e integração entre os repositórios](docs/images/g52-arquitetura-fluxo-de-deploy-ci-cd.png)
 
 1. **1 - Build & PR** (`feature/**` → `develop`): ao dar push numa branch `feature/*`, roda os testes unitários e abre automaticamente um PR pra `develop` (se ainda não existir um aberto).
 2. **2 - Build and Deploy** (`develop`): lê as configs do `.pipes.yml`, builda o JAR e as imagens Docker da app e do Keycloak, publica no ECR, autentica no cluster EKS (`aws eks update-kubeconfig`) e aplica os manifestos em `k8s/` via `kubectl` (secrets injetados a partir de GitHub Secrets via `envsubst`). Depois de aplicar, descobre o hostname da NLB, reaplica o `ConfigMap` com a `APP_BASE_URL` real, reinicia o rollout e publica as URLs como *repo variables* (inclusive no repositório do API Gateway). Se `destroy: true` no `.pipes.yml`, os manifestos são removidos em vez de aplicados. Ao final, cria/reaproveita uma branch `release/vX.Y.Z` com PR de `develop` pra ela.
