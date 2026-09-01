@@ -25,19 +25,7 @@ Este repositório contém o **serviço de aplicação** (API + Keycloak + MailPi
 
 O pod da aplicação roda três containers (app, Keycloak e MailPit) no mesmo `Deployment`, tanto localmente (via `docker-compose.yml`) quanto no cluster (via `k8s/deployment.yaml`):
 
-```mermaid
-flowchart LR
-    subgraph Pod["Pod tech-challenge-ms"]
-        APP["app (Spring Boot) porta 8080"]
-        KC["keycloak porta 9000"]
-        MP["mailpit portas 1025 / 8025"]
-    end
-
-    Client(["Cliente HTTP"]) -->|REST + JWT| APP
-    APP -->|valida token JWT| KC
-    APP -->|SMTP| MP
-    APP -->|JDBC| H2[("H2 em memória")]
-```
+![Componentes da aplicação](docs/images/g52-arquitetura-componentes-da-aplicacao.png)
 
 Camadas internas da API (Clean Architecture): `controller` → `usecase`/`service` → `gateway` (interface + `gateway/impl`) → `gateway/database` (entidades JPA + repositórios), com `dto`s de request/response e `domain` representando as entidades de negócio (`Cliente`, `Veiculo`/`Marca`/`Modelo`, `Peca`, `Insumo`, `Servico`, `OrdemDeServico`, `ApprovalLink`).
 
