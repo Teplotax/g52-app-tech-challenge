@@ -32,7 +32,7 @@ public class UpdateOrdemStatusUseCaseImpl implements UpdateOrdemStatusUseCase {
         try {
             if (!validateStatusChange(os.getStatus(), newStatus)) {
                 throw new InvalidStatusChangeException(
-                        "Mudança de status não permitida, OS não pode mudar de '" + os.getStatus() + "' para '" + newStatus + "'"
+                        "Mudança de status não permitida, a ordem de serviço não pode mudar de '" + os.getStatus() + "' para '" + newStatus + "'"
                 );
             }
             os.setStatus(newStatus);

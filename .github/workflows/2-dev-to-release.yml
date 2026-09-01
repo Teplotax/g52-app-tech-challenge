@@ -31,7 +31,6 @@ jobs:
       java_version: ${{ steps.pipes.outputs.java_version }}
       destroy: ${{ steps.pipes.outputs.destroy }}
       eks_cluster_name: ${{ steps.pipes.outputs.eks_cluster_name }}
-      app_base_url: ${{ steps.pipes.outputs.app_base_url }}
       image_tag: ${{ steps.tag.outputs.image_tag }}
 
     steps:
@@ -52,7 +51,6 @@ jobs:
           echo "keycloak_dir=$(yq '.keycloak_dir' .pipes.yml)"                       >> $GITHUB_OUTPUT
           echo "destroy=$(yq '.destroy' .pipes.yml)"                                 >> $GITHUB_OUTPUT
           echo "eks_cluster_name=$(yq '.eks_cluster_name' .pipes.yml)"               >> $GITHUB_OUTPUT
-          echo "app_base_url=$(yq '.app_base_url' .pipes.yml)"                       >> $GITHUB_OUTPUT
 
       - name: Generate image tag
         id: tag
@@ -148,10 +146,11 @@ jobs:
     env:
       APP_IMAGE: ${{ needs.config.outputs.ecr_repository }}:${{ needs.config.outputs.image_tag }}
       KEYCLOAK_IMAGE: ${{ needs.config.outputs.ecr_repository_keycloak }}:${{ needs.config.outputs.image_tag }}
-      APP_BASE_URL: ${{ needs.config.outputs.app_base_url }}
       MAIL_PASSWORD: ${{ secrets.MAIL_PASSWORD }}
       APPROVAL_SECRET: ${{ secrets.APPROVAL_SECRET }}
       KEYCLOAK_ADMIN_PASSWORD: ${{ secrets.KEYCLOAK_ADMIN_PASSWORD }}
+      KEYCLOAK_CLIENT_ID: ${{ secrets.KEYCLOAK_CLIENT_ID }}
+      KEYCLOAK_CLIENT_SECRET: ${{ secrets.KEYCLOAK_CLIENT_SECRET }}
 
     steps:
       - name: Checkout
@@ -197,6 +196,69 @@ jobs:
         if: needs.config.outputs.destroy != 'true'
         run: |
           kubectl rollout status deployment/tech-challenge-ms -n tech-challenge --timeout=300s
+
+      - name: Discover NLB hostname
+        if: needs.config.outputs.destroy != 'true'
+        id: nlb
+        run: |
+          for i in $(seq 1 30); do
+            HOSTNAME=$(kubectl get svc tech-challenge-nlb -n tech-challenge -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null)
+            if [ -n "$HOSTNAME" ]; then
+              echo "hostname=$HOSTNAME" >> $GITHUB_OUTPUT
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "NLB hostname never became available" >&2
+          exit 1
+
+      - name: Set base URL env vars
+        if: needs.config.outputs.destroy != 'true'
+        run: |
+          echo "NLB_HOSTNAME=${{ steps.nlb.outputs.hostname }}" >> $GITHUB_ENV
+          echo "APP_BASE_URL=http://${{ steps.nlb.outputs.hostname }}:8080" >> $GITHUB_ENV
+          echo "AUTH_BASE_URL=http://${{ steps.nlb.outputs.hostname }}:9000" >> $GITHUB_ENV
+          echo "MAILPIT_BASE_URL=http://${{ steps.nlb.outputs.hostname }}:8025" >> $GITHUB_ENV
+
+      - name: Reapply ConfigMap with real APP_BASE_URL
+        if: needs.config.outputs.destroy != 'true'
+        run: |
+          envsubst < k8s/configmap.yaml > k8s-rendered/configmap.yaml
+          kubectl apply -f k8s-rendered/configmap.yaml
+          kubectl rollout restart deployment/tech-challenge-ms -n tech-challenge
+          kubectl rollout status deployment/tech-challenge-ms -n tech-challenge --timeout=300s
+
+      - name: Publish base URLs as repo variables
+        if: needs.config.outputs.destroy != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.VARIABLES_PAT }}
+        run: |
+          gh variable set NLB_HOSTNAME --body "$NLB_HOSTNAME" --env dev
+          gh variable set APP_BASE_URL --body "$APP_BASE_URL" --env dev
+          gh variable set AUTH_BASE_URL --body "$AUTH_BASE_URL" --env dev
+          gh variable set MAILPIT_BASE_URL --body "$MAILPIT_BASE_URL" --env dev
+
+      - name: Publish base URLs to api-ext repo
+        if: needs.config.outputs.destroy != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.VARIABLES_PAT }}
+        run: |
+          gh variable set APP_BASE_URL --body "$APP_BASE_URL" --repo Teplotax/g52-api-tech-challenge-v1-ext --env dev
+          gh variable set AUTH_BASE_URL --body "$AUTH_BASE_URL" --repo Teplotax/g52-api-tech-challenge-v1-ext --env dev
+          gh variable set MAILPIT_BASE_URL --body "$MAILPIT_BASE_URL" --repo Teplotax/g52-api-tech-challenge-v1-ext --env dev
+
+      - name: Debug pod logs
+        if: always() && needs.config.outputs.destroy != 'true'
+        run: |
+          kubectl get pods -n tech-challenge -o wide
+          for pod in $(kubectl get pods -n tech-challenge -l app=tech-challenge-ms -o jsonpath='{.items[*].metadata.name}'); do
+            for container in app keycloak mailpit; do
+              echo "===== $pod / $container (current) ====="
+              kubectl logs -n tech-challenge "$pod" -c "$container" --tail=200 || true
+              echo "===== $pod / $container (previous) ====="
+              kubectl logs -n tech-challenge "$pod" -c "$container" --previous --tail=200 || true
+            done
+          done
 
       - name: Destroy manifests
         if: needs.config.outputs.destroy == 'true'

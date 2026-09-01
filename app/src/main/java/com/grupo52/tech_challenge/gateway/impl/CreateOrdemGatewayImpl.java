@@ -23,7 +23,7 @@ public class CreateOrdemGatewayImpl implements CreateOrdemGateway {
     private final VeiculoRepository veiculoRepository;
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public Ordem execute(Ordem os) throws GatewayException, UseCaseException {
         try {
             VeiculoDatabase veiculo = veiculoRepository.findByPlaca(os.getVeiculo().getPlaca())
