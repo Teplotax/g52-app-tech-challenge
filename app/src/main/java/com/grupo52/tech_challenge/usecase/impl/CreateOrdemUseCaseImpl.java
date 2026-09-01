@@ -20,7 +20,7 @@ public class CreateOrdemUseCaseImpl implements CreateOrdemUseCase {
     private CalculateOrdemPriceUseCase calculateOrdemPriceUseCase;
 
     @Override
-    @Transactional
+    @Transactional(rollbackOn = Exception.class)
     public Ordem execute(Ordem os) throws GatewayException, UseCaseException {
 
         try {

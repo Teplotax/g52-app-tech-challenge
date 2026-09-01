@@ -3,10 +3,10 @@
   "enabled": true,
   "clients": [
     {
-      "clientId": "a3f7c2d1-84be-4e09-b61f-3d92a0f5e817",
+      "clientId": "${KEYCLOAK_CLIENT_ID}",
       "enabled": true,
       "clientAuthenticatorType": "client-secret",
-      "secret": "f0e1d2c3-b4a5-4678-9abc-def012345678",
+      "secret": "${KEYCLOAK_CLIENT_SECRET}",
       "serviceAccountsEnabled": true,
       "standardFlowEnabled": false,
       "directAccessGrantsEnabled": false,
