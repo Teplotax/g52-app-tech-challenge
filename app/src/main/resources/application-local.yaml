@@ -10,11 +10,9 @@ spring:
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
-      ddl-auto: update
-  # sql.init defaults to "embedded" (only runs data.sql for H2/HSQL/etc).
-  # Left unset here on purpose: data.sql isn't idempotent (plain INSERTs), so
-  # auto-running it against the persistent Postgres container on every restart
-  # would crash the app with duplicate-key errors after the first successful boot.
+      ddl-auto: none
+  flyway:
+    enabled: true
   mail:
     host: ${MAIL_HOST:localhost}
     port: ${MAIL_PORT:1025}

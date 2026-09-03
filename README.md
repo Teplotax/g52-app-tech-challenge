@@ -234,7 +234,7 @@ Assim como neste repositório, o provisionamento é automatizado por um pipeline
 ## Stack e arquitetura
 
 - **Java 21** e **Spring Boot**, com Maven como gerenciador de build (`app/pom.xml`)
-- **Spring Data JPA** com banco **PostgreSQL** (container `postgres` no `docker-compose.yml`, pod dedicado com PVC no cluster EKS) — o H2 em memória segue sendo usado apenas pelos testes automatizados
+- **Spring Data JPA** com banco **PostgreSQL** (container `postgres` no `docker-compose.yml`, pod dedicado com PVC no cluster EKS), schema e dados de exemplo versionados via **Flyway** — o H2 em memória segue sendo usado apenas pelos testes automatizados
 - **Spring Security + OAuth2 Resource Server**, validando JWTs emitidos pelo **Keycloak**
 - **Spring Mail**, com **MailPit** como servidor SMTP de desenvolvimento
 - Geração de PDF via **openhtmltopdf**
@@ -261,7 +261,12 @@ Os perfis de configuração ficam em `app/src/main/resources`:
 - `application-local.yaml`: perfil para execução local do jar fora de container, apontando para o Postgres publicado em `localhost:5432` pelo `docker-compose.yml`
 - `application-docker.yaml`: perfil usado tanto pelo container da aplicação no `docker-compose.yml` quanto pelo `Deployment` no cluster EKS, apontando para o serviço `postgres`
 
-Ambos os perfis não-teste (`local` e `docker`) usam Postgres; `spring.sql.init` fica deliberadamente sem valor (default `embedded`, ou seja, não roda `data.sql` fora de banco embarcado) porque o `data.sql` não é idempotente — rodá-lo de novo a cada restart contra um Postgres persistente quebraria a aplicação com erro de chave duplicada.
+Ambos os perfis não-teste (`local` e `docker`) usam Postgres, com o schema e os dados de exemplo geridos por **Flyway** (`app/src/main/resources/db/migration/`) em vez de `hibernate.ddl-auto` ou `data.sql`:
+
+- `V1__create_schema.sql`: DDL de todas as tabelas (equivalente ao schema que o Hibernate criava automaticamente antes)
+- `V2__seed_data.sql`: dados de exemplo (marcas, modelos, clientes, veículos, peças/insumos, serviços) — mesmo conteúdo que existia em `data.sql`
+
+`spring.jpa.hibernate.ddl-auto` é `none` nesses dois perfis (Flyway é o dono exclusivo do schema) e `spring.flyway.enabled` é `true`. Por padrão (`application.yaml`) o Flyway fica **desabilitado**, para nunca rodar contra o H2 embarcado usado quando nenhum profile está ativo. Como o Flyway guarda o histórico de migrações aplicadas (tabela `flyway_schema_history`), cada migração roda uma única vez por banco — reiniciar o pod não tenta reinserir os dados de exemplo nem quebra com erro de chave duplicada.
 
 Principais variáveis de ambiente usadas no `docker-compose.yml`: `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USERNAME`, `DB_PASSWORD`, `MAIL_HOST`, `MAIL_PORT`, `APPROVAL_SECRET`, `APP_BASE_URL`, `APPROVAL_TTL_MINUTES` e `KEYCLOAK_JWK_SET_URI`. No cluster Kubernetes, a configuração não sensível (incluindo `DB_HOST`/`DB_PORT`/`DB_NAME`/`DB_USERNAME`) fica em `k8s/configmap.yaml`, o Postgres é definido em `k8s/postgres.yaml` (`Deployment` + `PersistentVolumeClaim` + `Service`), e as credenciais (senha do banco, senha de e-mail, segredo de aprovação, credenciais do Keycloak) ficam em `k8s/secret.yaml`, populado em runtime a partir de GitHub Secrets pelo pipeline de deploy.
 
