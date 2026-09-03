@@ -151,6 +151,7 @@ jobs:
       KEYCLOAK_ADMIN_PASSWORD: ${{ secrets.KEYCLOAK_ADMIN_PASSWORD }}
       KEYCLOAK_CLIENT_ID: ${{ secrets.KEYCLOAK_CLIENT_ID }}
       KEYCLOAK_CLIENT_SECRET: ${{ secrets.KEYCLOAK_CLIENT_SECRET }}
+      DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
 
     steps:
       - name: Checkout
@@ -178,7 +179,7 @@ jobs:
           export KEYCLOAK_IMAGE="${{ steps.login-ecr.outputs.registry }}/${{ env.KEYCLOAK_IMAGE }}"
 
           mkdir -p k8s-rendered
-          for f in k8s/namespace.yaml k8s/configmap.yaml k8s/secret.yaml k8s/deployment.yaml k8s/service.yaml k8s/hpa.yaml; do
+          for f in k8s/namespace.yaml k8s/configmap.yaml k8s/secret.yaml k8s/postgres.yaml k8s/deployment.yaml k8s/service.yaml k8s/hpa.yaml; do
             envsubst < "$f" > "k8s-rendered/$(basename $f)"
           done
 
@@ -188,6 +189,8 @@ jobs:
           kubectl apply -f k8s-rendered/namespace.yaml
           kubectl apply -f k8s-rendered/configmap.yaml
           kubectl apply -f k8s-rendered/secret.yaml
+          kubectl apply -f k8s-rendered/postgres.yaml
+          kubectl rollout status deployment/postgres -n tech-challenge --timeout=180s
           kubectl apply -f k8s-rendered/deployment.yaml
           kubectl apply -f k8s-rendered/service.yaml
           kubectl apply -f k8s-rendered/hpa.yaml
@@ -259,6 +262,8 @@ jobs:
               kubectl logs -n tech-challenge "$pod" -c "$container" --previous --tail=200 || true
             done
           done
+          echo "===== postgres (current) ====="
+          kubectl logs -n tech-challenge -l app=postgres --tail=200 || true
 
       - name: Destroy manifests
         if: needs.config.outputs.destroy == 'true'
@@ -268,6 +273,10 @@ jobs:
           kubectl delete -f k8s-rendered/deployment.yaml --ignore-not-found
           kubectl delete -f k8s-rendered/configmap.yaml --ignore-not-found
           kubectl delete -f k8s-rendered/secret.yaml --ignore-not-found
+          # PVC intentionally left in place: deleting it destroys the postgres
+          # EBS volume and all data. Only the compute (deployment/service) is
+          # torn down here; the data survives until the PVC is removed by hand.
+          kubectl delete deployment/postgres service/postgres -n tech-challenge --ignore-not-found
   release:
     name: Create Release Branch & PR
     needs: [ config, deploy ]

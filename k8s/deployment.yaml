@@ -17,6 +17,16 @@ spec:
       labels:
         app: tech-challenge-ms
     spec:
+      initContainers:
+        - name: wait-for-postgres
+          image: busybox:1.36
+          command:
+            - sh
+            - -c
+            - until nc -z "$DB_HOST" "$DB_PORT"; do echo waiting for postgres; sleep 2; done
+          envFrom:
+            - configMapRef:
+                name: tech-challenge-config
       containers:
         - name: app
           image: "${APP_IMAGE}"

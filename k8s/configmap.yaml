@@ -16,3 +16,7 @@ data:
   KEYCLOAK_JWK_SET_URI: "http://localhost:9000/realms/g52/protocol/openid-connect/certs"
   KEYCLOAK_ADMIN: "admin"
   KC_HTTP_PORT: "9000"
+  DB_HOST: "postgres"
+  DB_PORT: "5432"
+  DB_NAME: "techchallenge"
+  DB_USERNAME: "techchallenge"
