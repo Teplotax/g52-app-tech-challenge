@@ -41,7 +41,9 @@ A infraestrutura da AWS é provisionada por Terraform no repositório separado [
 | Repositórios ECR (app e keycloak) | Terraform (`g52-infra-eks-tech-challenge`) | Imagens Docker publicadas pelo pipeline deste repositório |
 | IAM Role (IRSA) + AWS Load Balancer Controller | Terraform (`g52-infra-eks-tech-challenge`) | Cria a NLB a partir do `Service type: LoadBalancer` definido em `k8s/service.yaml` |
 | metrics-server | Terraform (`g52-infra-eks-tech-challenge`) | Necessário para o HPA calcular utilização de CPU |
+| IAM Role (IRSA) + EBS CSI Driver addon + StorageClass `gp3` | Terraform (`g52-infra-eks-tech-challenge`) | Necessário para o `PersistentVolumeClaim` do Postgres poder provisionar um volume EBS |
 | Namespace, Deployment, ConfigMap, Secret, Service, HPA, CronJobs | kubectl (`k8s/*.yaml`, deste repositório) | Recursos da aplicação em si, aplicados no cluster já provisionado |
+| Postgres (Deployment + PersistentVolumeClaim + Service) | kubectl (`k8s/postgres.yaml`, deste repositório) | Banco de dados da aplicação, com dados persistidos em volume EBS |
 | State do Terraform | S3 (`g52-terraform-state-dev-<account-id>`) | Backend remoto configurado via `-backend-config` no pipeline |
 
 ### Fluxo de deploy
@@ -101,7 +103,7 @@ Para e remove os containers (equivalente a `docker compose down`):
 | Serviço | URL                              | Descrição |
 |---|----------------------------------|---|
 | MailPit | http://localhost:8025            | Visualização dos e-mails enviados pela aplicação (ex.: aprovações de ordem de serviço) |
-| H2 Console | http://localhost:8081/h2-console | Console do banco em memória (JDBC URL: `jdbc:h2:mem:testdb`, usuário `sa`, sem senha) |
+| Postgres | localhost:5432                   | Banco de dados (database `techchallenge`, usuário/senha `techchallenge`) |
 | Keycloak | http://localhost:8180            | Servidor de autenticação (realm `g52`, usuário admin: `admin` / `admin`) |
 | API | http://localhost:8081            | Aplicação Spring Boot |
 
@@ -219,7 +221,7 @@ Assim como neste repositório, o provisionamento é automatizado por um pipeline
 ## Stack e arquitetura
 
 - **Java 21** e **Spring Boot**, com Maven como gerenciador de build (`app/pom.xml`)
-- **Spring Data JPA** com banco **H2** em memória para o ambiente local/docker
+- **Spring Data JPA** com banco **PostgreSQL** (container `postgres` no `docker-compose.yml`, pod dedicado com PVC no cluster EKS) — o H2 em memória segue sendo usado apenas pelos testes automatizados
 - **Spring Security + OAuth2 Resource Server**, validando JWTs emitidos pelo **Keycloak**
 - **Spring Mail**, com **MailPit** como servidor SMTP de desenvolvimento
 - Geração de PDF via **openhtmltopdf**
@@ -242,11 +244,13 @@ A especificação completa dos endpoints está disponível no Swagger hospedado 
 
 Os perfis de configuração ficam em `app/src/main/resources`:
 
-- `application.yaml`: configurações comuns (porta, mail, OAuth2, actuator)
-- `application-local.yaml`: perfil para execução local com H2 em memória
-- `application-docker.yaml`: perfil usado pelo container da aplicação no `docker-compose.yml`
+- `application.yaml`: configurações comuns (porta, mail, OAuth2, actuator); sem `datasource` configurado, então os testes automatizados usam H2 em memória (auto-configurado pelo Spring Boot)
+- `application-local.yaml`: perfil para execução local do jar fora de container, apontando para o Postgres publicado em `localhost:5432` pelo `docker-compose.yml`
+- `application-docker.yaml`: perfil usado tanto pelo container da aplicação no `docker-compose.yml` quanto pelo `Deployment` no cluster EKS, apontando para o serviço `postgres`
 
-Principais variáveis de ambiente usadas no `docker-compose.yml`: `MAIL_HOST`, `MAIL_PORT`, `APPROVAL_SECRET`, `APP_BASE_URL`, `APPROVAL_TTL_MINUTES` e `KEYCLOAK_JWK_SET_URI`. No cluster Kubernetes, a configuração não sensível fica em `k8s/configmap.yaml` e as credenciais (senha de e-mail, segredo de aprovação, credenciais do Keycloak) ficam em `k8s/secret.yaml`, populado em runtime a partir de GitHub Secrets pelo pipeline de deploy.
+Ambos os perfis não-teste (`local` e `docker`) usam Postgres; `spring.sql.init` fica deliberadamente sem valor (default `embedded`, ou seja, não roda `data.sql` fora de banco embarcado) porque o `data.sql` não é idempotente — rodá-lo de novo a cada restart contra um Postgres persistente quebraria a aplicação com erro de chave duplicada.
+
+Principais variáveis de ambiente usadas no `docker-compose.yml`: `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USERNAME`, `DB_PASSWORD`, `MAIL_HOST`, `MAIL_PORT`, `APPROVAL_SECRET`, `APP_BASE_URL`, `APPROVAL_TTL_MINUTES` e `KEYCLOAK_JWK_SET_URI`. No cluster Kubernetes, a configuração não sensível (incluindo `DB_HOST`/`DB_PORT`/`DB_NAME`/`DB_USERNAME`) fica em `k8s/configmap.yaml`, o Postgres é definido em `k8s/postgres.yaml` (`Deployment` + `PersistentVolumeClaim` + `Service`), e as credenciais (senha do banco, senha de e-mail, segredo de aprovação, credenciais do Keycloak) ficam em `k8s/secret.yaml`, populado em runtime a partir de GitHub Secrets pelo pipeline de deploy.
 
 ## Repositórios do projeto
 
