@@ -140,7 +140,7 @@ jobs:
     needs: [ config, build ]
     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 25
     environment: dev
 
     env:
@@ -179,7 +179,7 @@ jobs:
           export KEYCLOAK_IMAGE="${{ steps.login-ecr.outputs.registry }}/${{ env.KEYCLOAK_IMAGE }}"
 
           mkdir -p k8s-rendered
-          for f in k8s/namespace.yaml k8s/configmap.yaml k8s/secret.yaml k8s/postgres.yaml k8s/deployment.yaml k8s/service.yaml k8s/hpa.yaml; do
+          for f in k8s/namespace.yaml k8s/configmap.yaml k8s/secret.yaml k8s/postgres.yaml k8s/deployment.yaml k8s/service.yaml k8s/keycloak.yaml k8s/mailpit.yaml k8s/hpa.yaml; do
             envsubst < "$f" > "k8s-rendered/$(basename $f)"
           done
 
@@ -193,35 +193,52 @@ jobs:
           kubectl rollout status deployment/postgres -n tech-challenge --timeout=180s
           kubectl apply -f k8s-rendered/deployment.yaml
           kubectl apply -f k8s-rendered/service.yaml
+          kubectl apply -f k8s-rendered/keycloak.yaml
+          kubectl apply -f k8s-rendered/mailpit.yaml
           kubectl apply -f k8s-rendered/hpa.yaml
 
       - name: Wait for rollout
         if: needs.config.outputs.destroy != 'true'
         run: |
           kubectl rollout status deployment/tech-challenge-ms -n tech-challenge --timeout=300s
+          kubectl rollout status deployment/keycloak -n tech-challenge --timeout=300s
+          kubectl rollout status deployment/mailpit -n tech-challenge --timeout=300s
 
-      - name: Discover NLB hostname
+      - name: Discover NLB hostnames
         if: needs.config.outputs.destroy != 'true'
         id: nlb
         run: |
-          for i in $(seq 1 30); do
-            HOSTNAME=$(kubectl get svc tech-challenge-nlb -n tech-challenge -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null)
-            if [ -n "$HOSTNAME" ]; then
-              echo "hostname=$HOSTNAME" >> $GITHUB_OUTPUT
-              exit 0
-            fi
-            sleep 10
-          done
-          echo "NLB hostname never became available" >&2
-          exit 1
+          discover() {
+            local svc="$1"
+            for i in $(seq 1 30); do
+              HOSTNAME=$(kubectl get svc "$svc" -n tech-challenge -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null)
+              if [ -n "$HOSTNAME" ]; then
+                echo "$HOSTNAME"
+                return 0
+              fi
+              sleep 10
+            done
+            echo "NLB hostname for $svc never became available" >&2
+            return 1
+          }
+
+          APP_HOSTNAME=$(discover tech-challenge-nlb) || exit 1
+          KEYCLOAK_HOSTNAME=$(discover keycloak) || exit 1
+          MAILPIT_HOSTNAME=$(discover mailpit-nlb) || exit 1
+
+          echo "app_hostname=$APP_HOSTNAME" >> $GITHUB_OUTPUT
+          echo "keycloak_hostname=$KEYCLOAK_HOSTNAME" >> $GITHUB_OUTPUT
+          echo "mailpit_hostname=$MAILPIT_HOSTNAME" >> $GITHUB_OUTPUT
 
       - name: Set base URL env vars
         if: needs.config.outputs.destroy != 'true'
         run: |
-          echo "NLB_HOSTNAME=${{ steps.nlb.outputs.hostname }}" >> $GITHUB_ENV
-          echo "APP_BASE_URL=http://${{ steps.nlb.outputs.hostname }}:8080" >> $GITHUB_ENV
-          echo "AUTH_BASE_URL=http://${{ steps.nlb.outputs.hostname }}:9000" >> $GITHUB_ENV
-          echo "MAILPIT_BASE_URL=http://${{ steps.nlb.outputs.hostname }}:8025" >> $GITHUB_ENV
+          echo "APP_HOSTNAME=${{ steps.nlb.outputs.app_hostname }}" >> $GITHUB_ENV
+          echo "AUTH_HOSTNAME=${{ steps.nlb.outputs.keycloak_hostname }}" >> $GITHUB_ENV
+          echo "MAILPIT_HOSTNAME=${{ steps.nlb.outputs.mailpit_hostname }}" >> $GITHUB_ENV
+          echo "APP_BASE_URL=http://${{ steps.nlb.outputs.app_hostname }}:8080" >> $GITHUB_ENV
+          echo "AUTH_BASE_URL=http://${{ steps.nlb.outputs.keycloak_hostname }}:9000" >> $GITHUB_ENV
+          echo "MAILPIT_BASE_URL=http://${{ steps.nlb.outputs.mailpit_hostname }}:8025" >> $GITHUB_ENV
 
       - name: Reapply ConfigMap with real APP_BASE_URL
         if: needs.config.outputs.destroy != 'true'
@@ -236,7 +253,9 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.VARIABLES_PAT }}
         run: |
-          gh variable set NLB_HOSTNAME --body "$NLB_HOSTNAME" --env dev
+          gh variable set APP_HOSTNAME --body "$APP_HOSTNAME" --env dev
+          gh variable set AUTH_HOSTNAME --body "$AUTH_HOSTNAME" --env dev
+          gh variable set MAILPIT_HOSTNAME --body "$MAILPIT_HOSTNAME" --env dev
           gh variable set APP_BASE_URL --body "$APP_BASE_URL" --env dev
           gh variable set AUTH_BASE_URL --body "$AUTH_BASE_URL" --env dev
           gh variable set MAILPIT_BASE_URL --body "$MAILPIT_BASE_URL" --env dev
@@ -254,16 +273,14 @@ jobs:
         if: always() && needs.config.outputs.destroy != 'true'
         run: |
           kubectl get pods -n tech-challenge -o wide
-          for pod in $(kubectl get pods -n tech-challenge -l app=tech-challenge-ms -o jsonpath='{.items[*].metadata.name}'); do
-            for container in app keycloak mailpit; do
-              echo "===== $pod / $container (current) ====="
-              kubectl logs -n tech-challenge "$pod" -c "$container" --tail=200 || true
-              echo "===== $pod / $container (previous) ====="
-              kubectl logs -n tech-challenge "$pod" -c "$container" --previous --tail=200 || true
+          for label in tech-challenge-ms keycloak mailpit postgres; do
+            for pod in $(kubectl get pods -n tech-challenge -l app=$label -o jsonpath='{.items[*].metadata.name}'); do
+              echo "===== $pod (current) ====="
+              kubectl logs -n tech-challenge "$pod" --tail=200 || true
+              echo "===== $pod (previous) ====="
+              kubectl logs -n tech-challenge "$pod" --previous --tail=200 || true
             done
           done
-          echo "===== postgres (current) ====="
-          kubectl logs -n tech-challenge -l app=postgres --tail=200 || true
 
       - name: Destroy manifests
         if: needs.config.outputs.destroy == 'true'
@@ -271,6 +288,8 @@ jobs:
           kubectl delete -f k8s-rendered/hpa.yaml --ignore-not-found
           kubectl delete -f k8s-rendered/service.yaml --ignore-not-found
           kubectl delete -f k8s-rendered/deployment.yaml --ignore-not-found
+          kubectl delete -f k8s-rendered/keycloak.yaml --ignore-not-found
+          kubectl delete -f k8s-rendered/mailpit.yaml --ignore-not-found
           kubectl delete -f k8s-rendered/configmap.yaml --ignore-not-found
           kubectl delete -f k8s-rendered/secret.yaml --ignore-not-found
           # PVC intentionally left in place: deleting it destroys the postgres

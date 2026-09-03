@@ -23,7 +23,7 @@ Este repositório contém o **serviço de aplicação** (API + Keycloak + MailPi
 
 ### Componentes da aplicação
 
-O pod da aplicação roda três containers (app, Keycloak e MailPit) no mesmo `Deployment`, tanto localmente (via `docker-compose.yml`) quanto no cluster (via `k8s/deployment.yaml`):
+App, Keycloak e MailPit rodam como três `Deployment`s independentes (cada um com seu próprio Pod, réplicas e Service), tanto localmente (via `docker-compose.yml`) quanto no cluster (`k8s/deployment.yaml`, `k8s/keycloak.yaml`, `k8s/mailpit.yaml`) — o HPA escala só o Deployment da app, sem arrastar Keycloak/MailPit junto. O Postgres (`k8s/postgres.yaml`) é um quarto Deployment independente, com dados persistidos em `PersistentVolumeClaim`:
 
 ![Componentes da aplicação](docs/images/g52-arquitetura-componentes-da-aplicacao.png)
 
@@ -39,10 +39,10 @@ A infraestrutura da AWS é provisionada por Terraform no repositório separado [
 |---|---|---|
 | Cluster EKS + Fargate Profiles | Terraform (`g52-infra-eks-tech-challenge`) | Compute do cluster, sem nós EC2 gerenciados manualmente |
 | Repositórios ECR (app e keycloak) | Terraform (`g52-infra-eks-tech-challenge`) | Imagens Docker publicadas pelo pipeline deste repositório |
-| IAM Role (IRSA) + AWS Load Balancer Controller | Terraform (`g52-infra-eks-tech-challenge`) | Cria a NLB a partir do `Service type: LoadBalancer` definido em `k8s/service.yaml` |
+| IAM Role (IRSA) + AWS Load Balancer Controller | Terraform (`g52-infra-eks-tech-challenge`) | Cria uma NLB para cada `Service type: LoadBalancer` (`k8s/service.yaml`, `k8s/keycloak.yaml`, `k8s/mailpit.yaml`) — uma NLB por componente, já que cada um é um Deployment/Pod independente |
 | metrics-server | Terraform (`g52-infra-eks-tech-challenge`) | Necessário para o HPA calcular utilização de CPU |
 | IAM Role (IRSA) + EBS CSI Driver addon + StorageClass `gp3` | Terraform (`g52-infra-eks-tech-challenge`) | Necessário para o `PersistentVolumeClaim` do Postgres poder provisionar um volume EBS |
-| Namespace, Deployment, ConfigMap, Secret, Service, HPA, CronJobs | kubectl (`k8s/*.yaml`, deste repositório) | Recursos da aplicação em si, aplicados no cluster já provisionado |
+| Namespace, Deployments (app/Keycloak/MailPit), ConfigMap, Secret, Services, HPA, CronJobs | kubectl (`k8s/*.yaml`, deste repositório) | Recursos da aplicação em si, aplicados no cluster já provisionado |
 | Postgres (Deployment + PersistentVolumeClaim + Service) | kubectl (`k8s/postgres.yaml`, deste repositório) | Banco de dados da aplicação, com dados persistidos em volume EBS |
 | State do Terraform | S3 (`g52-terraform-state-dev-<account-id>`) | Backend remoto configurado via `-backend-config` no pipeline |
 
@@ -53,7 +53,7 @@ O fluxo de branches é `feature → develop → release → main`, com um workfl
 ![Fluxo de deploy e integração entre os repositórios](docs/images/g52-arquitetura-fluxo-de-deploy-ci-cd.png)
 
 1. **1 - Build & PR** (`feature/**` → `develop`): ao dar push numa branch `feature/*`, roda os testes unitários e abre automaticamente um PR pra `develop` (se ainda não existir um aberto).
-2. **2 - Build and Deploy** (`develop`): lê as configs do `.pipes.yml`, builda o JAR e as imagens Docker da app e do Keycloak, publica no ECR, autentica no cluster EKS (`aws eks update-kubeconfig`) e aplica os manifestos em `k8s/` via `kubectl` (secrets injetados a partir de GitHub Secrets via `envsubst`). Depois de aplicar, descobre o hostname da NLB, reaplica o `ConfigMap` com a `APP_BASE_URL` real, reinicia o rollout e publica as URLs como *repo variables* (inclusive no repositório do API Gateway). Se `destroy: true` no `.pipes.yml`, os manifestos são removidos em vez de aplicados. Ao final, cria/reaproveita uma branch `release/vX.Y.Z` com PR de `develop` pra ela.
+2. **2 - Build and Deploy** (`develop`): lê as configs do `.pipes.yml`, builda o JAR e as imagens Docker da app e do Keycloak, publica no ECR, autentica no cluster EKS (`aws eks update-kubeconfig`) e aplica os manifestos em `k8s/` via `kubectl` (secrets injetados a partir de GitHub Secrets via `envsubst`) — Postgres primeiro (aguardando seu rollout antes do resto), depois app/Keycloak/MailPit em paralelo. Depois de aplicar, descobre o hostname de cada uma das três NLBs (app, Keycloak, MailPit), reaplica o `ConfigMap` com a `APP_BASE_URL` real, reinicia o rollout da app e publica as URLs como *repo variables* (inclusive no repositório do API Gateway). Se `destroy: true` no `.pipes.yml`, os manifestos são removidos em vez de aplicados. Ao final, cria/reaproveita uma branch `release/vX.Y.Z` com PR de `develop` pra ela.
 3. **3 - Promote & Deploy** (`release/**` → `main`): quando o PR de `develop` pra `release/*` é mergeado, roda os testes novamente e abre automaticamente o PR de `release/*` pra `main`.
 
 Autenticação com a AWS é via **OIDC** (sem credenciais fixas). O provisionamento da infraestrutura (cluster, ECR, IAM) roda em um pipeline equivalente no repositório `g52-infra-eks-tech-challenge`, de forma independente deste.
@@ -113,7 +113,7 @@ O MailPit do ambiente dev é acessado através do API Gateway (`g52-api-tech-cha
 
 [https://mjsur3jbx5.execute-api.us-east-1.amazonaws.com/dev/mailpit](https://mjsur3jbx5.execute-api.us-east-1.amazonaws.com/dev/mailpit)
 
-O container do MailPit roda com `MP_WEBROOT=dev/mailpit` (`k8s/deployment.yaml`), fazendo a UI e a API dele responderem sob esse prefixo, o mesmo caminho exposto pelo Gateway. Por isso, acessar o MailPit direto pela NLB (porta 8025) exige o mesmo sufixo: `http://<NLB_HOSTNAME>:8025/dev/mailpit/`. O hostname da NLB muda a cada recriação e está sempre publicado na variável de repositório `NLB_HOSTNAME` (aba `Variables` do ambiente `dev`, GitHub Actions).
+O container do MailPit roda com `MP_WEBROOT=dev/mailpit` (`k8s/mailpit.yaml`), fazendo a UI e a API dele responderem sob esse prefixo, o mesmo caminho exposto pelo Gateway. Por isso, acessar o MailPit direto pela sua NLB (porta 8025) exige o mesmo sufixo: `http://<MAILPIT_HOSTNAME>:8025/dev/mailpit/`. O hostname muda a cada recriação e está sempre publicado na variável de repositório `MAILPIT_HOSTNAME` (aba `Variables` do ambiente `dev`, GitHub Actions) — cada componente (app, Keycloak, MailPit) tem sua própria NLB e sua própria variável de hostname (`APP_HOSTNAME`, `AUTH_HOSTNAME`, `MAILPIT_HOSTNAME`).
 
 ### Deploy em Kubernetes
 
@@ -125,60 +125,73 @@ Pré-requisitos: um cluster EKS já provisionado (ver seção [Provisionamento d
    aws eks update-kubeconfig --name <eks_cluster_name> --region <aws_region>
    ```
 
-2. Defina as variáveis usadas pelos manifestos (eles usam `envsubst` para interpolar `${APP_IMAGE}`, `${KEYCLOAK_IMAGE}`, `${APP_BASE_URL}`, `${MAIL_PASSWORD}`, `${APPROVAL_SECRET}`, `${KEYCLOAK_ADMIN_PASSWORD}`, `${KEYCLOAK_CLIENT_ID}` e `${KEYCLOAK_CLIENT_SECRET}`):
+2. Defina as variáveis usadas pelos manifestos (eles usam `envsubst` para interpolar `${APP_IMAGE}`, `${KEYCLOAK_IMAGE}`, `${APP_BASE_URL}`, `${MAIL_PASSWORD}`, `${APPROVAL_SECRET}`, `${KEYCLOAK_ADMIN_PASSWORD}`, `${KEYCLOAK_CLIENT_ID}`, `${KEYCLOAK_CLIENT_SECRET}` e `${DB_PASSWORD}`):
 
    ```bash
    export APP_IMAGE=<registry>/<ecr_repository>:<tag>
    export KEYCLOAK_IMAGE=<registry>/<ecr_repository_keycloak>:<tag>
-   export APP_BASE_URL=http://localhost:8081   # atualizado depois com o hostname real da NLB
+   export APP_BASE_URL=http://localhost:8081   # atualizado depois com o hostname real da NLB da app
    export MAIL_PASSWORD=...
    export APPROVAL_SECRET=...
    export KEYCLOAK_ADMIN_PASSWORD=...
    export KEYCLOAK_CLIENT_ID=...
    export KEYCLOAK_CLIENT_SECRET=...
+   export DB_PASSWORD=...
    ```
 
-   Em CI, esses valores não ficam hardcoded em lugar nenhum do repositório: `APP_IMAGE`/`KEYCLOAK_IMAGE` são resolvidos a partir do `.pipes.yml` e da tag de imagem gerada no pipeline, e os demais (`MAIL_PASSWORD`, `APPROVAL_SECRET`, `KEYCLOAK_ADMIN_PASSWORD`, `KEYCLOAK_CLIENT_ID`, `KEYCLOAK_CLIENT_SECRET`) vêm dos **GitHub Secrets** do ambiente `dev` deste repositório (`Settings → Environments → dev → Environment secrets`). Para rodar esse passo manualmente fora do pipeline, defina esses mesmos valores localmente (ex.: exportando-os a partir de um cofre próprio), sem copiar os valores reais para arquivos versionados.
+   Em CI, esses valores não ficam hardcoded em lugar nenhum do repositório: `APP_IMAGE`/`KEYCLOAK_IMAGE` são resolvidos a partir do `.pipes.yml` e da tag de imagem gerada no pipeline, e os demais (`MAIL_PASSWORD`, `APPROVAL_SECRET`, `KEYCLOAK_ADMIN_PASSWORD`, `KEYCLOAK_CLIENT_ID`, `KEYCLOAK_CLIENT_SECRET`, `DB_PASSWORD`) vêm dos **GitHub Secrets** do ambiente `dev` deste repositório (`Settings → Environments → dev → Environment secrets`). Para rodar esse passo manualmente fora do pipeline, defina esses mesmos valores localmente (ex.: exportando-os a partir de um cofre próprio), sem copiar os valores reais para arquivos versionados.
 
-3. Renderize e aplique os manifestos, na ordem (namespace e secret precisam existir antes do deployment):
+3. Renderize e aplique os manifestos. Postgres primeiro (o `Deployment` da app tem um `initContainer` que espera ele responder na porta 5432); Keycloak e MailPit são independentes entre si e da app, então podem ser aplicados em qualquer ordem depois:
 
    ```bash
    mkdir -p k8s-rendered
-   for f in k8s/namespace.yaml k8s/configmap.yaml k8s/secret.yaml k8s/deployment.yaml k8s/service.yaml k8s/hpa.yaml; do
+   for f in k8s/namespace.yaml k8s/configmap.yaml k8s/secret.yaml k8s/postgres.yaml k8s/deployment.yaml k8s/service.yaml k8s/keycloak.yaml k8s/mailpit.yaml k8s/hpa.yaml; do
      envsubst < "$f" > "k8s-rendered/$(basename "$f")"
    done
 
    kubectl apply -f k8s-rendered/namespace.yaml
    kubectl apply -f k8s-rendered/configmap.yaml
    kubectl apply -f k8s-rendered/secret.yaml
+   kubectl apply -f k8s-rendered/postgres.yaml
+   kubectl rollout status deployment/postgres -n tech-challenge --timeout=180s
+
    kubectl apply -f k8s-rendered/deployment.yaml
    kubectl apply -f k8s-rendered/service.yaml
+   kubectl apply -f k8s-rendered/keycloak.yaml
+   kubectl apply -f k8s-rendered/mailpit.yaml
    kubectl apply -f k8s-rendered/hpa.yaml
 
    kubectl rollout status deployment/tech-challenge-ms -n tech-challenge --timeout=300s
+   kubectl rollout status deployment/keycloak -n tech-challenge --timeout=300s
+   kubectl rollout status deployment/mailpit -n tech-challenge --timeout=300s
    ```
 
-4. Opcionalmente, aplique também as `CronJob`s de scale down/up noturno:
+4. Opcionalmente, aplique também as `CronJob`s de scale down/up noturno (escalam os quatro `Deployment`s — app, Keycloak, MailPit e Postgres — juntos):
 
    ```bash
    kubectl apply -f k8s/scale-schedule.yaml
    ```
 
-5. Descubra o hostname público da NLB provisionada pelo AWS Load Balancer Controller, atualize `APP_BASE_URL`/`KEYCLOAK_JWK_SET_URI` no `ConfigMap` e reinicie o rollout:
+5. Descubra o hostname público de cada NLB (app, Keycloak, MailPit — cada componente tem a sua), atualize `APP_BASE_URL`/`KEYCLOAK_JWK_SET_URI`/`MAIL_HOST` no `ConfigMap` e reinicie o rollout da app:
 
    ```bash
-   kubectl get svc tech-challenge-nlb -n tech-challenge -o jsonpath='{.status.loadBalancer.ingress[0].hostname}'
+   kubectl get svc tech-challenge-nlb -n tech-challenge -o jsonpath='{.status.loadBalancer.ingress[0].hostname}'  # app
+   kubectl get svc keycloak -n tech-challenge -o jsonpath='{.status.loadBalancer.ingress[0].hostname}'            # keycloak
+   kubectl get svc mailpit-nlb -n tech-challenge -o jsonpath='{.status.loadBalancer.ingress[0].hostname}'         # mailpit (UI)
 
-   export APP_BASE_URL=http://<hostname-da-nlb>:8080
+   export APP_BASE_URL=http://<hostname-da-nlb-da-app>:8080
    envsubst < k8s/configmap.yaml > k8s-rendered/configmap.yaml
    kubectl apply -f k8s-rendered/configmap.yaml
    kubectl rollout restart deployment/tech-challenge-ms -n tech-challenge
    ```
 
-Para desfazer o deploy (remover apenas os recursos da aplicação, sem tocar no cluster):
+   `MAIL_HOST` (`mailpit`) e `KEYCLOAK_JWK_SET_URI` (`http://keycloak:9000/...`) já apontam para os nomes internos dos Services (`mailpit`, `keycloak`) no `ConfigMap` — só precisam de override manual se você estiver rodando fora do cluster ou usando nomes de Service diferentes.
+
+Para desfazer o deploy (remover apenas os recursos da aplicação, sem tocar no cluster — o `PersistentVolumeClaim` do Postgres é preservado de propósito, para não perder os dados):
 
 ```bash
-kubectl delete -f k8s/hpa.yaml -f k8s/service.yaml -f k8s/deployment.yaml -f k8s/configmap.yaml -f k8s/secret.yaml --ignore-not-found
+kubectl delete -f k8s/hpa.yaml -f k8s/service.yaml -f k8s/deployment.yaml -f k8s/keycloak.yaml -f k8s/mailpit.yaml -f k8s/configmap.yaml -f k8s/secret.yaml --ignore-not-found
+kubectl delete deployment/postgres service/postgres -n tech-challenge --ignore-not-found
 ```
 
 > Em CI, esse passo a passo (login OIDC na AWS, build/push das imagens, `envsubst`, `kubectl apply`, descoberta do hostname da NLB e publicação das URLs como *repo variables*) é automatizado pelo workflow `2 - [DEV] Build and Deploy` (`.github/workflows/2-dev-to-release.yml`), controlado pelo `.pipes.yml` na raiz deste repositório.

@@ -20,11 +20,3 @@ spec:
       port: 8080
       targetPort: 8080
       protocol: TCP
-    - name: keycloak
-      port: 9000
-      targetPort: 9000
-      protocol: TCP
-    - name: mailpit
-      port: 8025
-      targetPort: 8025
-      protocol: TCP
