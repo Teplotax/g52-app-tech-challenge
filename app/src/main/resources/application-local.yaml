@@ -3,22 +3,18 @@ server:
 
 spring:
   datasource:
-    url: jdbc:h2:mem:testdb;MODE=PostgreSQL;DB_CLOSE_DELAY=-1
-    driver-class-name: org.h2.Driver
-    username: sa
-    password:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:techchallenge}
+    driver-class-name: org.postgresql.Driver
+    username: ${DB_USERNAME:techchallenge}
+    password: ${DB_PASSWORD:techchallenge}
   jpa:
-    defer-datasource-initialization: true
-    database-platform: org.hibernate.dialect.H2Dialect
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
-      ddl-auto: update #update #none
-  h2:
-    console:
-      enabled: true
-      path: /h2-console
-  sql:
-    init:
-      mode: always
+      ddl-auto: update
+  # sql.init defaults to "embedded" (only runs data.sql for H2/HSQL/etc).
+  # Left unset here on purpose: data.sql isn't idempotent (plain INSERTs), so
+  # auto-running it against the persistent Postgres container on every restart
+  # would crash the app with duplicate-key errors after the first successful boot.
   mail:
     host: ${MAIL_HOST:localhost}
     port: ${MAIL_PORT:1025}

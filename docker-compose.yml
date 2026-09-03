@@ -1,4 +1,22 @@
 services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: tech-challenge-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: techchallenge
+      POSTGRES_USER: techchallenge
+      POSTGRES_PASSWORD: techchallenge
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U techchallenge -d techchallenge"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
   keycloak:
     build:
       context: ./keycloak
@@ -41,6 +59,8 @@ services:
     container_name: tech-challenge-app
     restart: unless-stopped
     depends_on:
+      postgres:
+        condition: service_healthy
       mailpit:
         condition: service_healthy
       keycloak:
@@ -49,6 +69,11 @@ services:
       - "8081:8081"
     environment:
       SPRING_PROFILES_ACTIVE: docker
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: techchallenge
+      DB_USERNAME: techchallenge
+      DB_PASSWORD: techchallenge
       MAIL_HOST: mailpit
       MAIL_PORT: 1025
       MAIL_USERNAME: dev@local
@@ -59,3 +84,6 @@ services:
       APP_BASE_URL: http://localhost:8081
       APPROVAL_TTL_MINUTES: 1440
       KEYCLOAK_JWK_SET_URI: http://keycloak:8080/realms/g52/protocol/openid-connect/certs
+
+volumes:
+  postgres-data:
