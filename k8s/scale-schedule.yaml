@@ -45,7 +45,7 @@ spec:
           containers:
             - name: kubectl
               image: bitnami/kubectl:latest
-              command: ["kubectl", "scale", "deployment/tech-challenge-ms", "--replicas=0", "-n", "tech-challenge"]
+              command: ["kubectl", "scale", "deployment/tech-challenge-ms", "deployment/keycloak", "deployment/mailpit", "deployment/postgres", "--replicas=0", "-n", "tech-challenge"]
 ---
 apiVersion: batch/v1
 kind: CronJob
@@ -64,4 +64,4 @@ spec:
           containers:
             - name: kubectl
               image: bitnami/kubectl:latest
-              command: ["kubectl", "scale", "deployment/tech-challenge-ms", "--replicas=1", "-n", "tech-challenge"]
+              command: ["kubectl", "scale", "deployment/tech-challenge-ms", "deployment/keycloak", "deployment/mailpit", "deployment/postgres", "--replicas=1", "-n", "tech-challenge"]

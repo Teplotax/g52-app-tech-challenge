@@ -1,0 +1,84 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mailpit
+  namespace: tech-challenge
+  labels:
+    app: mailpit
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: mailpit
+  template:
+    metadata:
+      labels:
+        app: mailpit
+    spec:
+      containers:
+        - name: mailpit
+          image: "axllent/mailpit:latest"
+          ports:
+            - containerPort: 1025
+            - containerPort: 8025
+          env:
+            - name: MP_SMTP_AUTH_ACCEPT_ANY
+              value: "true"
+            - name: MP_SMTP_AUTH_ALLOW_INSECURE
+              value: "true"
+            - name: MP_WEBROOT
+              value: "dev/mailpit"
+          readinessProbe:
+            exec:
+              command: ["/mailpit", "readyz"]
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "48Mi"
+            limits:
+              cpu: "150m"
+              memory: "96Mi"
+---
+# Internal-only: SMTP traffic from the app container (MAIL_HOST=mailpit). Not
+# exposed on the NLB - mailpit-nlb below covers the public web UI instead.
+apiVersion: v1
+kind: Service
+metadata:
+  name: mailpit
+  namespace: tech-challenge
+spec:
+  type: ClusterIP
+  selector:
+    app: mailpit
+  ports:
+    - name: smtp
+      port: 1025
+      targetPort: 1025
+      protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mailpit-nlb
+  namespace: tech-challenge
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-type: "external"
+    service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: "ip"
+    service.beta.kubernetes.io/aws-load-balancer-scheme: "internet-facing"
+    service.beta.kubernetes.io/aws-load-balancer-healthcheck-protocol: "TCP"
+    service.beta.kubernetes.io/aws-load-balancer-healthcheck-interval: "15"
+    service.beta.kubernetes.io/aws-load-balancer-healthcheck-healthy-threshold: "2"
+    service.beta.kubernetes.io/aws-load-balancer-healthcheck-unhealthy-threshold: "3"
+spec:
+  type: LoadBalancer
+  selector:
+    app: mailpit
+  ports:
+    - name: web
+      port: 8025
+      targetPort: 8025
+      protocol: TCP
