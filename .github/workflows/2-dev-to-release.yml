@@ -152,6 +152,7 @@ jobs:
       KEYCLOAK_CLIENT_ID: ${{ secrets.KEYCLOAK_CLIENT_ID }}
       KEYCLOAK_CLIENT_SECRET: ${{ secrets.KEYCLOAK_CLIENT_SECRET }}
       DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+      ENVSUBST_VARS: "$APP_IMAGE $KEYCLOAK_IMAGE $APP_BASE_URL $MAIL_PASSWORD $APPROVAL_SECRET $KEYCLOAK_ADMIN_PASSWORD $KEYCLOAK_CLIENT_ID $KEYCLOAK_CLIENT_SECRET $DB_PASSWORD"
 
     steps:
       - name: Checkout
@@ -180,7 +181,7 @@ jobs:
 
           mkdir -p k8s-rendered
           for f in k8s/namespace.yaml k8s/configmap.yaml k8s/secret.yaml k8s/postgres.yaml k8s/deployment.yaml k8s/service.yaml k8s/keycloak.yaml k8s/mailpit.yaml k8s/hpa.yaml; do
-            envsubst < "$f" > "k8s-rendered/$(basename $f)"
+            envsubst "$ENVSUBST_VARS" < "$f" > "k8s-rendered/$(basename $f)"
           done
 
       - name: Apply manifests
@@ -243,7 +244,7 @@ jobs:
       - name: Reapply ConfigMap with real APP_BASE_URL
         if: needs.config.outputs.destroy != 'true'
         run: |
-          envsubst < k8s/configmap.yaml > k8s-rendered/configmap.yaml
+          envsubst "$ENVSUBST_VARS" < k8s/configmap.yaml > k8s-rendered/configmap.yaml
           kubectl apply -f k8s-rendered/configmap.yaml
           kubectl rollout restart deployment/tech-challenge-ms -n tech-challenge
           kubectl rollout status deployment/tech-challenge-ms -n tech-challenge --timeout=300s
