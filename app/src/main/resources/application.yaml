@@ -4,6 +4,11 @@ server:
 spring:
   application:
     name: tech-challenge-ms
+  # Flyway migrations target Postgres; off by default so it never runs
+  # against the auto-configured embedded H2 used when no profile is active.
+  # local/docker profiles turn it back on for the real database.
+  flyway:
+    enabled: false
   mail:
     host: ${MAIL_HOST:localhost}
     port: ${MAIL_PORT:1025}
