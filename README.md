@@ -42,7 +42,7 @@ A infraestrutura da AWS é provisionada por Terraform no repositório separado [
 | IAM Role (IRSA) + AWS Load Balancer Controller | Terraform (`g52-infra-eks-tech-challenge`) | Cria uma NLB para cada `Service type: LoadBalancer` (`k8s/service.yaml`, `k8s/keycloak.yaml`, `k8s/mailpit.yaml`) — uma NLB por componente, já que cada um é um Deployment/Pod independente |
 | metrics-server | Terraform (`g52-infra-eks-tech-challenge`) | Necessário para o HPA calcular utilização de CPU |
 | IAM Role (IRSA) + EBS CSI Driver addon + StorageClass `gp3` | Terraform (`g52-infra-eks-tech-challenge`) | Necessário para o `PersistentVolumeClaim` do Postgres poder provisionar um volume EBS |
-| Namespace, Deployments (app/Keycloak/MailPit), ConfigMap, Secret, Services, HPA, CronJobs | kubectl (`k8s/*.yaml`, deste repositório) | Recursos da aplicação em si, aplicados no cluster já provisionado |
+| Namespace, Deployments (app/Keycloak/MailPit), ConfigMap, Secret, Services, HPA | kubectl (`k8s/*.yaml`, deste repositório) | Recursos da aplicação em si, aplicados no cluster já provisionado |
 | Postgres (Deployment + PersistentVolumeClaim + Service) | kubectl (`k8s/postgres.yaml`, deste repositório) | Banco de dados da aplicação, com dados persistidos em volume EBS |
 | State do Terraform | S3 (`g52-terraform-state-dev-<account-id>`) | Backend remoto configurado via `-backend-config` no pipeline |
 
@@ -166,13 +166,7 @@ Pré-requisitos: um cluster EKS já provisionado (ver seção [Provisionamento d
    kubectl rollout status deployment/mailpit -n tech-challenge --timeout=300s
    ```
 
-4. Opcionalmente, aplique também as `CronJob`s de scale down/up noturno (escalam os quatro `Deployment`s — app, Keycloak, MailPit e Postgres — juntos):
-
-   ```bash
-   kubectl apply -f k8s/scale-schedule.yaml
-   ```
-
-5. Descubra o hostname público de cada NLB (app, Keycloak, MailPit — cada componente tem a sua), atualize `APP_BASE_URL`/`KEYCLOAK_JWK_SET_URI`/`MAIL_HOST` no `ConfigMap` e reinicie o rollout da app:
+4. Descubra o hostname público de cada NLB (app, Keycloak, MailPit — cada componente tem a sua), atualize `APP_BASE_URL`/`KEYCLOAK_JWK_SET_URI`/`MAIL_HOST` no `ConfigMap` e reinicie o rollout da app:
 
    ```bash
    kubectl get svc tech-challenge-nlb -n tech-challenge -o jsonpath='{.status.loadBalancer.ingress[0].hostname}'  # app

@@ -48,6 +48,8 @@ spec:
                 secretKeyRef:
                   name: tech-challenge-secrets
                   key: KEYCLOAK_CLIENT_SECRET
+            - name: JAVA_OPTS_KC_HEAP
+              value: "-XX:MaxRAMPercentage=65 -XX:InitialRAMPercentage=40 -XX:MaxHeapFreeRatio=10 -XX:MinHeapFreeRatio=10"
           readinessProbe:
             tcpSocket:
               port: 9000
@@ -57,10 +59,10 @@ spec:
           resources:
             requests:
               cpu: "150m"
-              memory: "350Mi"
+              memory: "512Mi"
             limits:
               cpu: "400m"
-              memory: "600Mi"
+              memory: "768Mi"
 ---
 apiVersion: v1
 kind: Service
