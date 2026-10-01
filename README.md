@@ -25,7 +25,23 @@ Este repositório contém o **serviço de aplicação** (API + Keycloak + MailPi
 
 App, Keycloak e MailPit rodam como três `Deployment`s independentes (cada um com seu próprio Pod, réplicas e Service), tanto localmente (via `docker-compose.yml`) quanto no cluster (`k8s/deployment.yaml`, `k8s/keycloak.yaml`, `k8s/mailpit.yaml`) — o HPA escala só o Deployment da app, sem arrastar Keycloak/MailPit junto. O Postgres (`k8s/postgres.yaml`) é um quarto Deployment independente, com dados persistidos em `PersistentVolumeClaim`:
 
-![Componentes da aplicação](docs/images/g52-arquitetura-componentes-da-aplicacao.png)
+```mermaid
+flowchart LR
+    client(["Cliente HTTP"])
+
+    subgraph ns["Namespace tech-challenge"]
+        app["Deployment tech-challenge-ms<br/>Spring Boot · :8080<br/>HPA 1–2 réplicas"]
+        kc["Deployment keycloak<br/>realm g52 · :9000"]
+        mp["Deployment mailpit<br/>SMTP :1025 · Web :8025"]
+        pg[("Deployment postgres<br/>:5432 · PVC gp3")]
+    end
+
+    client -- "REST + JWT" --> app
+    client -- "obtém token OIDC" --> kc
+    app -- "valida JWT (jwk-set-uri)" --> kc
+    app -- "SMTP" --> mp
+    app -- "JDBC + Flyway" --> pg
+```
 
 Camadas internas da API (Clean Architecture): `controller` → `usecase`/`service` → `gateway` (interface + `gateway/impl`) → `gateway/database` (entidades JPA + repositórios), com `dto`s de request/response e `domain` representando as entidades de negócio (`Cliente`, `Veiculo`/`Marca`/`Modelo`, `Peca`, `Insumo`, `Servico`, `OrdemDeServico`, `ApprovalLink`).
 
@@ -33,14 +49,64 @@ Camadas internas da API (Clean Architecture): `controller` → `usecase`/`servic
 
 A infraestrutura da AWS é provisionada por Terraform no repositório separado [`g52-infra-eks-tech-challenge`](https://github.com/Teplotax/g52-infra-eks-tech-challenge). Este repositório (`g52-app-tech-challenge`) consome essa infraestrutura, mas não a provisiona:
 
-![Componentes e infraestrutura provisionada na AWS](docs/images/g52-arquitetura-componentes-e-infraestrutura.png)
+```mermaid
+flowchart TB
+    client(["Cliente / Postman / Swagger UI"])
+
+    subgraph aws["AWS us-east-1"]
+        apigw["API Gateway REST<br/>api-g52-tech-challenge-v1"]
+
+        subgraph eks["EKS eks-tech-challenge · Kubernetes 1.34<br/>Managed node group t3.small (2–3 nós)"]
+            subgraph sys["kube-system"]
+                lbc["aws-load-balancer-controller"]
+                ms["metrics-server"]
+                ca["cluster-autoscaler"]
+                ebs["aws-ebs-csi-driver"]
+            end
+
+            subgraph ns["tech-challenge"]
+                nlbApp["Service tech-challenge-nlb<br/>NLB :8080"]
+                nlbKc["Service keycloak<br/>NLB :9000"]
+                nlbMp["Service mailpit-nlb<br/>NLB :8025"]
+                app["tech-challenge-ms"]
+                kc["keycloak"]
+                mp["mailpit"]
+                pg[("postgres")]
+                hpa["HPA 1–2 · CPU 70%"]
+                cfg["ConfigMap + Secret"]
+            end
+        end
+
+        ecr["ECR<br/>app e keycloak"]
+        ebsVol[("Volume EBS gp3")]
+        asg["Auto Scaling Group<br/>do node group"]
+        s3["S3 g52-terraform-state-dev"]
+        iam["IAM Role github-actions-terraform-dev<br/>(OIDC GitHub Actions)"]
+    end
+
+    client -- HTTPS --> apigw
+    apigw -- "HTTP_PROXY" --> nlbApp & nlbKc & nlbMp
+    nlbApp --> app
+    nlbKc --> kc
+    nlbMp --> mp
+    app --> kc & mp & pg
+    cfg -. envFrom .-> app & kc & pg
+    hpa -. escala .-> app
+    ms -. métricas CPU .-> hpa
+    lbc -. provisiona .-> nlbApp & nlbKc & nlbMp
+    ca -. ajusta capacidade .-> asg
+    ebs -. provisiona .-> ebsVol
+    pg --- ebsVol
+    ecr -. pull image .-> app & kc
+```
 
 | Recurso | Provisionado por | Descrição |
 |---|---|---|
-| Cluster EKS + Fargate Profiles | Terraform (`g52-infra-eks-tech-challenge`) | Compute do cluster, sem nós EC2 gerenciados manualmente |
+| Cluster EKS + managed node group (`t3.small`, 2–3 nós) | Terraform (`g52-infra-eks-tech-challenge`) | Compute do cluster |
 | Repositórios ECR (app e keycloak) | Terraform (`g52-infra-eks-tech-challenge`) | Imagens Docker publicadas pelo pipeline deste repositório |
 | IAM Role (IRSA) + AWS Load Balancer Controller | Terraform (`g52-infra-eks-tech-challenge`) | Cria uma NLB para cada `Service type: LoadBalancer` (`k8s/service.yaml`, `k8s/keycloak.yaml`, `k8s/mailpit.yaml`) — uma NLB por componente, já que cada um é um Deployment/Pod independente |
 | metrics-server | Terraform (`g52-infra-eks-tech-challenge`) | Necessário para o HPA calcular utilização de CPU |
+| IAM Role (IRSA) + Cluster Autoscaler | Terraform (`g52-infra-eks-tech-challenge`) | Adiciona/remove nós do node group quando há pods `Pending` (ex: 2ª réplica do HPA) |
 | IAM Role (IRSA) + EBS CSI Driver addon + StorageClass `gp3` | Terraform (`g52-infra-eks-tech-challenge`) | Necessário para o `PersistentVolumeClaim` do Postgres poder provisionar um volume EBS |
 | Namespace, Deployments (app/Keycloak/MailPit), ConfigMap, Secret, Services, HPA | kubectl (`k8s/*.yaml`, deste repositório) | Recursos da aplicação em si, aplicados no cluster já provisionado |
 | Postgres (Deployment + PersistentVolumeClaim + Service) | kubectl (`k8s/postgres.yaml`, deste repositório) | Banco de dados da aplicação, com dados persistidos em volume EBS |
@@ -50,7 +116,44 @@ A infraestrutura da AWS é provisionada por Terraform no repositório separado [
 
 O fluxo de branches é `feature → develop → release → main`, com um workflow do GitHub Actions por etapa:
 
-![Fluxo de deploy e integração entre os repositórios](docs/images/g52-arquitetura-fluxo-de-deploy-ci-cd.png)
+```mermaid
+flowchart LR
+    subgraph git["Fluxo Git"]
+        direction LR
+        f["push feature/**"] --> w1["Workflow 1<br/>mvn test + PR → develop"]
+        w1 --> md["Merge PR → develop"]
+        mr["Merge PR → release/vX"] --> w3["Workflow 3<br/>mvn test + PR release → main"]
+    end
+
+    subgraph infra["g52-infra-eks-tech-challenge"]
+        direction LR
+        i1["push/PR develop"] --> i2["terraform init<br/>backend S3"]
+        i2 --> i3["plan (PR) /<br/>apply ou destroy (push)"]
+        i3 --> i4["EKS + node group, IAM/IRSA, ECR,<br/>LB Controller, metrics-server,<br/>Cluster Autoscaler, EBS CSI"]
+    end
+
+    subgraph app["g52-app-tech-challenge · Workflow 2"]
+        direction LR
+        a1["Lê .pipes.yml"] --> a2["mvn test"]
+        a2 --> a3["Build & push imagens<br/>app + keycloak → ECR"]
+        a3 --> a4["envsubst + kubectl apply<br/>postgres → app/keycloak/mailpit"]
+        a4 --> a5["Descobre NLBs, reaplica<br/>ConfigMap, reinicia rollout"]
+        a5 --> a6["Publica URLs como<br/>GitHub Variables"]
+        a6 --> a7["Cria release/vX + PR"]
+    end
+
+    subgraph ext["g52-api-tech-challenge-v1-ext"]
+        direction LR
+        e1["Aplica URLs no OpenAPI"] --> e2["redocly bundle"]
+        e2 --> e3["put-rest-api --mode merge"]
+        e3 --> e4["Deploy stage dev"]
+    end
+
+    md -- dispara --> a1
+    i4 -. "cluster e ECR disponíveis" .-> a3
+    a6 -. "VARIABLES_PAT" .-> e1
+    a7 --> mr
+```
 
 1. **1 - Build & PR** (`feature/**` → `develop`): ao dar push numa branch `feature/*`, roda os testes unitários e abre automaticamente um PR pra `develop` (se ainda não existir um aberto).
 2. **2 - Build and Deploy** (`develop`): lê as configs do `.pipes.yml`, builda o JAR e as imagens Docker da app e do Keycloak, publica no ECR, autentica no cluster EKS (`aws eks update-kubeconfig`) e aplica os manifestos em `k8s/` via `kubectl` (secrets injetados a partir de GitHub Secrets via `envsubst`) — Postgres primeiro (aguardando seu rollout antes do resto), depois app/Keycloak/MailPit em paralelo. Depois de aplicar, descobre o hostname de cada uma das três NLBs (app, Keycloak, MailPit), reaplica o `ConfigMap` com a `APP_BASE_URL` real, reinicia o rollout da app e publica as URLs como *repo variables* (inclusive no repositório do API Gateway). Se `destroy: true` no `.pipes.yml`, os manifestos são removidos em vez de aplicados. Ao final, cria/reaproveita uma branch `release/vX.Y.Z` com PR de `develop` pra ela.
