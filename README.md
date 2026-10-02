@@ -25,7 +25,12 @@ Este repositório contém o **serviço de aplicação** (API + MailPit, empacota
 
 App e MailPit rodam como `Deployment`s independentes (cada um com seu próprio Pod, réplicas e Service), tanto localmente (via `docker-compose.yml`) quanto no cluster (`k8s/deployment.yaml`, `k8s/mailpit.yaml`) — o HPA escala só o Deployment da app. O banco é um **RDS PostgreSQL 16** gerenciado, fora do cluster (repositório [`g52-infra-rds-tech-challenge`](https://github.com/Teplotax/g52-infra-rds-tech-challenge)). A app alcança o banco porque os nós do EKS anexam o SG `g52-rds-tech-challenge-clients`.
 
-A autenticação é feita por CPF, fora do cluster: a Function Serverless do repositório [`g52-lambda-tech-challenge`](https://github.com/Teplotax/g52-lambda-tech-challenge) emite um JWT (RS256), o **Lambda Authorizer** valida o token no API Gateway e a app valida de novo pelo JWKS publicado pela Lambda (`JWT_JWK_SET_URI`), conferindo assinatura, expiração, emissor e audiência:
+A autenticação fica fora do cluster, na Function Serverless do repositório [`g52-lambda-tech-challenge`](https://github.com/Teplotax/g52-lambda-tech-challenge). Ela emite dois tipos de JWT (RS256), diferenciados pela claim `roles`:
+
+- **Cliente** (`POST /auth` com o CPF, `roles: CLIENTE`): só consulta e aprova as **próprias** OS (`GET /ordensDeServico`, `GET /ordensDeServico/{osId}` e `POST /ordensDeServico/{osId}/aprovar`). A listagem é filtrada pelo CPF do token. Uma OS de outro cliente responde `404`.
+- **Administrativo** (`POST /auth/token` com `client_credentials`, `roles: ADMIN`): todas as rotas, para a equipe da oficina.
+
+O **Lambda Authorizer** valida o token e a role no API Gateway. A app valida de novo pelo JWKS publicado pela Lambda (`JWT_JWK_SET_URI`), conferindo assinatura, expiração, emissor e audiência, e aplica as mesmas regras de role no `SecurityConfig`. Os links enviados por e-mail (`/aprovacao/**` e `/aquisicao/**`) continuam públicos, protegidos por token HMAC:
 
 ```mermaid
 flowchart LR
@@ -329,7 +334,7 @@ Assim como neste repositório, o provisionamento é automatizado por um pipeline
 
 - **Java 21** e **Spring Boot**, com Maven como gerenciador de build (`app/pom.xml`)
 - **Spring Data JPA** com banco **PostgreSQL** (container `postgres` no `docker-compose.yml` localmente, **Amazon RDS** no ambiente da AWS), schema e dados de exemplo versionados via **Flyway** — o H2 em memória segue sendo usado apenas pelos testes automatizados
-- **Spring Security + OAuth2 Resource Server**, validando os JWTs emitidos pela **Lambda de autenticação por CPF** (JWKS, emissor `g52-lambda-auth`, audiência `tech-challenge-api`)
+- **Spring Security + OAuth2 Resource Server**, validando os JWTs emitidos pela **Lambda de autenticação** (JWKS, emissor `g52-lambda-auth`, audiência `tech-challenge-api`), com autorização por role (`ADMIN` / `CLIENTE`)
 - **Spring Mail**, com **MailPit** como servidor SMTP de desenvolvimento
 - Geração de PDF via **openhtmltopdf**
 - Observabilidade via **Actuator** e **Micrometer/Prometheus** (`/actuator/health`, `/actuator/prometheus`, etc.)
