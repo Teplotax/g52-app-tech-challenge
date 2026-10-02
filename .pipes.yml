@@ -6,3 +6,5 @@ destroy: true
 eks_cluster_name: "eks-tech-challenge"
 # JWKS da Lambda de autenticação por CPF, exposto pelo API Gateway (g52-infra-gateway / g52-api-...-ext)
 jwk_set_uri: "https://uqjslc5lb8.execute-api.us-east-1.amazonaws.com/dev/.well-known/jwks.json"
+# secret do rds (repo g52-infra-rds-tech-challenge)
+db_secret_name: "g52-rds-tech-challenge/credentials"

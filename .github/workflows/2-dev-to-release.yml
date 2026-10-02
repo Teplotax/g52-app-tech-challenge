@@ -27,6 +27,7 @@ jobs:
       ecr_repository: ${{ steps.pipes.outputs.ecr_repository }}
       app_dir: ${{ steps.pipes.outputs.app_dir }}
       jwk_set_uri: ${{ steps.pipes.outputs.jwk_set_uri }}
+      db_secret_name: ${{ steps.pipes.outputs.db_secret_name }}
       java_version: ${{ steps.pipes.outputs.java_version }}
       destroy: ${{ steps.pipes.outputs.destroy }}
       eks_cluster_name: ${{ steps.pipes.outputs.eks_cluster_name }}
@@ -47,6 +48,7 @@ jobs:
           echo "java_version=$(yq '.java_version' .pipes.yml)"                       >> $GITHUB_OUTPUT
           echo "app_dir=$APP_DIR"                                                     >> $GITHUB_OUTPUT
           echo "jwk_set_uri=$(yq '.jwk_set_uri' .pipes.yml)"                         >> $GITHUB_OUTPUT
+          echo "db_secret_name=$(yq '.db_secret_name' .pipes.yml)"                   >> $GITHUB_OUTPUT
           echo "destroy=$(yq '.destroy' .pipes.yml)"                                 >> $GITHUB_OUTPUT
           echo "eks_cluster_name=$(yq '.eks_cluster_name' .pipes.yml)"               >> $GITHUB_OUTPUT
 
@@ -132,8 +134,7 @@ jobs:
       MAIL_PASSWORD: ${{ secrets.MAIL_PASSWORD }}
       APPROVAL_SECRET: ${{ secrets.APPROVAL_SECRET }}
       JWT_JWK_SET_URI: ${{ needs.config.outputs.jwk_set_uri }}
-      DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-      ENVSUBST_VARS: "$APP_IMAGE $APP_BASE_URL $MAIL_PASSWORD $APPROVAL_SECRET $JWT_JWK_SET_URI $DB_PASSWORD"
+      ENVSUBST_VARS: "$APP_IMAGE $APP_BASE_URL $MAIL_PASSWORD $APPROVAL_SECRET $JWT_JWK_SET_URI $DB_HOST $DB_PORT $DB_NAME $DB_USERNAME $DB_PASSWORD"
 
     steps:
       - name: Checkout
@@ -149,6 +150,23 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
+      # credenciais do rds (repo g52-infra-rds-tech-challenge)
+      - name: Read DB credentials
+        if: needs.config.outputs.destroy != 'true'
+        run: |
+          SECRET=$(aws secretsmanager get-secret-value \
+            --secret-id "${{ needs.config.outputs.db_secret_name }}" \
+            --query SecretString --output text)
+
+          DB_PASSWORD=$(echo "$SECRET" | jq -r .password)
+          echo "::add-mask::$DB_PASSWORD"
+
+          echo "DB_HOST=$(echo "$SECRET" | jq -r .host)" >> $GITHUB_ENV
+          echo "DB_PORT=$(echo "$SECRET" | jq -r .port)" >> $GITHUB_ENV
+          echo "DB_NAME=$(echo "$SECRET" | jq -r .dbname)" >> $GITHUB_ENV
+          echo "DB_USERNAME=$(echo "$SECRET" | jq -r .username)" >> $GITHUB_ENV
+          echo "DB_PASSWORD=$DB_PASSWORD" >> $GITHUB_ENV
+
       - name: Update kubeconfig
         run: |
           aws eks update-kubeconfig \
@@ -160,7 +178,7 @@ jobs:
           export APP_IMAGE="${{ steps.login-ecr.outputs.registry }}/${{ env.APP_IMAGE }}"
 
           mkdir -p k8s-rendered
-          for f in k8s/namespace.yaml k8s/configmap.yaml k8s/secret.yaml k8s/postgres.yaml k8s/deployment.yaml k8s/service.yaml k8s/mailpit.yaml k8s/hpa.yaml; do
+          for f in k8s/namespace.yaml k8s/configmap.yaml k8s/secret.yaml k8s/deployment.yaml k8s/service.yaml k8s/mailpit.yaml k8s/hpa.yaml; do
             envsubst "$ENVSUBST_VARS" < "$f" > "k8s-rendered/$(basename $f)"
           done
 
@@ -170,8 +188,6 @@ jobs:
           kubectl apply -f k8s-rendered/namespace.yaml
           kubectl apply -f k8s-rendered/configmap.yaml
           kubectl apply -f k8s-rendered/secret.yaml
-          kubectl apply -f k8s-rendered/postgres.yaml
-          kubectl rollout status deployment/postgres -n tech-challenge --timeout=180s
           kubectl apply -f k8s-rendered/deployment.yaml
           kubectl apply -f k8s-rendered/service.yaml
           kubectl apply -f k8s-rendered/mailpit.yaml
@@ -181,6 +197,11 @@ jobs:
       - name: Remove legacy Keycloak
         if: needs.config.outputs.destroy != 'true'
         run: kubectl delete deployment/keycloak service/keycloak -n tech-challenge --ignore-not-found
+
+      # postgres saiu do cluster (agora é rds), o pvc antigo fica pra apagar na mão
+      - name: Remove legacy Postgres
+        if: needs.config.outputs.destroy != 'true'
+        run: kubectl delete deployment/postgres service/postgres -n tech-challenge --ignore-not-found
 
       - name: Wait for rollout
         if: needs.config.outputs.destroy != 'true'
@@ -250,7 +271,7 @@ jobs:
         if: always() && needs.config.outputs.destroy != 'true'
         run: |
           kubectl get pods -n tech-challenge -o wide
-          for label in tech-challenge-ms mailpit postgres; do
+          for label in tech-challenge-ms mailpit; do
             for pod in $(kubectl get pods -n tech-challenge -l app=$label -o jsonpath='{.items[*].metadata.name}'); do
               echo "===== $pod (current) ====="
               kubectl logs -n tech-challenge "$pod" --tail=200 || true
@@ -269,9 +290,6 @@ jobs:
           kubectl delete -f k8s-rendered/mailpit.yaml --ignore-not-found
           kubectl delete -f k8s-rendered/configmap.yaml --ignore-not-found
           kubectl delete -f k8s-rendered/secret.yaml --ignore-not-found
-          # PVC intentionally left in place: deleting it destroys the postgres
-          # EBS volume and all data. Only the compute (deployment/service) is
-          # torn down here; the data survives until the PVC is removed by hand.
           kubectl delete deployment/postgres service/postgres -n tech-challenge --ignore-not-found
   release:
     name: Create Release Branch & PR
