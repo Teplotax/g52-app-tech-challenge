@@ -223,7 +223,7 @@ Para e remove os containers (equivalente a `docker compose down`):
 
 O MailPit do ambiente dev é acessado através do API Gateway (`g52-api-tech-challenge-v1-ext`), não diretamente pela NLB. A rota `/mailpit` é provisionada em Terraform separadamente do contrato OpenAPI da aplicação, então não aparece na documentação Swagger:
 
-[https://mjsur3jbx5.execute-api.us-east-1.amazonaws.com/dev/mailpit](https://mjsur3jbx5.execute-api.us-east-1.amazonaws.com/dev/mailpit)
+[https://uqjslc5lb8.execute-api.us-east-1.amazonaws.com/dev/mailpit](https://uqjslc5lb8.execute-api.us-east-1.amazonaws.com/dev/mailpit)
 
 O container do MailPit roda com `MP_WEBROOT=dev/mailpit` (`k8s/mailpit.yaml`), fazendo a UI e a API dele responderem sob esse prefixo, o mesmo caminho exposto pelo Gateway. Por isso, acessar o MailPit direto pela sua NLB (porta 8025) exige o mesmo sufixo: `http://<MAILPIT_HOSTNAME>:8025/dev/mailpit/`. O hostname muda a cada recriação e está sempre publicado na variável de repositório `MAILPIT_HOSTNAME` (aba `Variables` do ambiente `dev`, GitHub Actions) — cada componente (app, MailPit) tem sua própria NLB e sua própria variável de hostname (`APP_HOSTNAME`, `MAILPIT_HOSTNAME`).
 
