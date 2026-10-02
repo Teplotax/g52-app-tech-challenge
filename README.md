@@ -359,6 +359,9 @@ Ambos os perfis não-teste (`local` e `docker`) usam Postgres, com o schema e os
 
 - `V1__create_schema.sql`: DDL de todas as tabelas (equivalente ao schema que o Hibernate criava automaticamente antes)
 - `V2__seed_data.sql`: dados de exemplo (marcas, modelos, clientes, veículos, peças/insumos, serviços) — mesmo conteúdo que existia em `data.sql`
+- `V3__revisao_modelo.sql`: revisão do modelo na Fase 3 — coluna `clientes.ativo` (status usado pela autenticação por CPF), constraints de integridade, índices nas FKs e remoção de índices duplicados
+
+O diagrama ER, a explicação dos relacionamentos e a justificativa da escolha do banco estão em [`g52-infra-rds-tech-challenge/docs/modelo-de-dados.md`](https://github.com/Teplotax/g52-infra-rds-tech-challenge/blob/main/docs/modelo-de-dados.md).
 
 `spring.jpa.hibernate.ddl-auto` é `none` nesses dois perfis (Flyway é o dono exclusivo do schema) e `spring.flyway.enabled` é `true`. Por padrão (`application.yaml`) o Flyway fica **desabilitado**, para nunca rodar contra o H2 embarcado usado quando nenhum profile está ativo. Como o Flyway guarda o histórico de migrações aplicadas (tabela `flyway_schema_history`), cada migração roda uma única vez por banco — reiniciar o pod não tenta reinserir os dados de exemplo nem quebra com erro de chave duplicada.
 
