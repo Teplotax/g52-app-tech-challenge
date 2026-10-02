@@ -9,6 +9,7 @@ import org.springframework.boot.security.oauth2.server.resource.autoconfigure.se
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import com.grupo52.tech_challenge.gateway.FindOrdemGateway;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
@@ -28,6 +29,9 @@ class ApproveOrdemControllerTest {
 
     @MockitoBean
     private ApproveOrdemUseCase approveOrdemUseCase;
+
+    @MockitoBean
+    private FindOrdemGateway findOrdemGateway;
 
     @Test
     void aprovarTodosSucesso() throws Exception {

@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -49,12 +50,27 @@ class SecurityConfigTest {
         }
 
         @Test
-        void comTokenValidoRetorna200() throws Exception {
+        void comTokenAdminRetorna200() throws Exception {
             when(listMarcasGateway.execute()).thenReturn(List.of());
 
             mvc.perform(MockMvcRequestBuilders.get("/marcas")
-                            .with(jwt().jwt(j -> j.subject("1").claim("cpf", "55563271064"))))
+                            .with(jwt().jwt(j -> j.subject("g52-oficina-admin"))
+                                    .authorities(new SimpleGrantedAuthority("ROLE_ADMIN"))))
                     .andExpect(status().isOk());
+        }
+
+        @Test
+        void tokenDeClienteEmRotaAdministrativaRetorna403() throws Exception {
+            mvc.perform(MockMvcRequestBuilders.get("/marcas")
+                            .with(jwt().jwt(j -> j.subject("1").claim("cpf", "55563271064"))
+                                    .authorities(new SimpleGrantedAuthority("ROLE_CLIENTE"))))
+                    .andExpect(status().isForbidden());
+        }
+
+        @Test
+        void tokenSemRoleRetorna403() throws Exception {
+            mvc.perform(MockMvcRequestBuilders.get("/marcas").with(jwt()))
+                    .andExpect(status().isForbidden());
         }
     }
 

@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -15,6 +16,8 @@ import org.springframework.security.oauth2.jwt.JwtClaimValidator;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtValidators;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
+import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import org.springframework.security.web.SecurityFilterChain;
 
 import java.util.Collection;
@@ -41,20 +44,26 @@ public class SecurityConfig {
 
         http
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/aprovacao/**").permitAll()
+                        // links do e-mail, assinados com hmac
+                        .requestMatchers("/aprovacao/**", "/aquisicao/**").permitAll()
                         .requestMatchers("/h2-console/**").permitAll()
                         .requestMatchers("/actuator/**").permitAll()
-                        .anyRequest().authenticated()
+                        // token de cliente (cpf): consultar e aprovar as próprias OS
+                        .requestMatchers(HttpMethod.GET, "/ordensDeServico", "/ordensDeServico/{osId}")
+                        .hasAnyRole("ADMIN", "CLIENTE")
+                        .requestMatchers(HttpMethod.POST, "/ordensDeServico/{osId}/aprovar")
+                        .hasAnyRole("ADMIN", "CLIENTE")
+                        // resto é só da equipe (client_credentials)
+                        .anyRequest().hasRole("ADMIN")
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2
-                        .jwt(jwt -> {})
+                        .jwt(jwt -> jwt.jwtAuthenticationConverter(rolesConverter()))
                 );
 
         return http.build();
     }
 
-    // Valida os JWT emitidos pela Lambda de autenticação por CPF (g52-lambda-tech-challenge):
-    // assinatura RS256 pela chave do JWKS, expiração, emissor e audiência.
+    // valida o jwt da lambda (g52-lambda-tech-challenge): assinatura pelo jwks, exp, iss e aud
     @Bean
     @ConditionalOnProperty(name = "app.security.enabled", havingValue = "true", matchIfMissing = true)
     public JwtDecoder jwtDecoder(@Value("${app.security.jwt.jwk-set-uri}") String jwkSetUri,
@@ -63,6 +72,17 @@ public class SecurityConfig {
         NimbusJwtDecoder decoder = NimbusJwtDecoder.withJwkSetUri(jwkSetUri).build();
         decoder.setJwtValidator(tokenValidator(issuer, audience));
         return decoder;
+    }
+
+    // claim "roles" do token da lambda vira ROLE_ADMIN / ROLE_CLIENTE
+    static JwtAuthenticationConverter rolesConverter() {
+        JwtGrantedAuthoritiesConverter authorities = new JwtGrantedAuthoritiesConverter();
+        authorities.setAuthoritiesClaimName("roles");
+        authorities.setAuthorityPrefix("ROLE_");
+
+        JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
+        converter.setJwtGrantedAuthoritiesConverter(authorities);
+        return converter;
     }
 
     static OAuth2TokenValidator<Jwt> tokenValidator(String issuer, String audience) {
