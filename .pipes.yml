@@ -2,7 +2,7 @@ aws_region: "us-east-1"
 ecr_repository: "grupo52/tech-challenge/eks-tech-challenge"
 app_dir: "app"
 java_version: "21"
-destroy: true
+destroy: false
 eks_cluster_name: "eks-tech-challenge"
 # JWKS da Lambda de autenticação por CPF, exposto pelo API Gateway (g52-infra-gateway / g52-api-...-ext)
 jwk_set_uri: "https://uqjslc5lb8.execute-api.us-east-1.amazonaws.com/dev/.well-known/jwks.json"
