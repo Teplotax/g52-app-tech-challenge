@@ -20,11 +20,6 @@ spring:
           auth: ${MAIL_SMTP_AUTH:false}
           starttls:
             enable: ${MAIL_SMTP_STARTTLS:false}
-  security:
-    oauth2:
-      resourceserver:
-        jwt:
-          jwk-set-uri: ${KEYCLOAK_JWK_SET_URI:http://localhost:8180/realms/g52/protocol/openid-connect/certs}
 
 management:
   endpoints:
@@ -46,3 +41,13 @@ management:
 logging:
   level:
     root: info
+
+app:
+  security:
+    # Desligado apenas para rodar localmente (profile local / docker-compose)
+    enabled: ${AUTH_ENABLED:true}
+    jwt:
+      # JWKS publicado pela Lambda de autenticação por CPF, exposto pelo API Gateway
+      jwk-set-uri: ${JWT_JWK_SET_URI:}
+      issuer: ${JWT_ISSUER:g52-lambda-auth}
+      audience: ${JWT_AUDIENCE:tech-challenge-api}
