@@ -23,7 +23,7 @@ Este repositório contém o **serviço de aplicação** (API + MailPit, empacota
 
 ### Componentes da aplicação
 
-App e MailPit rodam como `Deployment`s independentes (cada um com seu próprio Pod, réplicas e Service), tanto localmente (via `docker-compose.yml`) quanto no cluster (`k8s/deployment.yaml`, `k8s/mailpit.yaml`) — o HPA escala só o Deployment da app. O Postgres (`k8s/postgres.yaml`) é um terceiro Deployment independente, com dados persistidos em `PersistentVolumeClaim`.
+App e MailPit rodam como `Deployment`s independentes (cada um com seu próprio Pod, réplicas e Service), tanto localmente (via `docker-compose.yml`) quanto no cluster (`k8s/deployment.yaml`, `k8s/mailpit.yaml`) — o HPA escala só o Deployment da app. O banco é um **RDS PostgreSQL 16** gerenciado, fora do cluster (repositório [`g52-infra-rds-tech-challenge`](https://github.com/Teplotax/g52-infra-rds-tech-challenge)). A app alcança o banco porque os nós do EKS anexam o SG `g52-rds-tech-challenge-clients`.
 
 A autenticação é feita por CPF, fora do cluster: a Function Serverless do repositório [`g52-lambda-tech-challenge`](https://github.com/Teplotax/g52-lambda-tech-challenge) emite um JWT (RS256), o **Lambda Authorizer** valida o token no API Gateway e a app valida de novo pelo JWKS publicado pela Lambda (`JWT_JWK_SET_URI`), conferindo assinatura, expiração, emissor e audiência:
 
@@ -34,8 +34,9 @@ flowchart LR
     subgraph ns["Namespace tech-challenge"]
         app["Deployment tech-challenge-ms<br/>Spring Boot · :8080<br/>HPA 1–2 réplicas"]
         mp["Deployment mailpit<br/>SMTP :1025 · Web :8025"]
-        pg[("Deployment postgres<br/>:5432 · PVC gp3")]
     end
+
+    pg[("RDS PostgreSQL 16<br/>g52-rds-tech-challenge")]
 
     lambda["Lambda g52-lambda-auth<br/>POST /auth · JWKS"]
 
@@ -66,7 +67,6 @@ flowchart TB
                 lbc["aws-load-balancer-controller"]
                 ms["metrics-server"]
                 ca["cluster-autoscaler"]
-                ebs["aws-ebs-csi-driver"]
             end
 
             subgraph ns["tech-challenge"]
@@ -74,14 +74,14 @@ flowchart TB
                 nlbMp["Service mailpit-nlb<br/>NLB :8025"]
                 app["tech-challenge-ms"]
                 mp["mailpit"]
-                pg[("postgres")]
                 hpa["HPA 1–2 · CPU 70%"]
                 cfg["ConfigMap + Secret"]
             end
         end
 
         ecr["ECR<br/>app"]
-        ebsVol[("Volume EBS gp3")]
+        pg[("RDS PostgreSQL 16<br/>privado · SG clients")]
+        sm["Secrets Manager<br/>credenciais do RDS"]
         asg["Auto Scaling Group<br/>do node group"]
         s3["S3 g52-terraform-state-dev"]
         iam["IAM Role github-actions-terraform-dev<br/>(OIDC GitHub Actions)"]
@@ -95,13 +95,13 @@ flowchart TB
     nlbMp --> mp
     app --> mp & pg
     app -. "JWKS" .-> apigw
-    cfg -. envFrom .-> app & pg
+    cfg -. envFrom .-> app
+    auth --> pg
+    sm -. "lido no deploy" .-> cfg
     hpa -. escala .-> app
     ms -. métricas CPU .-> hpa
     lbc -. provisiona .-> nlbApp & nlbMp
     ca -. ajusta capacidade .-> asg
-    ebs -. provisiona .-> ebsVol
-    pg --- ebsVol
     ecr -. pull image .-> app
 ```
 
@@ -112,9 +112,8 @@ flowchart TB
 | IAM Role (IRSA) + AWS Load Balancer Controller | Terraform (`g52-infra-eks-tech-challenge`) | Cria uma NLB para cada `Service type: LoadBalancer` (`k8s/service.yaml`, `k8s/mailpit.yaml`) — uma NLB por componente, já que cada um é um Deployment/Pod independente |
 | metrics-server | Terraform (`g52-infra-eks-tech-challenge`) | Necessário para o HPA calcular utilização de CPU |
 | IAM Role (IRSA) + Cluster Autoscaler | Terraform (`g52-infra-eks-tech-challenge`) | Adiciona/remove nós do node group quando há pods `Pending` (ex: 2ª réplica do HPA) |
-| IAM Role (IRSA) + EBS CSI Driver addon + StorageClass `gp3` | Terraform (`g52-infra-eks-tech-challenge`) | Necessário para o `PersistentVolumeClaim` do Postgres poder provisionar um volume EBS |
 | Namespace, Deployments (app/MailPit), ConfigMap, Secret, Services, HPA | kubectl (`k8s/*.yaml`, deste repositório) | Recursos da aplicação em si, aplicados no cluster já provisionado |
-| Postgres (Deployment + PersistentVolumeClaim + Service) | kubectl (`k8s/postgres.yaml`, deste repositório) | Banco de dados da aplicação, com dados persistidos em volume EBS |
+| RDS PostgreSQL 16 + SG de clientes + secret de credenciais | Terraform (`g52-infra-rds-tech-challenge`) | Banco de dados gerenciado da aplicação e da Lambda de autenticação |
 | Lambda de autenticação por CPF + Lambda Authorizer | Terraform (`g52-lambda-tech-challenge`) | Emissão e validação dos JWT usados pelas rotas protegidas |
 | State do Terraform | S3 (`g52-terraform-state-dev-<account-id>`) | Backend remoto configurado via `-backend-config` no pipeline |
 
@@ -135,14 +134,14 @@ flowchart LR
         direction LR
         i1["push/PR develop"] --> i2["terraform init<br/>backend S3"]
         i2 --> i3["plan (PR) /<br/>apply ou destroy (push)"]
-        i3 --> i4["EKS + node group, IAM/IRSA, ECR,<br/>LB Controller, metrics-server,<br/>Cluster Autoscaler, EBS CSI"]
+        i3 --> i4["EKS + node group, IAM/IRSA, ECR,<br/>LB Controller, metrics-server,<br/>Cluster Autoscaler"]
     end
 
     subgraph app["g52-app-tech-challenge · Workflow 2"]
         direction LR
         a1["Lê .pipes.yml"] --> a2["mvn test"]
         a2 --> a3["Build & push imagem<br/>app → ECR"]
-        a3 --> a4["envsubst + kubectl apply<br/>postgres → app/mailpit"]
+        a3 --> a4["lê credenciais do RDS +<br/>envsubst + kubectl apply"]
         a4 --> a5["Descobre NLBs, reaplica<br/>ConfigMap, reinicia rollout"]
         a5 --> a6["Publica URLs como<br/>GitHub Variables"]
         a6 --> a7["Cria release/vX + PR"]
@@ -162,7 +161,7 @@ flowchart LR
 ```
 
 1. **1 - Build & PR** (`feature/**` → `develop`): ao dar push numa branch `feature/*`, roda os testes unitários e abre automaticamente um PR pra `develop` (se ainda não existir um aberto).
-2. **2 - Build and Deploy** (`develop`): lê as configs do `.pipes.yml`, builda o JAR e a imagem Docker da app, publica no ECR, autentica no cluster EKS (`aws eks update-kubeconfig`) e aplica os manifestos em `k8s/` via `kubectl` (secrets injetados a partir de GitHub Secrets via `envsubst`) — Postgres primeiro (aguardando seu rollout antes do resto), depois app e MailPit. Depois de aplicar, descobre o hostname das NLBs (app e MailPit), reaplica o `ConfigMap` com a `APP_BASE_URL` real, reinicia o rollout da app e publica as URLs como *repo variables* (inclusive no repositório do API Gateway). Se `destroy: true` no `.pipes.yml`, os manifestos são removidos em vez de aplicados. Ao final, cria/reaproveita uma branch `release/vX.Y.Z` com PR de `develop` pra ela.
+2. **2 - Build and Deploy** (`develop`): lê as configs do `.pipes.yml`, builda o JAR e a imagem Docker da app, publica no ECR, autentica no cluster EKS (`aws eks update-kubeconfig`) e aplica os manifestos em `k8s/` via `kubectl` (credenciais do RDS lidas do Secrets Manager e demais secrets a partir de GitHub Secrets, injetados via `envsubst`). Depois de aplicar, descobre o hostname das NLBs (app e MailPit), reaplica o `ConfigMap` com a `APP_BASE_URL` real, reinicia o rollout da app e publica as URLs como *repo variables* (inclusive no repositório do API Gateway). Se `destroy: true` no `.pipes.yml`, os manifestos são removidos em vez de aplicados. Ao final, cria/reaproveita uma branch `release/vX.Y.Z` com PR de `develop` pra ela.
 3. **3 - Promote & Deploy** (`release/**` → `main`): quando o PR de `develop` pra `release/*` é mergeado, roda os testes novamente e abre automaticamente o PR de `release/*` pra `main`.
 
 Autenticação com a AWS é via **OIDC** (sem credenciais fixas). O provisionamento da infraestrutura (cluster, ECR, IAM) roda em um pipeline equivalente no repositório `g52-infra-eks-tech-challenge`, de forma independente deste.
@@ -171,7 +170,7 @@ Autenticação com a AWS é via **OIDC** (sem credenciais fixas). O provisioname
 
 ### Execução local
 
-A aplicação roda em containers Docker (app, Postgres e MailPit para e-mails) orquestrados via `docker-compose.yml`. Localmente a autenticação fica **desligada** (`AUTH_ENABLED=false` no `docker-compose.yml` e `app.security.enabled: false` no profile `local`), então as rotas respondem sem token. Existem três scripts na raiz do projeto para isso. Antes de tudo, dê permissão de execução a eles (necessário apenas uma vez):
+Localmente, a aplicação roda em containers Docker (app, Postgres e MailPit para e-mails) orquestrados via `docker-compose.yml`. Localmente a autenticação fica **desligada** (`AUTH_ENABLED=false` no `docker-compose.yml` e `app.security.enabled: false` no profile `local`), então as rotas respondem sem token. Existem três scripts na raiz do projeto para isso. Antes de tudo, dê permissão de execução a eles (necessário apenas uma vez):
 
 ```bash
 chmod +x build-and-run.sh run.sh stop.sh
@@ -233,7 +232,7 @@ Pré-requisitos: um cluster EKS já provisionado (ver seção [Provisionamento d
    aws eks update-kubeconfig --name <eks_cluster_name> --region <aws_region>
    ```
 
-2. Defina as variáveis usadas pelos manifestos (eles usam `envsubst` para interpolar `${APP_IMAGE}`, `${APP_BASE_URL}`, `${MAIL_PASSWORD}`, `${APPROVAL_SECRET}`, `${JWT_JWK_SET_URI}` e `${DB_PASSWORD}`):
+2. Defina as variáveis usadas pelos manifestos (eles usam `envsubst` para interpolar `${APP_IMAGE}`, `${APP_BASE_URL}`, `${MAIL_PASSWORD}`, `${APPROVAL_SECRET}`, `${JWT_JWK_SET_URI}` e `${DB_HOST}`/`${DB_PORT}`/`${DB_NAME}`/`${DB_USERNAME}`/`${DB_PASSWORD}`):
 
    ```bash
    export APP_IMAGE=<registry>/<ecr_repository>:<tag>
@@ -241,25 +240,25 @@ Pré-requisitos: um cluster EKS já provisionado (ver seção [Provisionamento d
    export MAIL_PASSWORD=...
    export APPROVAL_SECRET=...
    export JWT_JWK_SET_URI=https://<api-id>.execute-api.us-east-1.amazonaws.com/dev/.well-known/jwks.json
-   export DB_PASSWORD=...
+   # credenciais do RDS
+   SECRET=$(aws secretsmanager get-secret-value --secret-id g52-rds-tech-challenge/credentials --query SecretString --output text)
+   export DB_HOST=$(echo "$SECRET" | jq -r .host) DB_PORT=$(echo "$SECRET" | jq -r .port) DB_NAME=$(echo "$SECRET" | jq -r .dbname)
+   export DB_USERNAME=$(echo "$SECRET" | jq -r .username) DB_PASSWORD=$(echo "$SECRET" | jq -r .password)
    ```
 
-   Em CI, esses valores não ficam hardcoded em lugar nenhum do repositório: `APP_IMAGE` e `JWT_JWK_SET_URI` são resolvidos a partir do `.pipes.yml` (e da tag de imagem gerada no pipeline), e os demais (`MAIL_PASSWORD`, `APPROVAL_SECRET`, `DB_PASSWORD`) vêm dos **GitHub Secrets** do ambiente `dev` deste repositório (`Settings → Environments → dev → Environment secrets`). Para rodar esse passo manualmente fora do pipeline, defina esses mesmos valores localmente (ex.: exportando-os a partir de um cofre próprio), sem copiar os valores reais para arquivos versionados.
+   Em CI, esses valores não ficam hardcoded em lugar nenhum do repositório: `APP_IMAGE` e `JWT_JWK_SET_URI` são resolvidos a partir do `.pipes.yml` (e da tag de imagem gerada no pipeline), as credenciais do banco vêm do secret do RDS (`db_secret_name` no `.pipes.yml`), e os demais (`MAIL_PASSWORD`, `APPROVAL_SECRET`) vêm dos **GitHub Secrets** do ambiente `dev` deste repositório (`Settings → Environments → dev → Environment secrets`). Para rodar esse passo manualmente fora do pipeline, defina esses mesmos valores localmente (ex.: exportando-os a partir de um cofre próprio), sem copiar os valores reais para arquivos versionados.
 
-3. Renderize e aplique os manifestos. Postgres primeiro (o `Deployment` da app tem um `initContainer` que espera ele responder na porta 5432); o MailPit é independente da app, então pode ser aplicado em qualquer ordem depois:
+3. Renderize e aplique os manifestos. O `Deployment` da app tem um `initContainer` que espera o RDS responder na porta 5432; o MailPit é independente da app:
 
    ```bash
    mkdir -p k8s-rendered
-   for f in k8s/namespace.yaml k8s/configmap.yaml k8s/secret.yaml k8s/postgres.yaml k8s/deployment.yaml k8s/service.yaml k8s/mailpit.yaml k8s/hpa.yaml; do
+   for f in k8s/namespace.yaml k8s/configmap.yaml k8s/secret.yaml k8s/deployment.yaml k8s/service.yaml k8s/mailpit.yaml k8s/hpa.yaml; do
      envsubst < "$f" > "k8s-rendered/$(basename "$f")"
    done
 
    kubectl apply -f k8s-rendered/namespace.yaml
    kubectl apply -f k8s-rendered/configmap.yaml
    kubectl apply -f k8s-rendered/secret.yaml
-   kubectl apply -f k8s-rendered/postgres.yaml
-   kubectl rollout status deployment/postgres -n tech-challenge --timeout=180s
-
    kubectl apply -f k8s-rendered/deployment.yaml
    kubectl apply -f k8s-rendered/service.yaml
    kubectl apply -f k8s-rendered/mailpit.yaml
@@ -283,11 +282,10 @@ Pré-requisitos: um cluster EKS já provisionado (ver seção [Provisionamento d
 
    `MAIL_HOST` (`mailpit`) já aponta para o nome interno do Service no `ConfigMap`. `JWT_JWK_SET_URI` aponta para o JWKS da Lambda exposto pelo API Gateway; o Spring só busca a chave na primeira validação de token, então a app sobe mesmo que o Gateway ainda não esteja disponível.
 
-Para desfazer o deploy (remover apenas os recursos da aplicação, sem tocar no cluster — o `PersistentVolumeClaim` do Postgres é preservado de propósito, para não perder os dados):
+Para desfazer o deploy (remover apenas os recursos da aplicação, sem tocar no cluster nem no RDS):
 
 ```bash
 kubectl delete -f k8s/hpa.yaml -f k8s/service.yaml -f k8s/deployment.yaml -f k8s/mailpit.yaml -f k8s/configmap.yaml -f k8s/secret.yaml --ignore-not-found
-kubectl delete deployment/postgres service/postgres -n tech-challenge --ignore-not-found
 ```
 
 > Em CI, esse passo a passo (login OIDC na AWS, build/push das imagens, `envsubst`, `kubectl apply`, descoberta do hostname da NLB e publicação das URLs como *repo variables*) é automatizado pelo workflow `2 - [DEV] Build and Deploy` (`.github/workflows/2-dev-to-release.yml`), controlado pelo `.pipes.yml` na raiz deste repositório.
@@ -330,7 +328,7 @@ Assim como neste repositório, o provisionamento é automatizado por um pipeline
 ## Stack e arquitetura
 
 - **Java 21** e **Spring Boot**, com Maven como gerenciador de build (`app/pom.xml`)
-- **Spring Data JPA** com banco **PostgreSQL** (container `postgres` no `docker-compose.yml`, pod dedicado com PVC no cluster EKS), schema e dados de exemplo versionados via **Flyway** — o H2 em memória segue sendo usado apenas pelos testes automatizados
+- **Spring Data JPA** com banco **PostgreSQL** (container `postgres` no `docker-compose.yml` localmente, **Amazon RDS** no ambiente da AWS), schema e dados de exemplo versionados via **Flyway** — o H2 em memória segue sendo usado apenas pelos testes automatizados
 - **Spring Security + OAuth2 Resource Server**, validando os JWTs emitidos pela **Lambda de autenticação por CPF** (JWKS, emissor `g52-lambda-auth`, audiência `tech-challenge-api`)
 - **Spring Mail**, com **MailPit** como servidor SMTP de desenvolvimento
 - Geração de PDF via **openhtmltopdf**
@@ -355,7 +353,7 @@ Os perfis de configuração ficam em `app/src/main/resources`:
 
 - `application.yaml`: configurações comuns (porta, mail, autenticação JWT em `app.security.*`, actuator); sem `datasource` configurado, então os testes automatizados usam H2 em memória (auto-configurado pelo Spring Boot)
 - `application-local.yaml`: perfil para execução local do jar fora de container, apontando para o Postgres publicado em `localhost:5432` pelo `docker-compose.yml`, com a autenticação desligada
-- `application-docker.yaml`: perfil usado tanto pelo container da aplicação no `docker-compose.yml` quanto pelo `Deployment` no cluster EKS, apontando para o serviço `postgres`
+- `application-docker.yaml`: perfil usado tanto pelo container da aplicação no `docker-compose.yml` quanto pelo `Deployment` no cluster EKS (no cluster, `DB_HOST` aponta para o endpoint do RDS)
 
 Ambos os perfis não-teste (`local` e `docker`) usam Postgres, com o schema e os dados de exemplo geridos por **Flyway** (`app/src/main/resources/db/migration/`) em vez de `hibernate.ddl-auto` ou `data.sql`:
 
@@ -364,7 +362,7 @@ Ambos os perfis não-teste (`local` e `docker`) usam Postgres, com o schema e os
 
 `spring.jpa.hibernate.ddl-auto` é `none` nesses dois perfis (Flyway é o dono exclusivo do schema) e `spring.flyway.enabled` é `true`. Por padrão (`application.yaml`) o Flyway fica **desabilitado**, para nunca rodar contra o H2 embarcado usado quando nenhum profile está ativo. Como o Flyway guarda o histórico de migrações aplicadas (tabela `flyway_schema_history`), cada migração roda uma única vez por banco — reiniciar o pod não tenta reinserir os dados de exemplo nem quebra com erro de chave duplicada.
 
-Principais variáveis de ambiente usadas no `docker-compose.yml`: `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USERNAME`, `DB_PASSWORD`, `MAIL_HOST`, `MAIL_PORT`, `APPROVAL_SECRET`, `APP_BASE_URL`, `APPROVAL_TTL_MINUTES` e `AUTH_ENABLED`. No cluster, a validação do JWT usa `JWT_JWK_SET_URI`, `JWT_ISSUER` e `JWT_AUDIENCE`. No cluster Kubernetes, a configuração não sensível (incluindo `DB_HOST`/`DB_PORT`/`DB_NAME`/`DB_USERNAME`) fica em `k8s/configmap.yaml`, o Postgres é definido em `k8s/postgres.yaml` (`Deployment` + `PersistentVolumeClaim` + `Service`), e as credenciais (senha do banco, senha de e-mail, segredo de aprovação) ficam em `k8s/secret.yaml`, populado em runtime a partir de GitHub Secrets pelo pipeline de deploy.
+Principais variáveis de ambiente usadas no `docker-compose.yml`: `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USERNAME`, `DB_PASSWORD`, `MAIL_HOST`, `MAIL_PORT`, `APPROVAL_SECRET`, `APP_BASE_URL`, `APPROVAL_TTL_MINUTES` e `AUTH_ENABLED`. No cluster, a validação do JWT usa `JWT_JWK_SET_URI`, `JWT_ISSUER` e `JWT_AUDIENCE`. No cluster Kubernetes, a configuração não sensível (incluindo `DB_HOST`/`DB_PORT`/`DB_NAME`/`DB_USERNAME`) fica em `k8s/configmap.yaml`, com os valores do banco preenchidos pelo pipeline a partir do secret do RDS. As credenciais (senha do banco, senha de e-mail, segredo de aprovação) ficam em `k8s/secret.yaml`, populado em runtime pelo pipeline de deploy.
 
 ## Repositórios do projeto
 
@@ -375,6 +373,7 @@ Este repositório contém a **aplicação** (API + MailPit) e os **manifestos Ku
 | EKS Cluster + ECR + Load Balancer Controller | Infra    | https://github.com/Teplotax/g52-infra-eks-tech-challenge |
 | App + Manifestos K8s | App      | https://github.com/Teplotax/g52-app-tech-challenge |
 | Autenticação por CPF (Lambda + Authorizer) | Serverless | https://github.com/Teplotax/g52-lambda-tech-challenge |
+| Banco de dados (RDS PostgreSQL) | Infra    | https://github.com/Teplotax/g52-infra-rds-tech-challenge |
 | API Gateway | Infra    | https://github.com/Teplotax/g52-infra-gateway-tech-challenge |
 | API Gateway | Contract | https://github.com/Teplotax/g52-api-tech-challenge-v1-ext |
 | API Gateway | Doc      | https://github.com/Teplotax/doc-api-g52-tech-challenge-v1 |
