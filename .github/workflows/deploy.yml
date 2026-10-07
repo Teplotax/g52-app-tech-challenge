@@ -1,0 +1,338 @@
+name: "Deploy"
+
+# chamado pelos workflows de dev (develop), hom (release/*) e prod (main)
+on:
+  workflow_call:
+    inputs:
+      environment:
+        type: string
+        required: true
+      ref:
+        type: string
+        default: ""
+      plan_only:
+        type: boolean
+        default: false
+
+jobs:
+  config:
+    name: Load Config
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    outputs:
+      aws_region: ${{ steps.pipes.outputs.aws_region }}
+      ecr_repository: ${{ steps.pipes.outputs.ecr_repository }}
+      app_dir: ${{ steps.pipes.outputs.app_dir }}
+      api_name: ${{ steps.pipes.outputs.api_name }}
+      db_secret_name: ${{ steps.pipes.outputs.db_secret_name }}
+      java_version: ${{ steps.pipes.outputs.java_version }}
+      destroy: ${{ steps.pipes.outputs.destroy }}
+      eks_cluster_name: ${{ steps.pipes.outputs.eks_cluster_name }}
+      lb_subnets: ${{ steps.pipes.outputs.lb_subnets }}
+      image_tag: ${{ steps.tag.outputs.image_tag }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+
+      # comum no topo do .pipes.yml, o resto vem de environments.<env>
+      - name: Read .pipes.yml
+        id: pipes
+        env:
+          E: .environments.${{ inputs.environment }}
+        run: |
+          APP_DIR_PATTERN=$(yq '.app_dir' .pipes.yml)
+          APP_DIR=$(ls -d $APP_DIR_PATTERN 2>/dev/null | head -1)
+
+          echo "aws_region=$(yq '.aws_region' .pipes.yml)"                           >> $GITHUB_OUTPUT
+          echo "java_version=$(yq '.java_version' .pipes.yml)"                       >> $GITHUB_OUTPUT
+          echo "app_dir=$APP_DIR"                                                     >> $GITHUB_OUTPUT
+          echo "lb_subnets=$(yq '.lb_subnets' .pipes.yml)"                           >> $GITHUB_OUTPUT
+          echo "ecr_repository=$(yq "$E.ecr_repository" .pipes.yml)"                >> $GITHUB_OUTPUT
+          echo "api_name=$(yq '.api_name' .pipes.yml)"                               >> $GITHUB_OUTPUT
+          echo "db_secret_name=$(yq "$E.db_secret_name" .pipes.yml)"                >> $GITHUB_OUTPUT
+          echo "destroy=$(yq "$E.destroy" .pipes.yml)"                              >> $GITHUB_OUTPUT
+          echo "eks_cluster_name=$(yq "$E.eks_cluster_name" .pipes.yml)"            >> $GITHUB_OUTPUT
+
+      - name: Generate image tag
+        id: tag
+        run: echo "image_tag=${GITHUB_SHA}" >> $GITHUB_OUTPUT
+  test:
+    name: Run unit tests
+    needs: config
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+
+      - name: Set up JDK ${{ needs.config.outputs.java_version }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ needs.config.outputs.java_version }}
+          distribution: temurin
+          cache: maven
+
+      - name: Run unit tests
+        working-directory: ${{ needs.config.outputs.app_dir }}
+        run: mvn -B test --no-transfer-progress
+  build:
+    name: Build & Push to ECR
+    needs: [ config, test ]
+    if: ${{ !inputs.plan_only && needs.config.outputs.destroy != 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: ${{ inputs.environment }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+
+      - name: Set up JDK ${{ needs.config.outputs.java_version }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ needs.config.outputs.java_version }}
+          distribution: temurin
+          cache: maven
+
+      - name: Build JAR
+        working-directory: ${{ needs.config.outputs.app_dir }}
+        run: mvn clean package -DskipTests --no-transfer-progress
+
+      - name: Configure AWS (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/github-actions-terraform-dev
+          aws-region: ${{ needs.config.outputs.aws_region }}
+
+      - name: Login to ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build, tag and push app image
+        env:
+          REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          REPOSITORY: ${{ needs.config.outputs.ecr_repository }}
+          IMAGE_TAG: ${{ needs.config.outputs.image_tag }}
+          APP_DIR: ${{ needs.config.outputs.app_dir }}
+        run: |
+          FULL_IMAGE="$REGISTRY/$REPOSITORY:$IMAGE_TAG"
+
+          docker build -t $FULL_IMAGE $APP_DIR
+          docker push $FULL_IMAGE
+
+          echo "Pushed: $FULL_IMAGE"
+  deploy:
+    name: Deploy to EKS (${{ inputs.environment }})
+    needs: [ config, test, build ]
+    if: ${{ !inputs.plan_only && !cancelled() && needs.test.result == 'success' && needs.build.result != 'failure' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    environment: ${{ inputs.environment }}
+
+    concurrency:
+      group: app-${{ inputs.environment }}
+      cancel-in-progress: false
+
+    env:
+      APP_IMAGE: ${{ needs.config.outputs.ecr_repository }}:${{ needs.config.outputs.image_tag }}
+      MAIL_PASSWORD: ${{ secrets.MAIL_PASSWORD }}
+      APPROVAL_SECRET: ${{ secrets.APPROVAL_SECRET }}
+      ENVIRONMENT: ${{ inputs.environment }}
+      LB_SUBNETS: ${{ needs.config.outputs.lb_subnets }}
+      ENVSUBST_VARS: "$APP_IMAGE $APP_BASE_URL $MAIL_PASSWORD $APPROVAL_SECRET $JWT_JWK_SET_URI $DB_HOST $DB_PORT $DB_NAME $DB_USERNAME $DB_PASSWORD $ENVIRONMENT $LB_SUBNETS"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+
+      - name: Configure AWS (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/github-actions-terraform-dev
+          aws-region: ${{ needs.config.outputs.aws_region }}
+
+      # ambiente destruído (dev quase sempre): sem cluster não tem o que remover
+      - name: Check cluster
+        id: cluster
+        run: |
+          if aws eks describe-cluster --name ${{ needs.config.outputs.eks_cluster_name }} --region ${{ needs.config.outputs.aws_region }} > /dev/null 2>&1; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          elif [ "${{ needs.config.outputs.destroy }}" == "true" ]; then
+            echo "exists=false" >> $GITHUB_OUTPUT
+            echo "cluster ${{ needs.config.outputs.eks_cluster_name }} não existe, nada pra remover"
+          else
+            echo "cluster ${{ needs.config.outputs.eks_cluster_name }} não existe: rode o deploy do eks desse ambiente antes" >&2
+            exit 1
+          fi
+
+      - name: Login to ECR
+        id: login-ecr
+        if: needs.config.outputs.destroy != 'true'
+        uses: aws-actions/amazon-ecr-login@v2
+
+      # jwks da lambda do ambiente, exposto no stage do gateway; id da api buscado pelo nome
+      - name: Resolve JWKS URL
+        if: needs.config.outputs.destroy != 'true'
+        run: |
+          API_NAME="${{ needs.config.outputs.api_name }}"
+          API_ID=$(aws apigateway get-rest-apis --query "items[?name=='$API_NAME'].id" --output text)
+          if [ "$(echo $API_ID | wc -w)" -ne 1 ]; then
+            echo "esperava 1 rest api chamado $API_NAME, achei: '$API_ID'" >&2
+            exit 1
+          fi
+          echo "JWT_JWK_SET_URI=https://$API_ID.execute-api.${{ needs.config.outputs.aws_region }}.amazonaws.com/${{ inputs.environment }}/.well-known/jwks.json" >> $GITHUB_ENV
+
+      # credenciais do rds (repo g52-infra-rds-tech-challenge)
+      - name: Read DB credentials
+        if: needs.config.outputs.destroy != 'true'
+        run: |
+          SECRET=$(aws secretsmanager get-secret-value \
+            --secret-id "${{ needs.config.outputs.db_secret_name }}" \
+            --query SecretString --output text)
+
+          DB_PASSWORD=$(echo "$SECRET" | jq -r .password)
+          echo "::add-mask::$DB_PASSWORD"
+
+          echo "DB_HOST=$(echo "$SECRET" | jq -r .host)" >> $GITHUB_ENV
+          echo "DB_PORT=$(echo "$SECRET" | jq -r .port)" >> $GITHUB_ENV
+          echo "DB_NAME=$(echo "$SECRET" | jq -r .dbname)" >> $GITHUB_ENV
+          echo "DB_USERNAME=$(echo "$SECRET" | jq -r .username)" >> $GITHUB_ENV
+          echo "DB_PASSWORD=$DB_PASSWORD" >> $GITHUB_ENV
+
+      - name: Update kubeconfig
+        if: steps.cluster.outputs.exists == 'true'
+        run: |
+          aws eks update-kubeconfig \
+            --name ${{ needs.config.outputs.eks_cluster_name }} \
+            --region ${{ needs.config.outputs.aws_region }}
+
+      - name: Render manifests
+        if: steps.cluster.outputs.exists == 'true'
+        run: |
+          export APP_IMAGE="${{ steps.login-ecr.outputs.registry }}/${{ env.APP_IMAGE }}"
+
+          mkdir -p k8s-rendered
+          for f in k8s/namespace.yaml k8s/configmap.yaml k8s/secret.yaml k8s/deployment.yaml k8s/service.yaml k8s/mailpit.yaml k8s/hpa.yaml; do
+            envsubst "$ENVSUBST_VARS" < "$f" > "k8s-rendered/$(basename $f)"
+          done
+
+      - name: Apply manifests
+        if: needs.config.outputs.destroy != 'true'
+        run: |
+          kubectl apply -f k8s-rendered/namespace.yaml
+          kubectl apply -f k8s-rendered/configmap.yaml
+          kubectl apply -f k8s-rendered/secret.yaml
+          kubectl apply -f k8s-rendered/deployment.yaml
+          kubectl apply -f k8s-rendered/service.yaml
+          kubectl apply -f k8s-rendered/mailpit.yaml
+          kubectl apply -f k8s-rendered/hpa.yaml
+
+      # Keycloak foi substituído pela Lambda de autenticação por CPF; remove o que sobrou de deploys anteriores
+      - name: Remove legacy Keycloak
+        if: needs.config.outputs.destroy != 'true'
+        run: kubectl delete deployment/keycloak service/keycloak -n tech-challenge --ignore-not-found
+
+      # postgres saiu do cluster (agora é rds), o pvc antigo fica pra apagar na mão
+      - name: Remove legacy Postgres
+        if: needs.config.outputs.destroy != 'true'
+        run: kubectl delete deployment/postgres service/postgres -n tech-challenge --ignore-not-found
+
+      - name: Wait for rollout
+        if: needs.config.outputs.destroy != 'true'
+        run: |
+          kubectl rollout status deployment/tech-challenge-ms -n tech-challenge --timeout=300s
+          kubectl rollout status deployment/mailpit -n tech-challenge --timeout=300s
+
+      - name: Discover NLB hostnames
+        if: needs.config.outputs.destroy != 'true'
+        id: nlb
+        run: |
+          discover() {
+            local svc="$1"
+            for i in $(seq 1 30); do
+              HOSTNAME=$(kubectl get svc "$svc" -n tech-challenge -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null)
+              if [ -n "$HOSTNAME" ]; then
+                echo "$HOSTNAME"
+                return 0
+              fi
+              sleep 10
+            done
+            echo "NLB hostname for $svc never became available" >&2
+            return 1
+          }
+
+          APP_HOSTNAME=$(discover tech-challenge-nlb) || exit 1
+          MAILPIT_HOSTNAME=$(discover mailpit-nlb) || exit 1
+
+          echo "app_hostname=$APP_HOSTNAME" >> $GITHUB_OUTPUT
+          echo "mailpit_hostname=$MAILPIT_HOSTNAME" >> $GITHUB_OUTPUT
+
+      - name: Set base URL env vars
+        if: needs.config.outputs.destroy != 'true'
+        run: |
+          echo "APP_HOSTNAME=${{ steps.nlb.outputs.app_hostname }}" >> $GITHUB_ENV
+          echo "MAILPIT_HOSTNAME=${{ steps.nlb.outputs.mailpit_hostname }}" >> $GITHUB_ENV
+          echo "APP_BASE_URL=http://${{ steps.nlb.outputs.app_hostname }}:8080" >> $GITHUB_ENV
+          echo "MAILPIT_BASE_URL=http://${{ steps.nlb.outputs.mailpit_hostname }}:8025" >> $GITHUB_ENV
+
+      - name: Reapply ConfigMap with real APP_BASE_URL
+        if: needs.config.outputs.destroy != 'true'
+        run: |
+          envsubst "$ENVSUBST_VARS" < k8s/configmap.yaml > k8s-rendered/configmap.yaml
+          kubectl apply -f k8s-rendered/configmap.yaml
+          kubectl rollout restart deployment/tech-challenge-ms -n tech-challenge
+          kubectl rollout status deployment/tech-challenge-ms -n tech-challenge --timeout=300s
+
+      - name: Publish base URLs as repo variables
+        if: needs.config.outputs.destroy != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.VARIABLES_PAT }}
+        run: |
+          gh variable set APP_HOSTNAME --body "$APP_HOSTNAME" --env ${{ inputs.environment }}
+          gh variable set MAILPIT_HOSTNAME --body "$MAILPIT_HOSTNAME" --env ${{ inputs.environment }}
+          gh variable set APP_BASE_URL --body "$APP_BASE_URL" --env ${{ inputs.environment }}
+          gh variable set MAILPIT_BASE_URL --body "$MAILPIT_BASE_URL" --env ${{ inputs.environment }}
+
+      - name: Publish base URLs to api-ext repo
+        if: needs.config.outputs.destroy != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.VARIABLES_PAT }}
+        run: |
+          gh variable set APP_BASE_URL --body "$APP_BASE_URL" --repo Teplotax/g52-api-tech-challenge-v1-ext --env ${{ inputs.environment }}
+          gh variable set MAILPIT_BASE_URL --body "$MAILPIT_BASE_URL" --repo Teplotax/g52-api-tech-challenge-v1-ext --env ${{ inputs.environment }}
+
+      - name: Debug pod logs
+        if: always() && needs.config.outputs.destroy != 'true'
+        run: |
+          kubectl get pods -n tech-challenge -o wide
+          for label in tech-challenge-ms mailpit; do
+            for pod in $(kubectl get pods -n tech-challenge -l app=$label -o jsonpath='{.items[*].metadata.name}'); do
+              echo "===== $pod (current) ====="
+              kubectl logs -n tech-challenge "$pod" --tail=200 || true
+              echo "===== $pod (previous) ====="
+              kubectl logs -n tech-challenge "$pod" --previous --tail=200 || true
+            done
+          done
+
+      - name: Destroy manifests
+        if: needs.config.outputs.destroy == 'true' && steps.cluster.outputs.exists == 'true'
+        run: |
+          kubectl delete -f k8s-rendered/hpa.yaml --ignore-not-found
+          kubectl delete -f k8s-rendered/service.yaml --ignore-not-found
+          kubectl delete -f k8s-rendered/deployment.yaml --ignore-not-found
+          kubectl delete deployment/keycloak service/keycloak -n tech-challenge --ignore-not-found
+          kubectl delete -f k8s-rendered/mailpit.yaml --ignore-not-found
+          kubectl delete -f k8s-rendered/configmap.yaml --ignore-not-found
+          kubectl delete -f k8s-rendered/secret.yaml --ignore-not-found
+          kubectl delete deployment/postgres service/postgres -n tech-challenge --ignore-not-found

@@ -13,11 +13,6 @@ spring:
       ddl-auto: none
   flyway:
     enabled: true
-  security:
-    oauth2:
-      resourceserver:
-        jwt:
-          jwk-set-uri: ${KEYCLOAK_JWK_SET_URI:http://keycloak:8080/realms/g52/protocol/openid-connect/certs}
   mail:
     host: ${MAIL_HOST:mailpit}
     port: ${MAIL_PORT:1025}

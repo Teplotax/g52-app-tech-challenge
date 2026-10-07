@@ -1,8 +1,25 @@
 aws_region: "us-east-1"
-ecr_repository: "grupo52/tech-challenge/eks-tech-challenge"
-ecr_repository_keycloak: "grupo52/tech-challenge/eks-tech-challenge-keycloak"
 app_dir: "app"
-keycloak_dir: "keycloak"
 java_version: "21"
-destroy: false
-eks_cluster_name: "eks-tech-challenge"
+# subnets das nlbs (as mesmas do eks); vão na annotation dos services pra não depender da tag nas subnets
+lb_subnets: "subnet-0f8545b2a7f5196a2,subnet-0f211081d9ccab538"
+# rest api do gateway (g52-infra-gateway-tech-challenge); o id é buscado pelo nome no deploy
+api_name: "api-g52-tech-challenge-v1"
+
+# dev = develop, hom = release/*, prod = main
+environments:
+  dev:
+    destroy: true
+    eks_cluster_name: "eks-tech-challenge-dev"
+    ecr_repository: "grupo52/tech-challenge/eks-tech-challenge-dev"
+    db_secret_name: "g52-rds-tech-challenge-dev/credentials"
+  hom:
+    destroy: false
+    eks_cluster_name: "eks-tech-challenge-hom"
+    ecr_repository: "grupo52/tech-challenge/eks-tech-challenge-hom"
+    db_secret_name: "g52-rds-tech-challenge-hom/credentials"
+  prod:
+    destroy: true
+    eks_cluster_name: "eks-tech-challenge-prod"
+    ecr_repository: "grupo52/tech-challenge/eks-tech-challenge-prod"
+    db_secret_name: "g52-rds-tech-challenge-prod/credentials"

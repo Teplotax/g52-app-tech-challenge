@@ -1,6 +1,7 @@
 package com.grupo52.tech_challenge.controller;
 
 import com.grupo52.tech_challenge.api.ListOrdemApi;
+import com.grupo52.tech_challenge.config.ClienteAutenticado;
 import com.grupo52.tech_challenge.domain.Enums.Complexidade;
 import com.grupo52.tech_challenge.domain.Enums.Status;
 import com.grupo52.tech_challenge.domain.Ordem;
@@ -32,8 +33,11 @@ public class ListOrdemController implements ListOrdemApi {
             LocalDate dataFim,
             Pageable pageable) throws GatewayException {
 
+        // cliente só lista as próprias OS, ignora o filtro de documento que vier
+        String documento = ClienteAutenticado.cpf().orElse(documentoCliente);
+
         Page<Ordem> ordemDeServicos = listOrdemGateway.execute(
-                placa, documentoCliente, status, complexidade, dataInicio, dataFim, pageable);
+                placa, documento, status, complexidade, dataInicio, dataFim, pageable);
 
         return ResponseEntity.ok(OSInfoResponseDTO.fromDomain(ordemDeServicos));
     }
