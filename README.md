@@ -41,9 +41,9 @@ flowchart LR
         mp["Deployment mailpit<br/>SMTP :1025 · Web :8025"]
     end
 
-    pg[("RDS PostgreSQL 16<br/>g52-rds-tech-challenge")]
+    pg[("RDS PostgreSQL 16<br/>g52-rds-tech-challenge-{env}")]
 
-    lambda["Lambda g52-lambda-auth<br/>POST /auth · JWKS"]
+    lambda["Lambda g52-lambda-auth-{env}<br/>POST /auth · JWKS"]
 
     client -- "POST /auth (CPF)" --> lambda
     client -- "REST + JWT" --> app
@@ -64,10 +64,10 @@ flowchart TB
 
     subgraph aws["AWS us-east-1"]
         apigw["API Gateway REST<br/>api-g52-tech-challenge-v1"]
-        authz["Lambda Authorizer<br/>g52-lambda-auth-authorizer"]
-        auth["Lambda g52-lambda-auth<br/>POST /auth · JWKS"]
+        authz["Lambda Authorizer<br/>g52-lambda-auth-{env}-authorizer"]
+        auth["Lambda g52-lambda-auth-{env}<br/>POST /auth · JWKS"]
 
-        subgraph eks["EKS eks-tech-challenge · Kubernetes 1.34<br/>Managed node group t3.small (2–3 nós)"]
+        subgraph eks["EKS eks-tech-challenge-{env} · Kubernetes 1.34<br/>Managed node group t3.small (2–3 nós)"]
             subgraph sys["kube-system"]
                 lbc["aws-load-balancer-controller"]
                 ms["metrics-server"]
@@ -167,7 +167,22 @@ flowchart LR
 
 1. **1 - Build & PR** (`feature/**` → `develop`): ao dar push numa branch `feature/*`, roda os testes unitários e abre automaticamente um PR pra `develop` (se ainda não existir um aberto).
 2. **2 - Build and Deploy** (`develop`): lê as configs do `.pipes.yml`, builda o JAR e a imagem Docker da app, publica no ECR, autentica no cluster EKS (`aws eks update-kubeconfig`) e aplica os manifestos em `k8s/` via `kubectl` (credenciais do RDS lidas do Secrets Manager e demais secrets a partir de GitHub Secrets, injetados via `envsubst`). Depois de aplicar, descobre o hostname das NLBs (app e MailPit), reaplica o `ConfigMap` com a `APP_BASE_URL` real, reinicia o rollout da app e publica as URLs como *repo variables* (inclusive no repositório do API Gateway). Se `destroy: true` no `.pipes.yml`, os manifestos são removidos em vez de aplicados. Ao final, cria/reaproveita uma branch `release/vX.Y.Z` com PR de `develop` pra ela.
-3. **3 - Promote & Deploy** (`release/**` → `main`): quando o PR de `develop` pra `release/*` é mergeado, roda os testes novamente e abre automaticamente o PR de `release/*` pra `main`.
+3. **3 - [HOM] Deploy & Promote** (`release/**`): quando o PR de `develop` pra `release/*` é mergeado, faz o mesmo deploy no ambiente **hom** e abre automaticamente o PR de `release/*` pra `main`.
+4. **5 - [PROD] Deploy** (`main`): o merge da release na `main` faz o deploy no ambiente **prod**.
+
+### Ambientes
+
+| Ambiente | Branch | Quando sobe | `destroy` padrão | Configuração |
+|---|---|---|---|---|
+| **dev** | `develop` | Push em `develop` | `true` (sobe só quando precisa) | `.pipes.yml` → `environments.dev` (cluster `eks-tech-challenge-dev`) |
+| **hom** | `release/*` | Merge do PR `develop` → `release/*` | `false` (fica no ar) | `.pipes.yml` → `environments.hom` (cluster `eks-tech-challenge-hom`) |
+| **prod** | `main` | Merge do PR `release/*` → `main` | `true` (ligado só para demonstração) | `.pipes.yml` → `environments.prod` (cluster `eks-tech-challenge-prod`) |
+
+O deploy fica no workflow reutilizável `deploy.yml`, chamado pelos três gatilhos com o ambiente como parâmetro. Cada ambiente usa o ambiente de mesmo nome no GitHub (`Settings → Environments`), com a variável `AWS_ACCOUNT_ID` e os secrets `MAIL_PASSWORD`, `APPROVAL_SECRET` e `VARIABLES_PAT`. O state do Terraform fica no bucket `g52-terraform-state-dev-<account>`, na chave `<ambiente>/...`.
+
+A branch `main` é protegida: não aceita push direto, e o merge só acontece por Pull Request.
+
+O `.pipes.yml` tem a configuração comum no topo e uma seção por ambiente (`destroy`, cluster, ECR e secret do banco). A URL do JWKS é montada no deploy, buscando o ID do REST API pelo nome (`api_name`). Cada ambiente publica `APP_BASE_URL` e `MAILPIT_BASE_URL` no ambiente de mesmo nome do repositório do contrato, que usa esses valores no stage correspondente do API Gateway (`/dev`, `/hom`, `/prod`).
 
 Autenticação com a AWS é via **OIDC** (sem credenciais fixas). O provisionamento da infraestrutura (cluster, ECR, IAM) roda em um pipeline equivalente no repositório `g52-infra-eks-tech-challenge`, de forma independente deste.
 
@@ -223,7 +238,7 @@ Para e remove os containers (equivalente a `docker compose down`):
 
 O MailPit do ambiente dev é acessado através do API Gateway (`g52-api-tech-challenge-v1-ext`), não diretamente pela NLB. A rota `/mailpit` é provisionada em Terraform separadamente do contrato OpenAPI da aplicação, então não aparece na documentação Swagger:
 
-[https://uqjslc5lb8.execute-api.us-east-1.amazonaws.com/dev/mailpit](https://uqjslc5lb8.execute-api.us-east-1.amazonaws.com/dev/mailpit)
+`https://<api-id>.execute-api.us-east-1.amazonaws.com/<ambiente>/mailpit` (o `<api-id>` muda se o `g52-infra-gateway-tech-challenge` recriar a API; o atual está no console do API Gateway ou em `aws apigateway get-rest-apis`)
 
 O container do MailPit roda com `MP_WEBROOT=dev/mailpit` (`k8s/mailpit.yaml`), fazendo a UI e a API dele responderem sob esse prefixo, o mesmo caminho exposto pelo Gateway. Por isso, acessar o MailPit direto pela sua NLB (porta 8025) exige o mesmo sufixo: `http://<MAILPIT_HOSTNAME>:8025/dev/mailpit/`. O hostname muda a cada recriação e está sempre publicado na variável de repositório `MAILPIT_HOSTNAME` (aba `Variables` do ambiente `dev`, GitHub Actions) — cada componente (app, MailPit) tem sua própria NLB e sua própria variável de hostname (`APP_HOSTNAME`, `MAILPIT_HOSTNAME`).
 
@@ -246,7 +261,7 @@ Pré-requisitos: um cluster EKS já provisionado (ver seção [Provisionamento d
    export APPROVAL_SECRET=...
    export JWT_JWK_SET_URI=https://<api-id>.execute-api.us-east-1.amazonaws.com/dev/.well-known/jwks.json
    # credenciais do RDS
-   SECRET=$(aws secretsmanager get-secret-value --secret-id g52-rds-tech-challenge/credentials --query SecretString --output text)
+   SECRET=$(aws secretsmanager get-secret-value --secret-id g52-rds-tech-challenge-dev/credentials --query SecretString --output text)
    export DB_HOST=$(echo "$SECRET" | jq -r .host) DB_PORT=$(echo "$SECRET" | jq -r .port) DB_NAME=$(echo "$SECRET" | jq -r .dbname)
    export DB_USERNAME=$(echo "$SECRET" | jq -r .username) DB_PASSWORD=$(echo "$SECRET" | jq -r .password)
    ```
@@ -396,6 +411,9 @@ O fluxo de branches é `feature → develop → release → main`, e cada etapa 
 
 - **1 - Build & PR** (`feature/**` → `develop`): ao dar push numa branch `feature/*`, abre automaticamente um PR pra `develop` (se ainda não existir um aberto).
 - **2 - Build and Deploy** (`develop`): o mais "pesado". Lê configs do `.pipes.yml`, builda o JAR, builda e sobe as imagens Docker pra ECR, autentica no cluster EKS, aplica os manifestos em `k8s/` via `kubectl` (ou os remove, se `destroy: true`) e, no final, cria/reaproveita uma branch `release/vX.Y.Z` com PR de `develop` pra ela.
-- **3 - Promote & Deploy** (`release/**` → `main`): quando o PR de `develop` pra `release/*` é mergeado, abre automaticamente o PR de `release/*` pra `main`.
+- **3 - [HOM] Deploy & Promote** (`release/**`): quando o PR de `develop` pra `release/*` é mergeado, faz o deploy em **hom** e abre automaticamente o PR de `release/*` pra `main`.
+- **5 - [PROD] Deploy** (`main`): o merge na `main` faz o deploy em **prod**.
+
+Os três gatilhos chamam o mesmo workflow reutilizável (`deploy.yml`), mudando só o ambiente (ver [Ambientes](#ambientes)).
 
 Autenticação com a AWS é via OIDC (sem credenciais fixas).
