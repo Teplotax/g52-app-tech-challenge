@@ -85,7 +85,7 @@ jobs:
   build:
     name: Build & Push to ECR
     needs: [ config, test ]
-    if: ${{ !inputs.plan_only }}
+    if: ${{ !inputs.plan_only && needs.config.outputs.destroy != 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     environment: ${{ inputs.environment }}
@@ -132,8 +132,8 @@ jobs:
           echo "Pushed: $FULL_IMAGE"
   deploy:
     name: Deploy to EKS (${{ inputs.environment }})
-    needs: [ config, build ]
-    if: ${{ !inputs.plan_only }}
+    needs: [ config, test, build ]
+    if: ${{ !inputs.plan_only && !cancelled() && needs.test.result == 'success' && needs.build.result != 'failure' }}
     runs-on: ubuntu-latest
     timeout-minutes: 25
     environment: ${{ inputs.environment }}
@@ -162,8 +162,23 @@ jobs:
           role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/github-actions-terraform-dev
           aws-region: ${{ needs.config.outputs.aws_region }}
 
+      # ambiente destruído (dev quase sempre): sem cluster não tem o que remover
+      - name: Check cluster
+        id: cluster
+        run: |
+          if aws eks describe-cluster --name ${{ needs.config.outputs.eks_cluster_name }} --region ${{ needs.config.outputs.aws_region }} > /dev/null 2>&1; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          elif [ "${{ needs.config.outputs.destroy }}" == "true" ]; then
+            echo "exists=false" >> $GITHUB_OUTPUT
+            echo "cluster ${{ needs.config.outputs.eks_cluster_name }} não existe, nada pra remover"
+          else
+            echo "cluster ${{ needs.config.outputs.eks_cluster_name }} não existe: rode o deploy do eks desse ambiente antes" >&2
+            exit 1
+          fi
+
       - name: Login to ECR
         id: login-ecr
+        if: needs.config.outputs.destroy != 'true'
         uses: aws-actions/amazon-ecr-login@v2
 
       # jwks da lambda do ambiente, exposto no stage do gateway; id da api buscado pelo nome
@@ -196,12 +211,14 @@ jobs:
           echo "DB_PASSWORD=$DB_PASSWORD" >> $GITHUB_ENV
 
       - name: Update kubeconfig
+        if: steps.cluster.outputs.exists == 'true'
         run: |
           aws eks update-kubeconfig \
             --name ${{ needs.config.outputs.eks_cluster_name }} \
             --region ${{ needs.config.outputs.aws_region }}
 
       - name: Render manifests
+        if: steps.cluster.outputs.exists == 'true'
         run: |
           export APP_IMAGE="${{ steps.login-ecr.outputs.registry }}/${{ env.APP_IMAGE }}"
 
@@ -309,7 +326,7 @@ jobs:
           done
 
       - name: Destroy manifests
-        if: needs.config.outputs.destroy == 'true'
+        if: needs.config.outputs.destroy == 'true' && steps.cluster.outputs.exists == 'true'
         run: |
           kubectl delete -f k8s-rendered/hpa.yaml --ignore-not-found
           kubectl delete -f k8s-rendered/service.yaml --ignore-not-found
