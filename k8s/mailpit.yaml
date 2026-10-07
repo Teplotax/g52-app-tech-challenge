@@ -29,7 +29,8 @@ spec:
             - name: MP_SMTP_AUTH_ALLOW_INSECURE
               value: "true"
             - name: MP_WEBROOT
-              value: "dev/mailpit"
+              # mesmo prefixo do stage no api gateway
+              value: "${ENVIRONMENT}/mailpit"
           readinessProbe:
             exec:
               command: ["/mailpit", "readyz"]
@@ -69,6 +70,7 @@ metadata:
     service.beta.kubernetes.io/aws-load-balancer-type: "external"
     service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: "ip"
     service.beta.kubernetes.io/aws-load-balancer-scheme: "internet-facing"
+    service.beta.kubernetes.io/aws-load-balancer-subnets: "${LB_SUBNETS}"
     service.beta.kubernetes.io/aws-load-balancer-healthcheck-protocol: "TCP"
     service.beta.kubernetes.io/aws-load-balancer-healthcheck-interval: "15"
     service.beta.kubernetes.io/aws-load-balancer-healthcheck-healthy-threshold: "2"
