@@ -2,6 +2,7 @@ package com.grupo52.tech_challenge.gateway.database.model;
 
 import com.grupo52.tech_challenge.domain.Enums.Status;
 import com.grupo52.tech_challenge.domain.StatusChange;
+import com.grupo52.tech_challenge.observability.StatusChangeListener;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -13,6 +14,7 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "status_changes")
+@EntityListeners(StatusChangeListener.class)
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor

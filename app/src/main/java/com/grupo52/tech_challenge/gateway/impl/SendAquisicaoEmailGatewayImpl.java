@@ -1,5 +1,6 @@
 package com.grupo52.tech_challenge.gateway.impl;
 
+import com.grupo52.tech_challenge.observability.EventosNegocio;
 import com.grupo52.tech_challenge.domain.Ordem;
 import com.grupo52.tech_challenge.domain.OrdemInsumo;
 import com.grupo52.tech_challenge.domain.OrdemPeca;
@@ -41,6 +42,7 @@ public class SendAquisicaoEmailGatewayImpl implements SendAquisicaoEmailGateway 
 
             mailSender.send(message);
         } catch (Exception e) {
+            EventosNegocio.integracaoFalha("EMAIL", "aquisicao", os.getId(), e);
             throw new GatewayException("Falha ao enviar email de aquisição para OS id=" + os.getId(), e);
         }
     }
