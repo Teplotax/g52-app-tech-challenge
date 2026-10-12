@@ -186,6 +186,13 @@ O `.pipes.yml` tem a configuração comum no topo e uma seção por ambiente (`d
 
 Autenticação com a AWS é via **OIDC** (sem credenciais fixas). O provisionamento da infraestrutura (cluster, ECR, IAM) roda em um pipeline equivalente no repositório `g52-infra-eks-tech-challenge`, de forma independente deste.
 
+## Observabilidade (New Relic)
+
+- **APM:** o agente Java do New Relic vem na imagem (`app/Dockerfile`) e só é ligado quando o ambiente do GitHub tem o secret `NEW_RELIC_LICENSE_KEY`. A app aparece como `tech-challenge-ms-<ambiente>`, com latência por rota, erros, traces distribuídos e queries no banco.
+- **Logs estruturados:** no cluster a app escreve logs em JSON (formato ECS, `LOGGING_STRUCTURED_FORMAT_CONSOLE=ecs`). O agente encaminha os logs ao New Relic já ligados ao trace da requisição (*logs in context*). Localmente os logs continuam em texto.
+- **Correlation ID:** o `CorrelationIdFilter` lê o header `x-correlationid`, que vem do API Gateway ou do cliente, ou gera um UUID. Ele grava o valor no MDC (campo `correlationId` em cada linha de log) e o devolve no header da resposta. A Lambda de autenticação usa o mesmo header nos logs dela.
+- **Healthcheck:** `GET /<stage>/health` no API Gateway aponta para o `/actuator/health`, e é a URL usada pelo monitor de uptime.
+
 ## Instruções
 
 ### Execução local
