@@ -20,3 +20,10 @@ data:
   DB_PORT: "${DB_PORT}"
   DB_NAME: "${DB_NAME}"
   DB_USERNAME: "${DB_USERNAME}"
+  # logs em json (ecs), com o correlationId do mdc
+  LOGGING_STRUCTURED_FORMAT_CONSOLE: "ecs"
+  # new relic apm; desligado se o ambiente não tiver license key
+  NEW_RELIC_AGENT_ENABLED: "${NEW_RELIC_AGENT_ENABLED}"
+  NEW_RELIC_APP_NAME: "tech-challenge-ms-${ENVIRONMENT}"
+  NEW_RELIC_LABELS: "environment:${ENVIRONMENT}"
+  NEW_RELIC_LOG_FILE_NAME: "STDOUT"
