@@ -27,3 +27,5 @@ data:
   NEW_RELIC_APP_NAME: "tech-challenge-ms-${ENVIRONMENT}"
   NEW_RELIC_LABELS: "environment:${ENVIRONMENT}"
   NEW_RELIC_LOG_FILE_NAME: "STDOUT"
+  # manda o mdc (correlationId) junto com os logs encaminhados pelo agente
+  NEW_RELIC_APPLICATION_LOGGING_FORWARDING_CONTEXT_DATA_ENABLED: "true"
