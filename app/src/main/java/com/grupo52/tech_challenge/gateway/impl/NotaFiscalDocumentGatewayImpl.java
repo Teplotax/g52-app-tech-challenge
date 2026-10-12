@@ -1,5 +1,6 @@
 package com.grupo52.tech_challenge.gateway.impl;
 
+import com.grupo52.tech_challenge.observability.EventosNegocio;
 import com.grupo52.tech_challenge.domain.Ordem;
 import com.grupo52.tech_challenge.domain.OrdemServico;
 import com.grupo52.tech_challenge.exception.GatewayException;
@@ -59,6 +60,7 @@ public class NotaFiscalDocumentGatewayImpl implements NotaFiscalDocumentGateway 
             builder.run();
             return out.toByteArray();
         } catch (Exception e) {
+            EventosNegocio.integracaoFalha("PDF", "nota_fiscal", os.getId(), e);
             throw new GatewayException("Falha ao gerar PDF da nota fiscal para OS id=" + os.getId(), e);
         }
     }
