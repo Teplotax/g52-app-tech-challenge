@@ -1,5 +1,6 @@
 package com.grupo52.tech_challenge.gateway.impl;
 
+import com.grupo52.tech_challenge.observability.EventosNegocio;
 import com.grupo52.tech_challenge.domain.Ordem;
 import com.grupo52.tech_challenge.exception.GatewayException;
 import com.grupo52.tech_challenge.gateway.NotaFiscalDocumentGateway;
@@ -46,6 +47,7 @@ public class SendNotaFiscalEmailGatewayImpl implements SendNotaFiscalEmailGatewa
         } catch (GatewayException e) {
             throw e;
         } catch (Exception e) {
+            EventosNegocio.integracaoFalha("EMAIL", "nota_fiscal", os.getId(), e);
             throw new GatewayException("Falha ao enviar nota fiscal para OS id=" + os.getId(), e);
         }
     }

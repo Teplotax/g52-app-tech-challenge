@@ -1,5 +1,6 @@
 package com.grupo52.tech_challenge.gateway.impl;
 
+import com.grupo52.tech_challenge.observability.EventosNegocio;
 import com.grupo52.tech_challenge.domain.OrdemInsumo;
 import com.grupo52.tech_challenge.domain.Ordem;
 import com.grupo52.tech_challenge.domain.OrdemPeca;
@@ -83,6 +84,7 @@ public class OrcamentoDocumentGatewayImpl implements OrcamentoDocumentGateway {
             builder.run();
             return out.toByteArray();
         } catch (Exception e) {
+            EventosNegocio.integracaoFalha("PDF", "orcamento", os.getId(), e);
             throw new GatewayException("Falha ao gerar PDF do orçamento: " + e.getMessage(), e);
         }
     }

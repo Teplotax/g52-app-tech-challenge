@@ -1,5 +1,6 @@
 package com.grupo52.tech_challenge.gateway.impl;
 
+import com.grupo52.tech_challenge.observability.EventosNegocio;
 import com.grupo52.tech_challenge.domain.Ordem;
 import com.grupo52.tech_challenge.exception.GatewayException;
 import com.grupo52.tech_challenge.gateway.OrcamentoDocumentGateway;
@@ -49,6 +50,7 @@ public class SendOrcamentoEmailGatewayImpl implements SendOrcamentoEmailGateway 
         } catch (GatewayException e) {
             throw e;
         } catch (Exception e) {
+            EventosNegocio.integracaoFalha("EMAIL", "orcamento", os.getId(), e);
             throw new GatewayException("Falha ao enviar email de orçamento para OS id=" + os.getId(), e);
         }
     }
