@@ -112,6 +112,12 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-mail</artifactId>
 		</dependency>
+		<!-- eventos customizados no new relic; sem o agente (local/testes) as chamadas não fazem nada -->
+		<dependency>
+			<groupId>com.newrelic.agent.java</groupId>
+			<artifactId>newrelic-api</artifactId>
+			<version>9.5.0</version>
+		</dependency>
 		<dependency>
 			<groupId>com.openhtmltopdf</groupId>
 			<artifactId>openhtmltopdf-pdfbox</artifactId>
