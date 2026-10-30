@@ -2,24 +2,40 @@
 
 API de gerenciamento de ordens de serviço para uma oficina automotiva (clientes, veículos, peças, insumos, serviços e ordens de serviço), desenvolvida em Spring Boot pelo Grupo 52 como parte do tech challenge.
 
-## Documentação da API
+## Links
 
-A especificação Swagger/OpenAPI é mantida no repositório [`doc-api-g52-tech-challenge-v1`](https://github.com/Teplotax/doc-api-g52-tech-challenge-v1) e publicada via **GitHub Pages**:
+| | |
+|---|---|
+| Documentação da API (Swagger) | https://teplotax.github.io/doc-api-tech-challenge-v1/ |
+| Collection Postman/Insomnia | Enviada no PDF de entrega, porque contém CPFs de teste do seed |
+| Arquitetura da solução (diagramas, RFCs, ADRs) | [`g52-app-tech-challenge/docs/arquitetura`](https://github.com/Teplotax/g52-app-tech-challenge/tree/main/docs/arquitetura) |
+| Pipelines | [GitHub Actions](https://github.com/Teplotax/g52-app-tech-challenge/actions) |
 
-https://teplotax.github.io/doc-api-g52-tech-challenge-v1/
+### Deploys
 
-Também existe uma collection completa das APIs (Postman/Insomnia) cobrindo todos os fluxos da aplicação. Como essa collection inclui dados de clientes de teste (CPFs do seed), o link não foi incluído neste README. Ela é compartilhada apenas no PDF de entrega.
+Todos os ambientes respondem pelo mesmo API Gateway, com um stage por ambiente:
+
+| Ambiente | URL base | Healthcheck |
+|---|---|---|
+| dev | https://08onkvn4jb.execute-api.us-east-1.amazonaws.com/dev | [`/dev/health`](https://08onkvn4jb.execute-api.us-east-1.amazonaws.com/dev/health) |
+| hom | https://08onkvn4jb.execute-api.us-east-1.amazonaws.com/hom | [`/hom/health`](https://08onkvn4jb.execute-api.us-east-1.amazonaws.com/hom/health) |
+| prod | https://08onkvn4jb.execute-api.us-east-1.amazonaws.com/prod | [`/prod/health`](https://08onkvn4jb.execute-api.us-east-1.amazonaws.com/prod/health) |
+
+Para economizar, os ambientes ficam desligados quando não estão em uso ([ADR-003](https://github.com/Teplotax/g52-app-tech-challenge/blob/main/docs/arquitetura/adrs/ADR-003-ambientes.md)). O healthcheck mostra se um ambiente está no ar.
 
 ## Descrição da solução e objetivos desta fase
 
-Este repositório contém o **serviço de aplicação** (API + MailPit, empacotados como imagens Docker) e os **manifestos Kubernetes** usados para publicá-lo. Nesta fase o foco foi:
+Este repositório contém o **serviço de aplicação** (API + MailPit, empacotados como imagens Docker), os **manifestos Kubernetes** usados para publicá-lo e a **documentação de arquitetura** da solução. Na Fase 3, o foco foi:
 
-- Migrar o deploy de **ECS Fargate** para um **cluster EKS (Fargate Profiles)**, gerenciado via Kubernetes puro (Deployments, Services, ConfigMaps, Secrets, HPA), em vez de recursos nativos da AWS (Task Definitions, Application Auto Scaling).
-- Extrair todo o Terraform de provisionamento de infraestrutura para um repositório dedicado (`g52-infra-eks-tech-challenge`), mantendo neste repositório apenas o código da aplicação e os manifestos que descrevem *como* ela roda dentro do cluster.
-- Mover credenciais e segredos sensíveis (senha de e-mail, segredo de aprovação, senha do banco) de variáveis de ambiente em texto puro para um `Secret` do Kubernetes, injetado no pod via `envFrom`/`secretKeyRef` e populado em runtime pelo pipeline a partir de GitHub Secrets, nunca commitado com valores reais.
-- Manter a paridade entre o ambiente local (Docker Compose) e o ambiente do cluster (Kubernetes), reaproveitando as mesmas imagens e variáveis de configuração.
+- **Autenticação por CPF** com uma Function Serverless e validação do JWT no API Gateway (Lambda Authorizer) e na aplicação, substituindo o Keycloak. O cliente só consulta e aprova as próprias OS, e a equipe usa um token administrativo (`client_credentials`).
+- **Banco gerenciado**: o Postgres saiu do cluster e virou um RDS, com o modelo de dados revisado (migration `V3`).
+- **Ambientes dev, hom e prod** com deploy automático a partir de `develop`, `release/*` e `main`, e `main` protegida.
+- **Observabilidade com New Relic**: APM, logs JSON com correlation ID, métricas de negócio das OS, dashboards e alertas.
+- **Documentação arquitetural**: diagramas de componentes e de sequência, RFCs e ADRs em [`docs/arquitetura/`](docs/arquitetura/).
 
 ## Desenho da arquitetura proposta
+
+A documentação arquitetural completa (diagrama de componentes, diagramas de sequência, RFCs e ADRs) está em [`docs/arquitetura/`](docs/arquitetura/).
 
 ### Componentes da aplicação
 
@@ -137,8 +153,8 @@ flowchart LR
 
     subgraph infra["g52-infra-eks-tech-challenge"]
         direction LR
-        i1["push/PR develop"] --> i2["terraform init<br/>backend S3"]
-        i2 --> i3["plan (PR) /<br/>apply ou destroy (push)"]
+        i1["merge em develop"] --> i2["terraform init<br/>backend S3"]
+        i2 --> i3["apply ou destroy"]
         i3 --> i4["EKS + node group, IAM/IRSA, ECR,<br/>LB Controller, metrics-server,<br/>Cluster Autoscaler"]
     end
 
@@ -166,7 +182,7 @@ flowchart LR
 ```
 
 1. **1 - Build & PR** (`feature/**` → `develop`): ao dar push numa branch `feature/*`, roda os testes unitários e abre automaticamente um PR pra `develop` (se ainda não existir um aberto).
-2. **2 - Build and Deploy** (`develop`): lê as configs do `.pipes.yml`, builda o JAR e a imagem Docker da app, publica no ECR, autentica no cluster EKS (`aws eks update-kubeconfig`) e aplica os manifestos em `k8s/` via `kubectl` (credenciais do RDS lidas do Secrets Manager e demais secrets a partir de GitHub Secrets, injetados via `envsubst`). Depois de aplicar, descobre o hostname das NLBs (app e MailPit), reaplica o `ConfigMap` com a `APP_BASE_URL` real, reinicia o rollout da app e publica as URLs como *repo variables* (inclusive no repositório do API Gateway). Se `destroy: true` no `.pipes.yml`, os manifestos são removidos em vez de aplicados. Ao final, cria/reaproveita uma branch `release/vX.Y.Z` com PR de `develop` pra ela.
+2. **2 - Build and Deploy** (`develop`): lê as configs do `.pipes.yml`, builda o JAR e a imagem Docker da app, publica no ECR, autentica no cluster EKS (`aws eks update-kubeconfig`) e aplica os manifestos em `k8s/` via `kubectl` (credenciais do RDS lidas do Secrets Manager e demais secrets a partir de GitHub Secrets, injetados via `envsubst`). Depois de aplicar, descobre o hostname das NLBs (app e MailPit), reaplica o `ConfigMap` com a `APP_BASE_URL` real, reinicia o rollout da app e publica as URLs como variáveis do GitHub Environment (inclusive no repositório do contrato do API Gateway). Se `destroy: true` no `.pipes.yml`, os manifestos são removidos em vez de aplicados. Ao final, cria/reaproveita uma branch `release/vX.Y.Z` com PR de `develop` pra ela.
 3. **3 - [HOM] Deploy & Promote** (`release/**`): quando o PR de `develop` pra `release/*` é mergeado, faz o mesmo deploy no ambiente **hom** e abre automaticamente o PR de `release/*` pra `main`.
 4. **5 - [PROD] Deploy** (`main`): o merge da release na `main` faz o deploy no ambiente **prod**.
 
@@ -319,14 +335,14 @@ kubectl delete -f k8s/hpa.yaml -f k8s/service.yaml -f k8s/deployment.yaml -f k8s
 
 ### Provisionamento da infraestrutura com Terraform
 
-O Terraform que provisiona o cluster EKS, os repositórios ECR e os componentes de suporte (AWS Load Balancer Controller, metrics-server) **não vive neste repositório**. Ele está no repositório [`g52-infra-eks-tech-challenge`](https://github.com/Teplotax/g52-infra-eks-tech-challenge), separado para manter a fronteira entre "infraestrutura" e "aplicação". Resumo de como executá-lo:
+O Terraform que provisiona o cluster EKS, os repositórios ECR e os componentes de suporte (AWS Load Balancer Controller, metrics-server, Cluster Autoscaler, New Relic) **não vive neste repositório**. Ele está no repositório [`g52-infra-eks-tech-challenge`](https://github.com/Teplotax/g52-infra-eks-tech-challenge), separado para manter a fronteira entre "infraestrutura" e "aplicação". Resumo de como executá-lo:
 
 Pré-requisitos:
 
 - Terraform >= 1.6
 - AWS CLI configurado com permissões adequadas
 - Bucket S3 para armazenar o state remoto (`g52-terraform-state-dev-<account-id>`)
-- Subnets com rota de saída para a internet (NAT Gateway ou VPC Endpoints para `ecr.api`, `ecr.dkr`, `s3`, `sts` e `eks`), já que pods em Fargate não recebem IP público diretamente
+- O RDS do ambiente já criado (os nós anexam o SG de clientes dele)
 
 Passo a passo (a partir do diretório `infra/` do repositório `g52-infra-eks-tech-challenge`):
 
@@ -359,7 +375,7 @@ Assim como neste repositório, o provisionamento é automatizado por um pipeline
 - **Spring Security + OAuth2 Resource Server**, validando os JWTs emitidos pela **Lambda de autenticação** (JWKS, emissor `g52-lambda-auth`, audiência `tech-challenge-api`), com autorização por role (`ADMIN` / `CLIENTE`)
 - **Spring Mail**, com **MailPit** como servidor SMTP de desenvolvimento
 - Geração de PDF via **openhtmltopdf**
-- Observabilidade via **Actuator** e **Micrometer/Prometheus** (`/actuator/health`, `/actuator/prometheus`, etc.)
+- Observabilidade via **New Relic** (agente Java 9.5.0, logs JSON em formato ECS, eventos customizados com a `newrelic-api`) e **Actuator** (`/actuator/health`)
 - Código organizado em camadas seguindo princípios de Clean Architecture: `controller` → `service` → `gateway` (interface + implementação) → `gateway/database` (entidades JPA e repositórios), com `dto`s de request/response e `domain` representando as entidades de negócio
 
 ## Recursos da API
@@ -396,17 +412,15 @@ Principais variáveis de ambiente usadas no `docker-compose.yml`: `DB_HOST`, `DB
 
 ## Repositórios do projeto
 
-Este repositório contém a **aplicação** (API + MailPit) e os **manifestos Kubernetes** para publicá-la. A solução completa do projeto **G52 | Tech Challenge** está distribuída nos seguintes repositórios:
-
-| Recurso | Tipo     | Link Repositório |
-|---|----------|---|
-| EKS Cluster + ECR + Load Balancer Controller | Infra    | https://github.com/Teplotax/g52-infra-eks-tech-challenge |
-| App + Manifestos K8s | App      | https://github.com/Teplotax/g52-app-tech-challenge |
-| Autenticação por CPF (Lambda + Authorizer) | Serverless | https://github.com/Teplotax/g52-lambda-tech-challenge |
-| Banco de dados (RDS PostgreSQL) | Infra    | https://github.com/Teplotax/g52-infra-rds-tech-challenge |
-| API Gateway | Infra    | https://github.com/Teplotax/g52-infra-gateway-tech-challenge |
-| API Gateway | Contract | https://github.com/Teplotax/g52-api-tech-challenge-v1-ext |
-| API Gateway | Doc      | https://github.com/Teplotax/doc-api-g52-tech-challenge-v1 |
+| Repositório | Conteúdo |
+|---|---|
+| **g52-app-tech-challenge** (este) | Aplicação Spring Boot, manifestos Kubernetes e documentação de arquitetura |
+| [g52-lambda-tech-challenge](https://github.com/Teplotax/g52-lambda-tech-challenge) | Function Serverless de autenticação (CPF e `client_credentials`) e Lambda Authorizer |
+| [g52-infra-eks-tech-challenge](https://github.com/Teplotax/g52-infra-eks-tech-challenge) | Cluster EKS, ECR, add-ons e observabilidade (New Relic) |
+| [g52-infra-rds-tech-challenge](https://github.com/Teplotax/g52-infra-rds-tech-challenge) | Banco gerenciado (RDS PostgreSQL) e modelo de dados |
+| [g52-infra-gateway-tech-challenge](https://github.com/Teplotax/g52-infra-gateway-tech-challenge) | REST API do API Gateway e roles da conta |
+| [g52-api-tech-challenge-v1-ext](https://github.com/Teplotax/g52-api-tech-challenge-v1-ext) | Contrato OpenAPI importado no API Gateway (stages dev/hom/prod) |
+| [doc-api-tech-challenge-v1](https://github.com/Teplotax/doc-api-tech-challenge-v1) | Swagger publicado no GitHub Pages |
 
 > Fases anteriores do projeto usavam ECS Fargate, com infraestrutura nos repositórios `g52-infra-ecs-tech-challenge` (cluster ECS) e `g52-infra-lb-tech-challenge` (load balancer), hoje substituídos por `g52-infra-eks-tech-challenge`.
 
