@@ -12,10 +12,10 @@ A Lambda emite dois tipos de token (ver [RFC-003](../rfcs/RFC-003-estrategia-de-
 Autorização baseada na claim `roles` do JWT, aplicada em três pontos:
 
 1. **Lambda Authorizer (Gateway):** a policy devolvida libera só as rotas da role.
-   - `CLIENTE`: `GET /ordensDeServico`, `GET /ordensDeServico/*`, `POST /ordensDeServico/*/aprovar`.
+   - `CLIENTE`: `GET /clientes/documento/*`, `GET /clientes/documento/*/veiculos`, `GET /ordensDeServico`, `GET /ordensDeServico/*`, `POST /ordensDeServico/*/aprovar`.
    - `ADMIN`: todas as rotas.
-2. **Spring Security (`SecurityConfig`):** as mesmas regras por rota, com `hasAnyRole("ADMIN", "CLIENTE")` nas três rotas acima e `hasRole("ADMIN")` no resto.
-3. **Posse da OS (`ClienteAutenticado`):** com token `CLIENTE`, a listagem é filtrada pelo CPF do token, e uma OS de outro cliente responde **404**, não 403, para não revelar que o id existe.
+2. **Spring Security (`SecurityConfig`):** as mesmas regras por rota, com `hasAnyRole("ADMIN", "CLIENTE")` nas cinco rotas acima e `hasRole("ADMIN")` no resto.
+3. **Posse do cadastro e da OS (`ClienteAutenticado`):** com token `CLIENTE`, a listagem de OS é filtrada pelo CPF do token, e um documento (cadastro ou veículos) ou uma OS de outro cliente responde **404**, não 403, para não revelar que o registro existe.
 
 Ficam públicas, sem JWT:
 - `/aprovacao/**` e `/aquisicao/**`, protegidas por token HMAC no link do e-mail;

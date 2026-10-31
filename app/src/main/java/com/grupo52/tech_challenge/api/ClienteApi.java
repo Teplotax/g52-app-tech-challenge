@@ -29,6 +29,10 @@ public interface ClienteApi {
     ResponseEntity<FindClienteResponseDTO> findClienteByDocumento(
             @PathVariable @Documento String documento) throws GatewayException;
 
+    @GetMapping("/documento/{documento}/veiculos")
+    ResponseEntity<List<VeiculoInfoResponseDTO>> findVeiculosByDocumento(
+            @PathVariable @Documento String documento) throws GatewayException;
+
     @GetMapping
     ResponseEntity<PagedResponse<ClienteInfoResponseDTO>> listClientes(
             @PageableDefault(size = 20, page = 0) Pageable pageable) throws GatewayException;

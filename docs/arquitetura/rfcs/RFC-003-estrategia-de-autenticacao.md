@@ -16,7 +16,7 @@ Na Fase 2, a autenticação usava **Keycloak** rodando como pod no EKS, com `cli
 2. **Chave pública publicada como JWKS** em `GET /.well-known/jwks.json`.
 3. **Validação em duas camadas:**
    - no **Gateway**, por um Lambda Authorizer (TOKEN) que valida assinatura, `exp`, `iss`, `aud` e devolve uma policy só com as rotas da role;
-   - na **aplicação**, pelo Spring Security Resource Server, via JWKS, com a mesma regra de role e a checagem de que o cliente só acessa as próprias OS.
+   - na **aplicação**, pelo Spring Security Resource Server, via JWKS, com a mesma regra de role e a checagem de que o cliente só acessa o próprio cadastro, os próprios veículos e as próprias OS.
 4. **Keycloak removido.**
 
 ## Alternativas consideradas
@@ -37,6 +37,6 @@ Lambda própria como emissor único (CPF e `client_credentials`), RS256 com JWKS
 - Um emissor, uma chave e um JWKS. A aplicação não compartilha segredo com ninguém.
 - Requisições sem token ou com role errada são barradas no Gateway (401/403), antes do EKS.
 - O resultado do authorizer fica em cache por 5 min por token. Por isso a policy libera todas as rotas da role, e não só a rota chamada.
-- O token de cliente só consulta e aprova as próprias OS. Ver [ADR-006](../adrs/ADR-006-autorizacao-por-role.md).
+- O token de cliente só consulta o próprio cadastro e os próprios veículos e consulta e aprova as próprias OS. Ver [ADR-006](../adrs/ADR-006-autorizacao-por-role.md).
 - O `client_secret` administrativo é gerado pelo Terraform, guardado no Secrets Manager e entregue à Lambda só como hash.
 - Ponto de atenção: a NLB da aplicação é pública, então dá para chamar a app direto, sem passar pelo Gateway. Isso é mitigado pela validação do JWT na própria aplicação. A evolução seria uma NLB interna com VPC Link.
