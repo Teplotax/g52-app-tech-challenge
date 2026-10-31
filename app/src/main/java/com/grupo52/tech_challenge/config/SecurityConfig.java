@@ -48,7 +48,10 @@ public class SecurityConfig {
                         .requestMatchers("/aprovacao/**", "/aquisicao/**").permitAll()
                         .requestMatchers("/h2-console/**").permitAll()
                         .requestMatchers("/actuator/**").permitAll()
-                        // token de cliente (cpf): consultar e aprovar as próprias OS
+                        // token de cliente (cpf): consultar o próprio cadastro e veículos e consultar/aprovar as próprias OS
+                        .requestMatchers(HttpMethod.GET, "/clientes/documento/{documento}",
+                                "/clientes/documento/{documento}/veiculos")
+                        .hasAnyRole("ADMIN", "CLIENTE")
                         .requestMatchers(HttpMethod.GET, "/ordensDeServico", "/ordensDeServico/{osId}")
                         .hasAnyRole("ADMIN", "CLIENTE")
                         .requestMatchers(HttpMethod.POST, "/ordensDeServico/{osId}/aprovar")

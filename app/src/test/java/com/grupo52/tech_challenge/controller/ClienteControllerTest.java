@@ -157,6 +157,18 @@ class ClienteControllerTest {
     }
 
     @Test
+    void findVeiculosByDocumentoSucesso() throws Exception {
+        when(findClienteByDocumentGateway.execute(VALID_CPF)).thenReturn(clienteFixture());
+        when(listVeiculosByClienteGateway.execute(1L)).thenReturn(List.of(veiculoFixture()));
+
+        mvc.perform(MockMvcRequestBuilders.get("/clientes/documento/{documento}/veiculos", VALID_CPF))
+                .andExpect(status().isOk());
+
+        verify(findClienteByDocumentGateway, times(1)).execute(VALID_CPF);
+        verify(listVeiculosByClienteGateway, times(1)).execute(1L);
+    }
+
+    @Test
     void updateClienteSucesso() throws Exception {
         when(updateClienteGateway.execute(any(Cliente.class))).thenReturn(clienteFixture());
 
