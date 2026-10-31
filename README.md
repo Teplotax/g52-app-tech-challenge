@@ -27,7 +27,7 @@ Para economizar, os ambientes ficam desligados quando não estão em uso ([ADR-0
 
 Este repositório contém o **serviço de aplicação** (API + MailPit, empacotados como imagens Docker), os **manifestos Kubernetes** usados para publicá-lo e a **documentação de arquitetura** da solução. Na Fase 3, o foco foi:
 
-- **Autenticação por CPF** com uma Function Serverless e validação do JWT no API Gateway (Lambda Authorizer) e na aplicação, substituindo o Keycloak. O cliente só consulta e aprova as próprias OS, e a equipe usa um token administrativo (`client_credentials`).
+- **Autenticação por CPF** com uma Function Serverless e validação do JWT no API Gateway (Lambda Authorizer) e na aplicação, substituindo o Keycloak. O cliente só consulta o próprio cadastro e os próprios veículos e consulta e aprova as próprias OS, e a equipe usa um token administrativo (`client_credentials`).
 - **Banco gerenciado**: o Postgres saiu do cluster e virou um RDS, com o modelo de dados revisado (migration `V3`).
 - **Ambientes dev, hom e prod** com deploy automático a partir de `develop`, `release/*` e `main`, e `main` protegida.
 - **Observabilidade com New Relic**: APM, logs JSON com correlation ID, métricas de negócio das OS, dashboards e alertas.
@@ -43,7 +43,7 @@ App e MailPit rodam como `Deployment`s independentes (cada um com seu próprio P
 
 A autenticação fica fora do cluster, na Function Serverless do repositório [`g52-lambda-tech-challenge`](https://github.com/Teplotax/g52-lambda-tech-challenge). Ela emite dois tipos de JWT (RS256), diferenciados pela claim `roles`:
 
-- **Cliente** (`POST /auth` com o CPF, `roles: CLIENTE`): só consulta e aprova as **próprias** OS (`GET /ordensDeServico`, `GET /ordensDeServico/{osId}` e `POST /ordensDeServico/{osId}/aprovar`). A listagem é filtrada pelo CPF do token. Uma OS de outro cliente responde `404`.
+- **Cliente** (`POST /auth` com o CPF, `roles: CLIENTE`): só consulta o **próprio** cadastro e os **próprios** veículos (`GET /clientes/documento/{documento}` e `GET /clientes/documento/{documento}/veiculos`) e consulta e aprova as **próprias** OS (`GET /ordensDeServico`, `GET /ordensDeServico/{osId}` e `POST /ordensDeServico/{osId}/aprovar`). A listagem é filtrada pelo CPF do token. Um documento ou uma OS de outro cliente responde `404`.
 - **Administrativo** (`POST /auth/token` com `client_credentials`, `roles: ADMIN`): todas as rotas, para a equipe da oficina.
 
 O **Lambda Authorizer** valida o token e a role no API Gateway. A app valida de novo pelo JWKS publicado pela Lambda (`JWT_JWK_SET_URI`), conferindo assinatura, expiração, emissor e audiência, e aplica as mesmas regras de role no `SecurityConfig`. Os links enviados por e-mail (`/aprovacao/**` e `/aquisicao/**`) continuam públicos, protegidos por token HMAC:

@@ -1,6 +1,7 @@
 package com.grupo52.tech_challenge.controller;
 
 import com.grupo52.tech_challenge.api.ClienteApi;
+import com.grupo52.tech_challenge.config.ClienteAutenticado;
 import com.grupo52.tech_challenge.domain.Cliente;
 import com.grupo52.tech_challenge.domain.Veiculo;
 import com.grupo52.tech_challenge.dto.PagedResponse;
@@ -62,8 +63,18 @@ public class ClienteController implements ClienteApi {
     @Override
     public ResponseEntity<FindClienteResponseDTO> findClienteByDocumento(String documento) throws GatewayException {
         Cliente cliente = findClienteByDocumentGateway.execute(documento);
+        ClienteAutenticado.verificarAcesso(cliente);
 
         return ResponseEntity.ok().body(FindClienteResponseDTO.fromDomain(cliente));
+    }
+
+    @Override
+    public ResponseEntity<List<VeiculoInfoResponseDTO>> findVeiculosByDocumento(String documento) throws GatewayException {
+        Cliente cliente = findClienteByDocumentGateway.execute(documento);
+        ClienteAutenticado.verificarAcesso(cliente);
+        List<Veiculo> veiculos = listVeiculosByClienteGateway.execute(cliente.getId());
+
+        return ResponseEntity.ok().body(VeiculoInfoResponseDTO.fromDomain(veiculos));
     }
 
     @Override
