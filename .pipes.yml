@@ -14,7 +14,7 @@ environments:
     ecr_repository: "grupo52/tech-challenge/eks-tech-challenge-dev"
     db_secret_name: "g52-rds-tech-challenge-dev/credentials"
   hom:
-    destroy: false
+    destroy: true
     eks_cluster_name: "eks-tech-challenge-hom"
     ecr_repository: "grupo52/tech-challenge/eks-tech-challenge-hom"
     db_secret_name: "g52-rds-tech-challenge-hom/credentials"
