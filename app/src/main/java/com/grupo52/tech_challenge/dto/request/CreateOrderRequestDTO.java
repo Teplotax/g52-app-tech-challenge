@@ -36,13 +36,15 @@ public class CreateOrderRequestDTO {
     private List<@NotNull @Positive Long> servicosDesejados;
 
     public Ordem toDomain() {
-        return Ordem.builder()
+        Ordem os = Ordem.builder()
                 .veiculo(Veiculo.builder().placa(this.placa).build())
                 .tagChave(this.tagChave)
                 .sintomas(this.sintomas != null && !this.sintomas.isBlank() ? this.sintomas : null)
-                .status(Status.RECEBIDA)
                 .servicosDesejados(getServicosDesejadosDomain())
                 .build();
+        // pelo setter pra gravar o RECEBIDA no histórico (e gerar o evento de OS nova)
+        os.setStatus(Status.RECEBIDA);
+        return os;
     }
 
     private List<OrdemServico> getServicosDesejadosDomain() {
