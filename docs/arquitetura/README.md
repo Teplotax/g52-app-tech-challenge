@@ -88,4 +88,4 @@ flowchart LR
 | Cluster Kubernetes | `g52-infra-eks-tech-challenge` | EKS, autoscaling, ECR, New Relic (Kubernetes, dashboards e alertas) |
 | Banco de dados | `g52-infra-rds-tech-challenge` | RDS PostgreSQL, SG de clientes e credenciais |
 | Aplicação | `g52-app-tech-challenge` | API Spring Boot, manifestos Kubernetes e migrations Flyway |
-| Documentação da API | `doc-api-tech-challenge-v1` | Swagger publicado no GitHub Pages |
+| Documentação da API | `doc-api-g52-tech-challenge-v1` | Swagger publicado no GitHub Pages |
